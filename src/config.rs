@@ -77,6 +77,8 @@ pub struct Config {
     pub dashboard_layout: String,
     #[serde(default)]
     pub hide_extra_usage: bool,
+    #[serde(default = "default_true")]
+    pub token_expiry_warning: bool,
     #[serde(default)]
     pub custom_colors: CustomColors,
     #[serde(default)]
@@ -114,6 +116,7 @@ impl Default for Config {
             tray_icon_style: "number".to_string(),
             dashboard_layout: "standard".to_string(),
             hide_extra_usage: false,
+            token_expiry_warning: true,
             custom_colors: CustomColors::default(),
             quiet_hours: QuietHoursConfig::default(),
         }
