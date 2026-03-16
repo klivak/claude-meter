@@ -5,6 +5,14 @@ All notable changes to ClaudeMeter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.6] - 2026-03-16
+
+### Fixed
+- **Security: quinn-proto DoS vulnerability** — updated quinn-proto 0.11.13 → 0.11.14 to fix RUSTSEC-2026-0037 (high severity)
+
+### Added
+- **Token expiry warning** — new `token_expiry_warning` config option (default: true)
+
 ## [2.2.5] - 2026-03-09
 
 ### Fixed
