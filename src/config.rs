@@ -83,6 +83,12 @@ pub struct Config {
     pub custom_colors: CustomColors,
     #[serde(default)]
     pub quiet_hours: QuietHoursConfig,
+    /// Session key for claude.ai web API fallback (optional)
+    #[serde(default)]
+    pub web_api_session_key: Option<String>,
+    /// Organization ID for claude.ai web API fallback (optional)
+    #[serde(default)]
+    pub web_api_org_id: Option<String>,
 }
 
 fn default_dashboard_layout() -> String {
@@ -119,6 +125,8 @@ impl Default for Config {
             token_expiry_warning: true,
             custom_colors: CustomColors::default(),
             quiet_hours: QuietHoursConfig::default(),
+            web_api_session_key: None,
+            web_api_org_id: None,
         }
     }
 }

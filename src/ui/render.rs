@@ -1622,32 +1622,114 @@ impl PopupRenderer {
             })
             .unwrap_or(self.sf(100));
 
-        // Draw plan name as clickable link
+        // Draw plan name as a colored badge (pill shape)
         let is_plan_hovered = matches!(hovered, HoveredElement::PlanLink);
-        let plan_color = if is_plan_hovered {
-            lighten_d2d(&colorref_to_d2d(colors.accent), 0.3)
-        } else {
-            colorref_to_d2d(colors.accent)
-        };
-        let plan_brush = rt
-            .CreateSolidColorBrush(&plan_color as *const _, None)
-            .unwrap();
         let plan_text = wide(plan);
-        let plan_rect = D2D_RECT_F {
+
+        // Measure plan text width (get format first, then measure via factory)
+        let plan_format = d2d.get_text_format(10, true, 0, 1).clone();
+        let plan_text_w = d2d
+            .dwrite_factory
+            .CreateTextLayout(&plan_text[..plan_text.len() - 1], &plan_format, 200.0, 20.0)
+            .ok()
+            .and_then(|l| {
+                let mut m = windows::Win32::Graphics::DirectWrite::DWRITE_TEXT_METRICS::default();
+                l.GetMetrics(&mut m).ok()?;
+                Some(m.widthIncludingTrailingWhitespace)
+            })
+            .unwrap_or(self.sf(30));
+
+        let badge_h = self.sf(16);
+        let badge_pad = self.sf(6);
+        let badge_w = plan_text_w + badge_pad * 2.0;
+        let badge_y = y + (self.sf(20) - badge_h) / 2.0;
+        let badge_rect = D2D_RECT_F {
             left: pad + prefix_w,
-            top: y,
-            right: pad + prefix_w + self.sf(50),
-            bottom: y + self.sf(20),
+            top: badge_y,
+            right: pad + prefix_w + badge_w,
+            bottom: badge_y + badge_h,
         };
+
+        // Badge background color based on plan
+        let detected_lower = detected.to_lowercase();
+        let badge_bg = if detected_lower.contains("20x") {
+            D2D1_COLOR_F {
+                r: 0.85,
+                g: 0.65,
+                b: 0.13,
+                a: if is_plan_hovered { 0.85 } else { 1.0 },
+            }
+        } else if detected_lower.contains("5x") {
+            D2D1_COLOR_F {
+                r: 0.58,
+                g: 0.34,
+                b: 0.80,
+                a: if is_plan_hovered { 0.85 } else { 1.0 },
+            }
+        } else if detected_lower.starts_with("max") {
+            D2D1_COLOR_F {
+                r: 0.24,
+                g: 0.47,
+                b: 0.85,
+                a: if is_plan_hovered { 0.85 } else { 1.0 },
+            }
+        } else if detected_lower.starts_with("pro") {
+            D2D1_COLOR_F {
+                r: 0.30,
+                g: 0.69,
+                b: 0.31,
+                a: if is_plan_hovered { 0.85 } else { 1.0 },
+            }
+        } else {
+            D2D1_COLOR_F {
+                r: 0.45,
+                g: 0.45,
+                b: 0.50,
+                a: if is_plan_hovered { 0.85 } else { 1.0 },
+            }
+        };
+
+        let badge_brush = rt.CreateSolidColorBrush(&badge_bg, None).unwrap();
+        let rounded = D2D1_ROUNDED_RECT {
+            rect: badge_rect,
+            radiusX: self.sf(4),
+            radiusY: self.sf(4),
+        };
+        rt.FillRoundedRectangle(&rounded, &badge_brush);
+
+        // Badge text (white)
+        let text_color = D2D1_COLOR_F {
+            r: 1.0,
+            g: 1.0,
+            b: 1.0,
+            a: 1.0,
+        };
+        let text_brush = rt.CreateSolidColorBrush(&text_color, None).unwrap();
+        let text_rect = D2D_RECT_F {
+            left: badge_rect.left + badge_pad,
+            top: badge_rect.top,
+            right: badge_rect.right - badge_pad,
+            bottom: badge_rect.bottom,
+        };
+        // Center text vertically in badge (v_align=1 is PARAGRAPH_ALIGNMENT_CENTER)
+        let centered_format = d2d.get_text_format(10, true, 0, 1).clone();
         rt.DrawText(
             &plan_text[..plan_text.len() - 1],
-            &format,
-            &plan_rect,
-            &plan_brush,
+            &centered_format,
+            &text_rect,
+            &text_brush,
             D2D1_DRAW_TEXT_OPTIONS_NONE,
             DWRITE_MEASURING_MODE_NATURAL,
         );
-        *plan_link_rect = to_win32_rect(&plan_rect);
+
+        // Clickable rect covers the whole badge
+        let click_rect = D2D_RECT_F {
+            left: pad + prefix_w,
+            top: y,
+            right: pad + prefix_w + badge_w,
+            bottom: y + self.sf(20),
+        };
+        *plan_link_rect = to_win32_rect(&click_rect);
 
         // "Status ↗" link
         let status_str = format!("{} \u{2197}", i18n.t("Status"));

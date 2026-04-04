@@ -1,6 +1,6 @@
 [package]
 name = "claudemeter"
-version = "2.2.6"
+version = "3.0.0"
 edition = "2021"
 authors = ["klivak"]
 description = "Ultra-lightweight Windows tray app for monitoring Claude AI subscription usage limits. Built in Rust for minimal memory footprint (under 10 MB RAM)."
@@ -47,6 +47,10 @@ features = [
     "Win32_UI_Input_KeyboardAndMouse",
     "Win32_UI_Controls",
     "Foundation_Numerics",
+    "Win32_Storage_FileSystem",
+    "Win32_NetworkManagement_IpHelper",
+    "Win32_NetworkManagement_Ndis",
+    "Win32_Networking_WinSock",
 ]
 
 [profile.release]

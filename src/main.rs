@@ -68,6 +68,7 @@ const TIMER_BLINK: usize = 3;
 const TIMER_FADE: usize = 4;
 const TIMER_SLIDE: usize = 5;
 const TIMER_CONFIG: usize = 6;
+const TIMER_WAKE_RETRY: usize = 7;
 const ANIM_INTERVAL_MS: u32 = 16; // ~60fps
 const CONFIG_CHECK_INTERVAL_MS: u32 = 5_000; // 5 seconds
 const BLINK_INTERVAL_MS: u32 = 500;
@@ -76,6 +77,8 @@ const IDLE_TIMEOUT_MS: u32 = 5 * 60 * 1000; // 5 minutes
 const WM_POLL_RESULT: u32 = 0x0400 + 20; // WM_USER + 20
 const WM_UPDATE_AVAILABLE: u32 = 0x0400 + 21; // WM_USER + 21
 const WM_DB_RESULT: u32 = 0x0400 + 22; // WM_USER + 22
+const WM_CREDENTIAL_CHANGED: u32 = 0x0400 + 23; // WM_USER + 23
+const WM_NETWORK_CHANGED: u32 = 0x0400 + 24; // WM_USER + 24
 
 /// Shared application state accessible from the window proc.
 struct AppState {
@@ -142,6 +145,8 @@ struct AppState {
     slide_anim_active: bool,
     // Cached resolved theme (updated by TIMER_CONFIG, not every paint)
     cached_theme: crate::theme::ResolvedTheme,
+    // Wake retry progressive schedule index
+    wake_retry_index: usize,
 }
 
 // Safety: AppState is accessed only from the main thread via raw pointer.
@@ -301,6 +306,7 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
         slide_anim_target: 0.0,
         slide_anim_active: false,
         cached_theme: initial_theme,
+        wake_retry_index: 0,
     });
 
     // Create tray icon
@@ -356,6 +362,22 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
                     LPARAM(0),
                 );
             }
+        });
+    }
+
+    // Credential file watcher: monitors ~/.claude/ for changes
+    {
+        let hwnd_raw = main_hwnd.0 as usize;
+        std::thread::spawn(move || {
+            credential_file_watcher(hwnd_raw);
+        });
+    }
+
+    // Network connectivity change monitor
+    {
+        let hwnd_raw = main_hwnd.0 as usize;
+        std::thread::spawn(move || {
+            network_change_monitor(hwnd_raw);
         });
     }
 
@@ -523,6 +545,31 @@ unsafe extern "system" fn main_wnd_proc(
                         }
                     }
                 }
+            } else if wparam.0 == TIMER_WAKE_RETRY {
+                // Progressive retry after sleep/wake: 2s, 5s, 15s, 30s
+                const WAKE_RETRY_DELAYS: [u32; 4] = [2000, 5000, 15000, 30000];
+                trigger_poll(hwnd);
+                if let Some(state) = APP_STATE.as_mut() {
+                    state.wake_retry_index += 1;
+                    if state.wake_retry_index < WAKE_RETRY_DELAYS.len() {
+                        let delay = WAKE_RETRY_DELAYS[state.wake_retry_index];
+                        let _ = windows::Win32::UI::WindowsAndMessaging::KillTimer(
+                            hwnd,
+                            TIMER_WAKE_RETRY,
+                        );
+                        windows::Win32::UI::WindowsAndMessaging::SetTimer(
+                            hwnd,
+                            TIMER_WAKE_RETRY,
+                            delay,
+                            None,
+                        );
+                    } else {
+                        let _ = windows::Win32::UI::WindowsAndMessaging::KillTimer(
+                            hwnd,
+                            TIMER_WAKE_RETRY,
+                        );
+                    }
+                }
             } else if wparam.0 == TIMER_CONFIG {
                 // Periodically check config file changes and refresh theme
                 if let Some(state) = APP_STATE.as_mut() {
@@ -608,13 +655,51 @@ unsafe extern "system" fn main_wnd_proc(
         0x0218 => {
             // PBT_APMRESUMEAUTOMATIC = 0x12
             if wparam.0 == 0x12 {
-                log::info!("System resumed from sleep, triggering immediate poll");
+                log::info!("System resumed from sleep, starting progressive retry");
                 if let Some(state) = APP_STATE.as_mut() {
                     state.consecutive_failures = 0;
+                    state.wake_retry_index = 0;
                 }
-                trigger_poll(hwnd);
+                // Progressive retry: 2s, 5s, 15s, 30s — gives network stack time to come up
+                let _ = windows::Win32::UI::WindowsAndMessaging::KillTimer(hwnd, TIMER_WAKE_RETRY);
+                windows::Win32::UI::WindowsAndMessaging::SetTimer(
+                    hwnd,
+                    TIMER_WAKE_RETRY,
+                    2000,
+                    None,
+                );
             }
             LRESULT(1)
+        }
+        WM_CREDENTIAL_CHANGED => {
+            // Credential file changed — trigger poll if not too recent
+            log::info!("Credential file changed, triggering re-poll");
+            if let Some(state) = APP_STATE.as_mut() {
+                let should_poll = state
+                    .last_poll_time
+                    .map_or(true, |t| t.elapsed().as_secs() > 5);
+                if should_poll {
+                    state.consecutive_failures = 0;
+                    state.token_expiry_warned = false;
+                    trigger_poll(hwnd);
+                }
+            }
+            LRESULT(0)
+        }
+        WM_NETWORK_CHANGED => {
+            // Network interface changed — trigger poll if we had failures
+            log::info!("Network change detected");
+            if let Some(state) = APP_STATE.as_mut() {
+                let should_poll = state.consecutive_failures > 0
+                    || state
+                        .last_poll_time
+                        .map_or(true, |t| t.elapsed().as_secs() > 10);
+                if should_poll {
+                    state.consecutive_failures = 0;
+                    trigger_poll(hwnd);
+                }
+            }
+            LRESULT(0)
         }
         WM_DESTROY => {
             PostQuitMessage(0);
@@ -1784,12 +1869,24 @@ unsafe fn handle_menu_command(hwnd: HWND, cmd: u32) {
 /// Spawn async poll task. Result is posted back to main hwnd via WM_USER+20.
 unsafe fn trigger_poll(hwnd: HWND) {
     // Prevent concurrent polls (avoids 429 rate limiting)
-    if let Some(state) = APP_STATE.as_mut() {
+    let web_fallback = if let Some(state) = APP_STATE.as_mut() {
         if state.poll_in_progress {
             return;
         }
         state.poll_in_progress = true;
-    }
+        // Capture web API fallback config for the background thread
+        match (
+            &state.config_mgr.config.web_api_session_key,
+            &state.config_mgr.config.web_api_org_id,
+        ) {
+            (Some(key), Some(org)) if !key.is_empty() && !org.is_empty() => {
+                Some((key.clone(), org.clone()))
+            }
+            _ => None,
+        }
+    } else {
+        None
+    };
 
     // We run a background thread for async work to avoid blocking the message loop.
     // tokio::spawn would require a runtime, so we use std::thread + tokio block_on.
@@ -1803,7 +1900,7 @@ unsafe fn trigger_poll(hwnd: HWND) {
             .unwrap();
 
         rt.block_on(async move {
-            let result = do_poll().await;
+            let result = do_poll(web_fallback).await;
 
             // Post result back to main thread
             let hwnd = HWND(hwnd_val as *mut _);
@@ -1830,11 +1927,24 @@ struct DbResult {
     rate_of_change: std::collections::HashMap<String, f64>,
 }
 
-async fn do_poll() -> PollResult {
+async fn do_poll(web_fallback: Option<(String, String)>) -> PollResult {
     let cred_info = match credentials::read_claude_token() {
         Ok(info) => info,
         Err(e) => {
             log::warn!("Could not read Claude token: {e}");
+            // Try web API fallback if credentials not found
+            if let Some((session_key, org_id)) = &web_fallback {
+                log::info!("Attempting web API fallback");
+                if let Ok(client) = ClaudeClient::new() {
+                    if let Ok(usage) = client.fetch_usage_web(session_key, org_id).await {
+                        return PollResult {
+                            usage: Some(usage),
+                            error: None,
+                            token_expires_in_ms: None,
+                        };
+                    }
+                }
+            }
             return PollResult {
                 usage: None,
                 error: Some(e.to_string()),
@@ -1851,8 +1961,20 @@ async fn do_poll() -> PollResult {
 
     let token_expires_in_ms = cred_info.expires_at.map(|exp| exp.saturating_sub(now_ms));
 
-    // If token is already expired, return error immediately
+    // If token is already expired, try web fallback first
     if let Some(0) = token_expires_in_ms {
+        if let Some((session_key, org_id)) = &web_fallback {
+            log::info!("OAuth token expired, attempting web API fallback");
+            if let Ok(client) = ClaudeClient::new() {
+                if let Ok(usage) = client.fetch_usage_web(session_key, org_id).await {
+                    return PollResult {
+                        usage: Some(usage),
+                        error: None,
+                        token_expires_in_ms: Some(0),
+                    };
+                }
+            }
+        }
         return PollResult {
             usage: None,
             error: Some(
@@ -1885,6 +2007,17 @@ async fn do_poll() -> PollResult {
             }
         }
         Err(e) => {
+            // On OAuth failure, try web API fallback
+            if let Some((session_key, org_id)) = &web_fallback {
+                log::info!("OAuth API failed, attempting web API fallback: {e}");
+                if let Ok(usage) = client.fetch_usage_web(session_key, org_id).await {
+                    return PollResult {
+                        usage: Some(usage),
+                        error: None,
+                        token_expires_in_ms,
+                    };
+                }
+            }
             log::warn!("Failed to fetch usage: {e}");
             PollResult {
                 usage: None,
@@ -1929,6 +2062,8 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
 
         if let Some(u) = &usage {
             state.consecutive_failures = 0;
+            // Stop wake retry schedule on successful poll
+            let _ = windows::Win32::UI::WindowsAndMessaging::KillTimer(hwnd, TIMER_WAKE_RETRY);
             state.last_updated = Local::now().format("%H:%M:%S").to_string();
 
             // Store to DB and query charts on background thread
@@ -1982,6 +2117,9 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
             let in_quiet = is_in_quiet_hours(&state.config_mgr.config.quiet_hours);
             let focus_assist = is_focus_assist_active();
             if state.config_mgr.config.notifications.enabled && !in_quiet && !focus_assist {
+                // Collect all fired notifications, then emit a single aggregated balloon
+                let mut fired_alerts: Vec<(String, f64, u8, String)> = Vec::new();
+
                 for (key, metric) in u.all_metrics() {
                     let fired =
                         state
@@ -2000,59 +2138,74 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
                             .and_then(i18n::format_reset_target);
                         let reset_info = match (&reset_duration, &reset_target) {
                             (Some(dur), Some(tgt)) => {
-                                format!("\n{} {} {}", state.i18n.t("resets in"), dur, tgt)
+                                format!(" ({} {} {})", state.i18n.t("resets in"), dur, tgt)
                             }
                             (Some(dur), None) => {
-                                format!("\n{} {}", state.i18n.t("resets in"), dur)
+                                format!(" ({} {})", state.i18n.t("resets in"), dur)
                             }
                             _ => String::new(),
                         };
+                        fired_alerts.push((metric_name, metric.utilization, threshold, reset_info));
+                    }
+                }
 
-                        let (title, body) = if threshold >= 90 {
-                            (
-                                format!("ClaudeMeter — {}", state.i18n.t("Usage Critical")),
+                if !fired_alerts.is_empty() {
+                    let max_threshold = fired_alerts.iter().map(|a| a.2).max().unwrap_or(0);
+                    let is_critical = max_threshold >= 90;
+
+                    let title = if is_critical {
+                        format!("ClaudeMeter \u{2014} {}", state.i18n.t("Usage Critical"))
+                    } else {
+                        format!("ClaudeMeter \u{2014} {}", state.i18n.t("Usage Alert"))
+                    };
+
+                    let body = if fired_alerts.len() == 1 {
+                        let (ref name, util, thr, ref reset) = fired_alerts[0];
+                        format!(
+                            "{}: {:.0}% ({} {}%){}",
+                            name,
+                            util,
+                            state.i18n.t("exceeded"),
+                            thr,
+                            reset
+                        )
+                    } else {
+                        // Aggregated: one line per metric
+                        fired_alerts
+                            .iter()
+                            .map(|(name, util, thr, reset)| {
                                 format!(
                                     "{}: {:.0}% ({} {}%){}",
-                                    metric_name,
-                                    metric.utilization,
+                                    name,
+                                    util,
                                     state.i18n.t("exceeded"),
-                                    threshold,
-                                    reset_info
-                                ),
-                            )
-                        } else {
-                            (
-                                format!("ClaudeMeter — {}", state.i18n.t("Usage Alert")),
-                                format!(
-                                    "{}: {:.0}% ({} {}%){}",
-                                    metric_name,
-                                    metric.utilization,
-                                    state.i18n.t("exceeded"),
-                                    threshold,
-                                    reset_info
-                                ),
-                            )
-                        };
-                        if let Some(tray) = &state.tray {
-                            tray.show_balloon(&title, &body);
-                        }
+                                    thr,
+                                    reset
+                                )
+                            })
+                            .collect::<Vec<_>>()
+                            .join("\n")
+                    };
 
-                        // Play notification sound
-                        if state.config_mgr.config.notifications.sound {
-                            play_notification_sound(threshold >= 90);
-                        }
+                    if let Some(tray) = &state.tray {
+                        tray.show_balloon(&title, &body);
+                    }
 
-                        // Start tray icon blink for critical usage
-                        if threshold >= 90 && !state.blink_active {
-                            state.blink_active = true;
-                            state.blink_visible = true;
-                            windows::Win32::UI::WindowsAndMessaging::SetTimer(
-                                state.main_hwnd,
-                                TIMER_BLINK,
-                                BLINK_INTERVAL_MS,
-                                None,
-                            );
-                        }
+                    // Play notification sound (critical if any threshold >= 90)
+                    if state.config_mgr.config.notifications.sound {
+                        play_notification_sound(is_critical);
+                    }
+
+                    // Start tray icon blink for critical usage
+                    if is_critical && !state.blink_active {
+                        state.blink_active = true;
+                        state.blink_visible = true;
+                        windows::Win32::UI::WindowsAndMessaging::SetTimer(
+                            state.main_hwnd,
+                            TIMER_BLINK,
+                            BLINK_INTERVAL_MS,
+                            None,
+                        );
                     }
                 }
             }
@@ -2287,6 +2440,114 @@ fn play_notification_sound(critical: bool) {
             MessageBeep(0x10); // MB_ICONHAND — critical/error sound
         } else {
             MessageBeep(0x30); // MB_ICONEXCLAMATION — warning sound
+        }
+    }
+}
+
+/// Background thread that watches ~/.claude/ directory for credential file changes.
+/// Posts WM_CREDENTIAL_CHANGED to the main window when changes are detected.
+fn credential_file_watcher(hwnd_raw: usize) {
+    use windows::Win32::Storage::FileSystem::{
+        FindFirstChangeNotificationW, FindNextChangeNotification, FILE_NOTIFY_CHANGE_LAST_WRITE,
+    };
+    use windows::Win32::System::Threading::WaitForSingleObject;
+
+    let home = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
+        .unwrap_or_default();
+    if home.is_empty() {
+        log::warn!("Cannot determine home directory for credential watcher");
+        return;
+    }
+
+    let watch_dir = std::path::Path::new(&home).join(".claude");
+    if !watch_dir.exists() {
+        log::debug!("~/.claude/ does not exist, credential watcher not started");
+        return;
+    }
+
+    let dir_wide: Vec<u16> = watch_dir
+        .to_string_lossy()
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .collect();
+
+    unsafe {
+        let handle = FindFirstChangeNotificationW(
+            PCWSTR(dir_wide.as_ptr()),
+            false,
+            FILE_NOTIFY_CHANGE_LAST_WRITE,
+        );
+
+        let handle = match handle {
+            Ok(h) => h,
+            Err(e) => {
+                log::warn!("FindFirstChangeNotificationW failed: {e}");
+                return;
+            }
+        };
+
+        loop {
+            // Wait indefinitely for a change
+            let result = WaitForSingleObject(handle, u32::MAX);
+            if result.0 != 0 {
+                // WAIT_FAILED or timeout
+                log::warn!("WaitForSingleObject failed in credential watcher");
+                break;
+            }
+
+            // Debounce: wait a bit for file writes to settle
+            std::thread::sleep(std::time::Duration::from_millis(500));
+
+            let hwnd = HWND(hwnd_raw as *mut _);
+            let _ = PostMessageW(hwnd, WM_CREDENTIAL_CHANGED, WPARAM(0), LPARAM(0));
+
+            if FindNextChangeNotification(handle).is_err() {
+                log::warn!("FindNextChangeNotification failed");
+                break;
+            }
+        }
+    }
+}
+
+/// Background thread that monitors network interface changes.
+/// Posts WM_NETWORK_CHANGED to the main window when connectivity changes.
+fn network_change_monitor(hwnd_raw: usize) {
+    use windows::Win32::NetworkManagement::IpHelper::NotifyIpInterfaceChange;
+    use windows::Win32::Networking::WinSock::AF_UNSPEC;
+
+    // We use a callback that posts a message to the main window.
+    // The callback must be extern "system" and take specific parameters.
+    unsafe extern "system" fn callback(
+        _caller_context: *const std::ffi::c_void,
+        _row: *const windows::Win32::NetworkManagement::IpHelper::MIB_IPINTERFACE_ROW,
+        _notification_type: windows::Win32::NetworkManagement::IpHelper::MIB_NOTIFICATION_TYPE,
+    ) {
+        // Extract hwnd from caller_context
+        let hwnd_raw = _caller_context as usize;
+        let hwnd = HWND(hwnd_raw as *mut _);
+        let _ = PostMessageW(hwnd, WM_NETWORK_CHANGED, WPARAM(0), LPARAM(0));
+    }
+
+    unsafe {
+        let mut handle = std::mem::zeroed();
+        let result = NotifyIpInterfaceChange(
+            AF_UNSPEC,
+            Some(callback),
+            Some(hwnd_raw as *const std::ffi::c_void),
+            false,
+            &mut handle,
+        );
+
+        if result.is_err() {
+            log::warn!("NotifyIpInterfaceChange failed: {:?}", result);
+            return;
+        }
+
+        // Keep this thread alive — the callback needs it.
+        // The notification handle is automatically cleaned up when the process exits.
+        loop {
+            std::thread::sleep(std::time::Duration::from_secs(3600));
         }
     }
 }

@@ -190,6 +190,63 @@ impl ClaudeClient {
 
         parse_response(value)
     }
+
+    /// Fetch usage from claude.ai web API (fallback when OAuth is unavailable).
+    /// Uses session cookie authentication.
+    pub async fn fetch_usage_web(
+        &self,
+        session_key: &str,
+        org_id: &str,
+    ) -> Result<UsageResponse, String> {
+        let url = format!("https://claude.ai/api/organizations/{}/usage", org_id);
+
+        let response = self
+            .client
+            .get(&url)
+            .header("Accept", "application/json")
+            .header("Cookie", format!("sessionKey={}", session_key))
+            .send()
+            .await
+            .map_err(|e| format!("[network_error] {e}"))?;
+
+        let status = response.status();
+        if status.as_u16() == 429 {
+            return Err("[rate_limited] Web API rate limited".to_string());
+        }
+        if status.as_u16() == 401 || status.as_u16() == 403 {
+            return Err("[web_auth_failed] Session key expired or invalid".to_string());
+        }
+        if !status.is_success() {
+            return Err(format!("[web_api_error] Web API returned {status}"));
+        }
+
+        let value: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|e| format!("Failed to parse web API response: {e}"))?;
+
+        parse_web_response(value)
+    }
+}
+
+/// Parse the claude.ai web API response into UsageResponse.
+/// The web API may return a different structure than the OAuth API.
+fn parse_web_response(value: serde_json::Value) -> Result<UsageResponse, String> {
+    // The web API may return the same structure as OAuth, or a wrapper.
+    // Try direct parse first (same format as OAuth API).
+    if let Some(obj) = value.as_object() {
+        if obj.contains_key("five_hour") || obj.contains_key("seven_day") {
+            return parse_response(value);
+        }
+    }
+
+    // Try wrapped format: {"usage": {...}} or similar
+    if let Some(usage_obj) = value.get("usage") {
+        return parse_response(usage_obj.clone());
+    }
+
+    // Fall back to trying direct parse anyway
+    parse_response(value)
 }
 
 /// Parse rate_limit_tier into a human-readable plan name.

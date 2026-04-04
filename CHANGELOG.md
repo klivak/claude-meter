@@ -5,6 +5,23 @@ All notable changes to ClaudeMeter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-04-04
+
+### Added
+- **Credential file watcher** — monitors `~/.claude/` directory for changes and triggers immediate re-poll when credentials are updated, instead of waiting for the next polling cycle
+- **Network connectivity monitor** — detects network interface changes (e.g., WiFi reconnect) via Windows IP Helper API and triggers an immediate poll when connectivity is restored
+- **Sleep/wake progressive retry** — after resuming from sleep/hibernate, retries at 2s, 5s, 15s, 30s intervals instead of a single immediate poll; stops retrying on first successful response
+- **Subscription type badge** — the plan name (Pro, Max, Max 5X, Max 20X) is now displayed as a colored pill-shaped badge in the dashboard header instead of plain text
+- **Web API fallback** — when OAuth credentials are unavailable or expired, ClaudeMeter can optionally fall back to the claude.ai web API using session cookies; configure `web_api_session_key` and `web_api_org_id` in config.json
+- **Aggregated notifications** — when multiple usage thresholds are crossed simultaneously, a single batched notification is shown instead of multiple separate alerts
+
+### Fixed
+- **Security: rustls-webpki CRL vulnerability** — updated rustls-webpki 0.103.9 → 0.103.10 to fix RUSTSEC-2026-0049
+
+### Changed
+- **CI: Node.js 24 migration** — updated `actions/checkout` v4 → v6 across all workflows to resolve Node.js 20 deprecation warnings
+- **CI: audit workflow** — replaced `rustsec/audit-check@v2` (which required issue-creation permissions) with direct `cargo audit` for simpler, more reliable security scanning
+
 ## [2.2.6] - 2026-03-16
 
 ### Fixed

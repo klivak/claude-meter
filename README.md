@@ -89,7 +89,7 @@ Right-click the tray icon → check ✅ **"Start with Windows"**
 | 7-day weekly | Weekly usage cap with reset timer |
 | 7-day Sonnet | Sonnet-specific limit (shown if applicable) |
 | 7-day Opus | Opus-specific limit (Max plans only) |
-| Plan detection | Automatically detects Pro vs Max (incl. 5x/20x tiers) |
+| Plan badge | Color-coded badge (Pro/Max/5X/20X) with automatic detection |
 | Future metrics | Any new API fields are auto-displayed |
 
 ### ChatGPT / Codex (Optional)
@@ -192,6 +192,7 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 ### 🔔 Smart Notifications
 
 - Windows toast notifications at configurable thresholds (50%, 75%, 90% by default)
+- **Aggregated alerts** — when multiple thresholds are crossed simultaneously, a single batched notification is shown instead of separate alerts
 - **Informative alerts** — shows metric name, current %, exceeded threshold, and reset countdown
 - **Sound alerts** — system notification sound (configurable on/off)
 - **Startup notification** — confirmation that ClaudeMeter is running in the tray
@@ -211,6 +212,10 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 - **Idle detection** — pauses API polling when PC is idle for 5+ minutes
 - **Exponential backoff** — on API errors, interval doubles (2x, 4x, 8x) up to 10 min cap
 - **Rate-limit handling** — graceful 429 response parsing with retry-after
+- **Sleep/wake progressive retry** — after resuming from sleep/hibernate, retries at 2s, 5s, 15s, 30s intervals until a successful response
+- **Network change detection** — detects when network connectivity is restored and triggers an immediate poll
+- **Credential file watcher** — monitors `~/.claude/` for changes and re-polls immediately when credentials are updated
+- **Web API fallback** — optional fallback to claude.ai web API when OAuth is unavailable (configure `web_api_session_key` and `web_api_org_id`)
 - **Config validation** — sanitizes all values on load (polling interval 30-600s, thresholds 1-100%)
 
 ## ⚙ Configuration
@@ -242,7 +247,9 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
     "enabled": false,
     "start": "22:00",
     "end": "08:00"
-  }
+  },
+  "web_api_session_key": null,
+  "web_api_org_id": null
 }
 ```
 
@@ -267,6 +274,8 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 | `quiet_hours.enabled` | `false` | — | Suppress notifications during quiet hours |
 | `quiet_hours.start` | `"22:00"` | HH:MM | Quiet hours start time |
 | `quiet_hours.end` | `"08:00"` | HH:MM | Quiet hours end time |
+| `web_api_session_key` | `null` | string | Session key for claude.ai web API fallback |
+| `web_api_org_id` | `null` | string | Organization ID for claude.ai web API fallback |
 
 ## ⌨ Keyboard Shortcuts
 
