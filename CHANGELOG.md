@@ -5,6 +5,11 @@ All notable changes to ClaudeMeter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2026-04-20
+
+### Fixed
+- **Security: rustls-webpki name constraints vulnerabilities** — updated rustls-webpki 0.103.10 → 0.103.12 to fix RUSTSEC-2026-0098 (URI names incorrectly accepted) and RUSTSEC-2026-0099 (wildcard certificate name constraints)
+
 ## [3.0.0] - 2026-04-04
 
 ### Added
