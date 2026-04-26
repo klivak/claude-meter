@@ -5,6 +5,11 @@ All notable changes to ClaudeMeter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] - 2026-04-26
+
+### Fixed
+- **Security: rustls-webpki CRL parsing panic** — updated rustls-webpki 0.103.12 → 0.103.13 to fix RUSTSEC-2026-0104 (reachable panic when parsing certificate revocation lists with an empty `BIT STRING` in `onlySomeReasons` of an `IssuingDistributionPoint` extension)
+
 ## [3.1.0] - 2026-04-26
 
 ### Added
