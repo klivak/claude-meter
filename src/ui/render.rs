@@ -2718,7 +2718,7 @@ pub unsafe fn draw_settings_panel(
     config: &crate::config::Config,
     back_rect: &mut RECT,
     close_rect: &mut RECT,
-    setting_rects: &mut [RECT; 11],
+    setting_rects: &mut [RECT; 13],
     hovered: &HoveredElement,
 ) {
     let Some(rt) = d2d.render_target.clone() else {
@@ -2921,6 +2921,16 @@ pub unsafe fn draw_settings_panel(
             i18n.t("Hide Extra Usage").to_string(),
             None,
             Some(config.hide_extra_usage),
+        ),
+        (
+            i18n.t("Show startup notification").to_string(),
+            None,
+            Some(config.show_startup_notification),
+        ),
+        (
+            i18n.t("Show login expiry warning").to_string(),
+            None,
+            Some(config.token_expiry_warning),
         ),
     ];
 

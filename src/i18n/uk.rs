@@ -114,5 +114,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Standard", "Стандартний");
     m.insert("Detailed", "Детальний");
     m.insert("Hide Extra Usage", "Сховати Extra Usage");
+    m.insert("Show startup notification", "Сповіщення про запуск");
+    m.insert("Show login expiry warning", "Попередження про вхід Claude");
     m
 }

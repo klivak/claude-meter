@@ -123,6 +123,8 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 - **Acrylic backdrop** — Windows 11 translucent blur effect (falls back gracefully on Win10)
 - **Segoe UI Variable** — uses Windows 11's variable font with automatic fallback to Segoe UI
 - **Hide Extra Usage** — toggle in Settings to hide the extra_usage metric from the dashboard
+- **Notification toggles** — Settings exposes "Show startup notification" (silence the "Running in tray" balloon on launch) and "Show login expiry warning" (silence the `claude login` reminder)
+- **Clickable update balloon** — clicking the "Update available" tray balloon opens the GitHub release page in your browser
 
 ### 🎨 Themes
 

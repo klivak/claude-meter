@@ -79,6 +79,8 @@ pub struct Config {
     pub hide_extra_usage: bool,
     #[serde(default = "default_true")]
     pub token_expiry_warning: bool,
+    #[serde(default = "default_true")]
+    pub show_startup_notification: bool,
     #[serde(default)]
     pub custom_colors: CustomColors,
     #[serde(default)]
@@ -123,6 +125,7 @@ impl Default for Config {
             dashboard_layout: "standard".to_string(),
             hide_extra_usage: false,
             token_expiry_warning: true,
+            show_startup_notification: true,
             custom_colors: CustomColors::default(),
             quiet_hours: QuietHoursConfig::default(),
             web_api_session_key: None,

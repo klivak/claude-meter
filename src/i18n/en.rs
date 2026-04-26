@@ -108,5 +108,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Standard", "Standard");
     m.insert("Detailed", "Detailed");
     m.insert("Hide Extra Usage", "Hide Extra Usage");
+    m.insert("Show startup notification", "Show startup notification");
+    m.insert("Show login expiry warning", "Show login expiry warning");
     m
 }

@@ -102,7 +102,7 @@ struct AppState {
     status_link_rect: RECT,
     plan_link_rect: RECT,
     back_rect: RECT,
-    setting_rects: [RECT; 11],
+    setting_rects: [RECT; 13],
     notification_tracker: NotificationTracker,
     exe_dir: std::path::PathBuf,
     chart_data: Vec<f64>,
@@ -147,6 +147,8 @@ struct AppState {
     cached_theme: crate::theme::ResolvedTheme,
     // Wake retry progressive schedule index
     wake_retry_index: usize,
+    // URL of latest pending update — opened when user clicks the update balloon
+    pending_update_url: Option<String>,
 }
 
 // Safety: AppState is accessed only from the main thread via raw pointer.
@@ -276,7 +278,7 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
         status_link_rect: RECT::default(),
         plan_link_rect: RECT::default(),
         back_rect: RECT::default(),
-        setting_rects: [RECT::default(); 11],
+        setting_rects: [RECT::default(); 13],
         notification_tracker: NotificationTracker::new(),
         exe_dir,
         chart_data: Vec::new(),
@@ -307,6 +309,7 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
         slide_anim_active: false,
         cached_theme: initial_theme,
         wake_retry_index: 0,
+        pending_update_url: None,
     });
 
     // Create tray icon
@@ -317,7 +320,9 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
         }
 
         // Startup notification (balloon tip from tray icon)
-        if state.config_mgr.config.notifications.enabled {
+        if state.config_mgr.config.notifications.enabled
+            && state.config_mgr.config.show_startup_notification
+        {
             if let Some(tray) = &state.tray {
                 tray.show_balloon(
                     "ClaudeMeter",
@@ -504,6 +509,8 @@ unsafe extern "system" fn main_wnd_proc(
 ) -> LRESULT {
     match msg {
         WM_TRAY_ICON => {
+            // NIN_BALLOONUSERCLICK = WM_USER + 5
+            const NIN_BALLOONUSERCLICK: u32 = 0x0400 + 5;
             let event = (lparam.0 & 0xFFFF) as u32;
             match event {
                 WM_LBUTTONUP => {
@@ -511,6 +518,14 @@ unsafe extern "system" fn main_wnd_proc(
                 }
                 WM_RBUTTONUP => {
                     show_context_menu(hwnd);
+                }
+                NIN_BALLOONUSERCLICK => {
+                    // User clicked the balloon body — open update URL if one is pending.
+                    if let Some(state) = APP_STATE.as_mut() {
+                        if let Some(url) = state.pending_update_url.take() {
+                            let _ = open::that(&url);
+                        }
+                    }
                 }
                 _ => {}
             }
@@ -636,7 +651,8 @@ unsafe extern "system" fn main_wnd_proc(
             let data_ptr = wparam.0 as *mut (String, String);
             if !data_ptr.is_null() {
                 let (tag, url) = *Box::from_raw(data_ptr);
-                if let Some(state) = APP_STATE.as_ref() {
+                if let Some(state) = APP_STATE.as_mut() {
+                    state.pending_update_url = Some(url.clone());
                     if let Some(tray) = &state.tray {
                         let title = state.i18n.t("Update available");
                         let body = format!(
@@ -1254,6 +1270,22 @@ unsafe extern "system" fn popup_wnd_proc(
                         !state.config_mgr.config.hide_extra_usage;
                     state.config_mgr.save();
                     let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
+                } else if state.popup_in_settings
+                    && crate::popup::point_in_rect(pt, state.setting_rects[11])
+                {
+                    // Show startup notification: toggle
+                    state.config_mgr.config.show_startup_notification =
+                        !state.config_mgr.config.show_startup_notification;
+                    state.config_mgr.save();
+                    let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
+                } else if state.popup_in_settings
+                    && crate::popup::point_in_rect(pt, state.setting_rects[12])
+                {
+                    // Token expiry warning: toggle
+                    state.config_mgr.config.token_expiry_warning =
+                        !state.config_mgr.config.token_expiry_warning;
+                    state.config_mgr.save();
+                    let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
                 } else if crate::popup::point_in_rect(pt, state.settings_rect) {
                     // Slide to settings
                     state.popup_in_settings = true;
@@ -1443,7 +1475,7 @@ fn is_focus_assist_active() -> bool {
 fn settings_panel_height() -> i32 {
     let header_h = 40;
     let row_h = 38;
-    let num_rows = 11;
+    let num_rows = 13;
     let legend_h = 10 + 1 + 10 + 18 + (4 * 18) + 10; // gap + sep + gap + title + 4 rows + bottom padding
     let footer_h = 44;
     header_h + 8 + (num_rows * row_h) + legend_h + footer_h
@@ -2041,7 +2073,12 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
 
         // Token expiry warning: notify once when token expires within 1 hour
         if let Some(ms) = token_expires_in_ms {
-            if ms > 0 && ms < 3_600_000 && !state.token_expiry_warned && !is_focus_assist_active() {
+            if ms > 0
+                && ms < 3_600_000
+                && !state.token_expiry_warned
+                && !is_focus_assist_active()
+                && state.config_mgr.config.token_expiry_warning
+            {
                 state.token_expiry_warned = true;
                 let minutes = ms / 60_000;
                 if let Some(tray) = &state.tray {

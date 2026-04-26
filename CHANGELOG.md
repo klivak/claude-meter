@@ -5,6 +5,16 @@ All notable changes to ClaudeMeter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-04-26
+
+### Added
+- **Toggle for startup tray notification** — new `show_startup_notification` config option (default: true) and a settings-panel toggle to silence the "Running in system tray" balloon shown on every launch
+- **Settings toggle for token-expiry warning** — the existing `token_expiry_warning` flag is now exposed in the settings panel as "Show login expiry warning" (was previously only editable via config.json)
+
+### Fixed
+- **Update-available balloon now opens the GitHub release page** — clicking the toast/balloon for a newer version opens the release URL in the default browser instead of doing nothing
+- **`token_expiry_warning` config flag was ignored** — the option existed since v2.2.6 but wasn't actually checked when firing the notification; now properly suppresses the balloon when set to false
+
 ## [3.0.1] - 2026-04-20
 
 ### Fixed
