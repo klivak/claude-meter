@@ -69,6 +69,10 @@ jobs:
   release-macos:
     needs: release
     runs-on: macos-latest
+    env:
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
@@ -76,14 +80,21 @@ jobs:
           targets: aarch64-apple-darwin
       - uses: Swatinem/rust-cache@v2
 
-      - name: Build macOS release
-        run: cargo build --release --target aarch64-apple-darwin
+      - name: Build macOS app bundle
+        run: sh scripts/build-macos-app.sh
 
-      - name: Rename macOS binary
-        run: cp target/aarch64-apple-darwin/release/claudemeter target/aarch64-apple-darwin/release/claudemeter-macos-arm64
+      - name: Notarize macOS app
+        if: env.APPLE_ID != '' && env.APPLE_TEAM_ID != '' && env.APPLE_APP_PASSWORD != ''
+        run: |
+          xcrun notarytool submit target/aarch64-apple-darwin/release/ClaudeMeter-macos-arm64.app.zip \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --wait
 
       - name: Upload macOS binary to release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             target/aarch64-apple-darwin/release/claudemeter-macos-arm64
+            target/aarch64-apple-darwin/release/ClaudeMeter-macos-arm64.app.zip

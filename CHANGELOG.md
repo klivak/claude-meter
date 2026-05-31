@@ -5,6 +5,18 @@ All notable changes to ClaudeMeter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-05-31
+
+### Added
+- **Native macOS menu bar app** — added a Swift/AppKit `NSStatusItem` app with live percentage, freshness state, Refresh, Open Claude, update check, config import/export, logs, and autostart controls
+- **macOS `.app` bundle release** — CI now packages `ClaudeMeter.app` with the Rust polling agent embedded as `claudemeter-agent`
+- **macOS data freshness status** — the agent writes `status.json` with `Live`, `Refreshing`, cached/no-data, and API error states for the menu UI
+- **Portable macOS logs** — the macOS agent writes `claudemeter.log` under `~/Library/Application Support/ClaudeMeter`
+- **Optional macOS notarization hook** — release workflow notarizes the app zip when Apple Developer secrets are configured
+
+### Changed
+- **Dependency refresh** — updated compatible Rust dependencies in `Cargo.lock`
+
 ## [3.1.4] - 2026-05-31
 
 ### Fixed

@@ -31,12 +31,12 @@ jobs:
         with:
           targets: aarch64-apple-darwin
       - uses: Swatinem/rust-cache@v2
-      - name: Build
-        run: cargo build --release --target aarch64-apple-darwin
-      - name: Rename binary
-        run: cp target/aarch64-apple-darwin/release/claudemeter target/aarch64-apple-darwin/release/claudemeter-macos-arm64
+      - name: Build app bundle
+        run: sh scripts/build-macos-app.sh
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: claudemeter-macos-arm64
-          path: target/aarch64-apple-darwin/release/claudemeter-macos-arm64
+          path: |
+            target/aarch64-apple-darwin/release/claudemeter-macos-arm64
+            target/aarch64-apple-darwin/release/ClaudeMeter-macos-arm64.app.zip

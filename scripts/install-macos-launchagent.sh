@@ -8,6 +8,9 @@ PLIST_PATH="$PLIST_DIR/$LABEL.plist"
 
 if [ $# -gt 0 ]; then
   BIN_PATH="$1"
+elif [ -x "/Applications/ClaudeMeter.app/Contents/MacOS/ClaudeMeter" ]; then
+  BIN_PATH="/usr/bin/open"
+  APP_PATH="/Applications/ClaudeMeter.app"
 else
   BIN_PATH="$(cd "$(dirname "$0")/.." && pwd)/target/aarch64-apple-darwin/release/claudemeter"
 fi
@@ -30,6 +33,7 @@ cat > "$PLIST_PATH" <<EOF
   <key>ProgramArguments</key>
   <array>
     <string>$BIN_PATH</string>
+$(if [ "${APP_PATH:-}" ]; then printf '    <string>%s</string>\n' "$APP_PATH"; fi)
   </array>
   <key>RunAtLoad</key>
   <true/>
