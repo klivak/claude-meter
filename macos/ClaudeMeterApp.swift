@@ -177,7 +177,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.notify("ClaudeMeter", "Could not check for updates.")
                 return
             }
-            if tag == "v4.0.0" {
+            if tag == "v4.0.1" {
                 self.notify("ClaudeMeter", "You are running the latest version.")
             } else {
                 self.notify("ClaudeMeter Update", "\(tag) is available.")
@@ -306,7 +306,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let data = line.data(using: .utf8) {
             if FileManager.default.fileExists(atPath: path.path),
                let handle = try? FileHandle(forWritingTo: path) {
-                try? handle.seekToEnd()
+                _ = try? handle.seekToEnd()
                 try? handle.write(contentsOf: data)
                 try? handle.close()
             } else {
