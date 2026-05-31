@@ -4,7 +4,7 @@
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/klivak)
 
-**Real-time Claude AI usage monitor for Windows — track your subscription limits from the system tray**
+**Real-time Claude AI usage monitor for Windows and macOS — track your subscription limits from the tray or menu bar**
 
 Ultra-lightweight Rust app that monitors Claude Pro & Max usage caps in real time.
 See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening a browser.
@@ -16,6 +16,7 @@ See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening
 [![Release](https://img.shields.io/github/v/release/klivak/claudemeter)](https://github.com/klivak/claudemeter/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Windows](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6?logo=windows)](https://github.com/klivak/claudemeter/releases)
+[![macOS](https://img.shields.io/badge/platform-macOS%2012%2B-000000?logo=apple)](https://github.com/klivak/claudemeter/releases)
 [![RAM](https://img.shields.io/badge/RAM-under%2010MB-brightgreen)](#-why-rust)
 [![VirusTotal](https://img.shields.io/badge/VirusTotal-scanned-4CAF50?logo=virustotal&logoColor=white)](https://github.com/klivak/claudemeter/releases/latest)
 
@@ -34,11 +35,11 @@ See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening
 
 ## 🤔 Why ClaudeMeter?
 
-Tired of hitting Claude AI rate limits mid-conversation? ClaudeMeter sits quietly in your Windows system tray and shows you **exactly** how much of your Anthropic subscription quota remains — 5-hour session utilization, weekly usage caps, Sonnet and Opus limits — all without opening a browser tab or checking the Claude dashboard manually.
+Tired of hitting Claude AI rate limits mid-conversation? ClaudeMeter sits quietly in your Windows system tray or macOS menu bar and shows you **exactly** how much of your Anthropic subscription quota remains — 5-hour session utilization, weekly usage caps, Sonnet and Opus limits — all without opening a browser tab or checking the Claude dashboard manually.
 
 ## 🦀 Why Rust?
 
-ClaudeMeter is **purposefully built in Rust** to be as lightweight as physically possible. While most similar tools use Electron (which bundles an entire Chromium browser) or Python (which needs a runtime), ClaudeMeter compiles to a single native Windows binary with zero dependencies.
+ClaudeMeter is **purposefully built in Rust** to be as lightweight as physically possible. While most similar tools use Electron (which bundles an entire Chromium browser) or Python (which needs a runtime), ClaudeMeter compiles to native Windows and macOS binaries with no bundled browser runtime.
 
 | App | RAM Usage | Binary Size | Dependencies |
 |-----|-----------|-------------|-------------|
@@ -50,7 +51,7 @@ ClaudeMeter is **purposefully built in Rust** to be as lightweight as physically
 
 <img src="screenshots/task-manager.png" alt="Windows Task Manager showing ClaudeMeter using only 1.9 MB RAM" width="540">
 
-**Single portable `.exe`** — no installation, no runtime, no .NET, no Java, no Python, no Node.js. Download → run → done.
+**Single portable `.exe` on Windows** and a native **`.app` bundle on macOS** — no Electron, no .NET, no Java, no Python, no Node.js. Download → run → done.
 
 ## ⬇ Quick Start
 
@@ -68,6 +69,8 @@ claude
 
 ### Step 2: Download & Run ClaudeMeter
 
+#### Windows
+
 1. **Download** [`claudemeter.exe`](https://github.com/klivak/claudemeter/releases/latest) from Releases
 2. **Place** it anywhere — Desktop, tools folder, USB drive (it's portable)
 3. **Double-click** to run
@@ -75,9 +78,20 @@ claude
 
 That's it! No configuration needed. ClaudeMeter auto-detects your plan and starts monitoring.
 
+#### macOS
+
+1. **Download** [`ClaudeMeter-macos-arm64.app.zip`](https://github.com/klivak/claudemeter/releases/latest) from Releases
+2. **Unzip** it and move `ClaudeMeter.app` to `/Applications`
+3. **Open** the app; it appears as a native menu bar item
+4. Use the menu for **Refresh Now**, **Open Claude Usage**, **Settings/config**, **Import/Export Config**, **Autostart**, and **Open Logs**
+
+The raw `claudemeter-macos-arm64` binary is also published for CLI/agent use, but the `.app.zip` is the recommended macOS download.
+
 ### Step 3 (Optional): Enable Auto-Start
 
 Right-click the tray icon → check ✅ **"Start with Windows"**
+
+On macOS, use the menu bar item → **Enable Autostart**. The app uses a LaunchAgent and starts `ClaudeMeter.app` from `/Applications` when available.
 
 ## ✨ Features
 
@@ -107,6 +121,15 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 - **⚠ Blink on critical** — tray icon blinks when usage exceeds 90%
 
 <img src="screenshots/hover.png" alt="ClaudeMeter system tray tooltip showing Claude usage percentages and reset times" width="280">
+
+### macOS Menu Bar
+
+- **Native `NSStatusItem`** — shows current Claude usage directly in the macOS menu bar
+- **Freshness state** — displays whether data is live, refreshing, cached, stale, or blocked by an API error
+- **Manual refresh** — `Refresh Now` forces a new poll instead of relying on cached data
+- **Quick actions** — open Claude usage, check for updates, open config, import/export config, toggle autostart, and open logs
+- **Portable logs** — writes `claudemeter.log` under `~/Library/Application Support/ClaudeMeter`
+- **Agent status file** — writes `status.json` for the menu bar UI under `~/Library/Application Support/ClaudeMeter`
 
 ### 📊 Dashboard
 
@@ -222,7 +245,12 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 
 ## ⚙ Configuration
 
-`config.json` is auto-created next to the `.exe` on first launch:
+`config.json` is auto-created on first launch:
+
+| Platform | Default location |
+|----------|------------------|
+| Windows | Next to `claudemeter.exe` |
+| macOS | `~/Library/Application Support/ClaudeMeter/config.json` |
 
 ```json
 {
@@ -265,7 +293,7 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 | `language` | `"auto"` | auto/en/uk/.../zh | UI language (35 languages) |
 | `compact_mode` | `false` | — | Compact dashboard layout |
 | `show_chatgpt_section` | `false` | — | Show ChatGPT quick-link panel |
-| `autostart` | `false` | — | Start with Windows |
+| `autostart` | `false` | — | Start with Windows or macOS LaunchAgent |
 | `show_widget` | `false` | — | Show floating mini-widget |
 | `check_updates` | `true` | — | Check for updates on startup |
 | `tray_icon_style` | `"number"` | number/ring/bar/pie | Tray icon style: number (%), ring (circular), bar (vertical), pie (multi-metric) |
@@ -288,6 +316,8 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 
 ## 🔨 Building from Source
 
+### Windows
+
 ```bash
 git clone https://github.com/klivak/claudemeter.git
 cd claudemeter
@@ -297,6 +327,20 @@ cargo build --release
 
 **Requirements:** Rust 1.75+ and Windows SDK (included with [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)).
 
+### macOS
+
+```bash
+git clone https://github.com/klivak/claudemeter.git
+cd claudemeter
+sh scripts/build-macos-app.sh
+# Output:
+# target/aarch64-apple-darwin/release/ClaudeMeter.app
+# target/aarch64-apple-darwin/release/ClaudeMeter-macos-arm64.app.zip
+# target/aarch64-apple-darwin/release/claudemeter-macos-arm64
+```
+
+**Requirements:** Rust stable, Xcode Command Line Tools, Swift compiler, and macOS 12+.
+
 ## 🔑 How Authentication Works
 
 ClaudeMeter does **not** ask for your password or API key. It reuses the OAuth token that [Claude Code](https://claude.ai/download) already stores on your machine.
@@ -305,8 +349,8 @@ ClaudeMeter does **not** ask for your password or API key. It reuses the OAuth t
 
 | # | Location | Used by |
 |---|----------|---------|
-| 1 | `~/.claude/.credentials.json` | Claude Code v2.x+ |
-| 2 | Windows Credential Manager (`Claude Code-credentials`) | Claude Code v1.x (legacy) |
+| 1 | `~/.claude/.credentials.json` | Claude Code v2.x+ on Windows and macOS |
+| 2 | Windows Credential Manager (`Claude Code-credentials`) | Claude Code v1.x on Windows (legacy) |
 
 When you run `claude` and log in via the browser, Claude Code saves an OAuth token to `~/.claude/.credentials.json`. ClaudeMeter reads this file to authenticate with the Anthropic Usage API — no extra setup needed.
 
@@ -325,7 +369,7 @@ When you run `claude` and log in via the browser, Claude Code saves an OAuth tok
 
 ClaudeMeter uses `accessToken` to fetch your usage data and `subscriptionType` to display your plan (Pro/Max). It never modifies this file.
 
-> **Troubleshooting:** If ClaudeMeter shows "Credentials not found", run `claude` in a terminal and log in. Then click Refresh in ClaudeMeter.
+> **Troubleshooting:** If ClaudeMeter shows "Credentials not found", run `claude` in a terminal and log in. Then click Refresh in ClaudeMeter. On macOS, use **Refresh Now** from the menu bar item and check **Open Logs** if the status remains cached or stale.
 
 ## ❓ FAQ
 
@@ -351,7 +395,13 @@ A: Yes. ClaudeMeter auto-detects your plan tier and displays the correct limits 
 A: Claude enforces a rolling 5-hour usage window. ClaudeMeter shows your current utilization percentage and a countdown to when it resets.
 
 **Q: Can I run ClaudeMeter from a USB drive?**
-A: Yes. It's a single portable `.exe` with zero dependencies. No installation, no registry changes, no AppData folders. Just copy and run.
+A: On Windows, yes. It's a single portable `.exe` with zero dependencies. On macOS, use the `.app` bundle for the menu bar UI or the raw `claudemeter-macos-arm64` binary for CLI/agent use.
+
+**Q: Does the macOS version have a real menu bar UI?**
+A: Yes. Starting with v4.0.1, ClaudeMeter ships a native AppKit menu bar app with usage %, freshness status, force refresh, Claude link, config import/export, autostart toggle, update check, and log access.
+
+**Q: How do I know if the value is cached?**
+A: On macOS, the menu shows freshness state such as Live, seconds/minutes old, cached/no data, refreshing, or API error. On Windows, use the tray refresh/dashboard behavior and settings to force a refresh.
 
 **Q: Does it support multiple languages?**
 A: Yes — 35 languages: English, Ukrainian, Spanish, German, French, Portuguese, Italian, Hindi, Turkish, Dutch, Polish, Vietnamese, Russian, Thai, Indonesian, Swedish, Czech, Japanese, Korean, Chinese (Simplified), Bulgarian, Greek, Hebrew, Malay, Norwegian, Arabic, Romanian, Danish, Finnish, Hungarian, Filipino, Bengali, Persian, Slovak, and Serbian.
