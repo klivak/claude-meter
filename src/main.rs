@@ -1,4 +1,6 @@
 #![cfg_attr(windows, windows_subsystem = "windows")]
+#![allow(static_mut_refs)]
+#![allow(clippy::too_many_arguments)]
 
 mod config;
 mod credentials;
