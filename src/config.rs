@@ -77,7 +77,7 @@ pub struct Config {
     pub dashboard_layout: String,
     #[serde(default)]
     pub hide_extra_usage: bool,
-    #[serde(default = "default_true")]
+    #[serde(default)]
     pub token_expiry_warning: bool,
     #[serde(default = "default_true")]
     pub show_startup_notification: bool,
@@ -124,7 +124,7 @@ impl Default for Config {
             tray_icon_style: "number".to_string(),
             dashboard_layout: "standard".to_string(),
             hide_extra_usage: false,
-            token_expiry_warning: true,
+            token_expiry_warning: false,
             show_startup_notification: true,
             custom_colors: CustomColors::default(),
             quiet_hours: QuietHoursConfig::default(),
@@ -272,6 +272,7 @@ mod tests {
         assert_eq!(cfg.tray_icon_style, "number");
         assert_eq!(cfg.theme, "auto");
         assert!(!cfg.compact_mode);
+        assert!(!cfg.token_expiry_warning);
     }
 
     #[test]
@@ -374,5 +375,6 @@ mod tests {
         assert_eq!(cfg.dashboard_layout, "standard");
         assert_eq!(cfg.tray_icon_style, "number");
         assert!(!cfg.show_widget);
+        assert!(!cfg.token_expiry_warning);
     }
 }

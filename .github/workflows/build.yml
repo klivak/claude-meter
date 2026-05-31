@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
@@ -22,3 +22,21 @@ jobs:
         with:
           name: claudemeter-windows-x64
           path: target/release/claudemeter.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build --release --target aarch64-apple-darwin
+      - name: Rename binary
+        run: cp target/aarch64-apple-darwin/release/claudemeter target/aarch64-apple-darwin/release/claudemeter-macos-arm64
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: claudemeter-macos-arm64
+          path: target/aarch64-apple-darwin/release/claudemeter-macos-arm64

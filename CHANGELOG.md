@@ -5,6 +5,19 @@ All notable changes to ClaudeMeter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.2] - 2026-05-31
+
+### Added
+- **macOS low-memory background agent** — added a native Rust macOS entrypoint, LaunchAgent installer script, and GitHub Actions builds for Apple Silicon without Electron/WebView overhead
+
+### Changed
+- **Login expiry warnings disabled by default** — `token_expiry_warning` now defaults to `false`, including old config files that do not have the field
+
+### Fixed
+- **Manual refresh no longer gets dropped** — user-triggered refreshes queue one follow-up poll when another poll is already running, avoiding stale cached display after opening the dashboard or pressing Refresh/F5
+- **Usage API cache bypass** — usage requests now include cache-busting query parameters and no-cache headers for fresher responses
+- **Cross-platform credentials module** — Windows Credential Manager access is now gated to Windows, while file-based Claude credentials work cross-platform
+
 ## [3.1.1] - 2026-04-26
 
 ### Fixed

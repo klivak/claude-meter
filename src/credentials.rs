@@ -1,4 +1,6 @@
+#[cfg(windows)]
 use windows::core::PCWSTR;
+#[cfg(windows)]
 use windows::Win32::Security::Credentials::{CredFree, CredReadW, CREDENTIALW, CRED_TYPE_GENERIC};
 
 #[derive(Debug, Clone)]
@@ -24,9 +26,9 @@ impl std::fmt::Display for CredentialError {
         match self {
             Self::NotFound => write!(
                 f,
-                "Claude Code credentials not found in Windows Credential Manager"
+                "Claude Code credentials not found in ~/.claude/.credentials.json"
             ),
-            Self::WindowsError(e) => write!(f, "Windows API error: {e}"),
+            Self::WindowsError(e) => write!(f, "Platform credential store error: {e}"),
             Self::ParseError(e) => write!(f, "Failed to parse credential JSON: {e}"),
         }
     }
@@ -36,7 +38,7 @@ impl std::fmt::Display for CredentialError {
 ///
 /// Checks two locations in order:
 /// 1. File-based: `~/.claude/.credentials.json` (Claude Code v2.x)
-/// 2. Windows Credential Manager: target "Claude Code-credentials" (legacy)
+/// 2. Windows Credential Manager: target "Claude Code-credentials" (legacy, Windows only)
 pub fn read_claude_token() -> Result<CredentialInfo, CredentialError> {
     // Try file-based credentials first (Claude Code v2.x stores here)
     if let Ok(info) = read_token_from_file() {
@@ -63,6 +65,7 @@ fn read_token_from_file() -> Result<CredentialInfo, CredentialError> {
 }
 
 /// Read token from Windows Credential Manager (legacy path)
+#[cfg(windows)]
 fn read_token_from_credential_manager() -> Result<CredentialInfo, CredentialError> {
     const TARGET: &str = "Claude Code-credentials";
 
@@ -128,6 +131,11 @@ fn read_token_from_credential_manager() -> Result<CredentialInfo, CredentialErro
 
         extract_credential_info(&json_string)
     }
+}
+
+#[cfg(not(windows))]
+fn read_token_from_credential_manager() -> Result<CredentialInfo, CredentialError> {
+    Err(CredentialError::NotFound)
 }
 
 fn extract_credential_info(json: &str) -> Result<CredentialInfo, CredentialError> {

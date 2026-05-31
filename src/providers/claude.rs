@@ -150,13 +150,16 @@ impl ClaudeClient {
     }
 
     pub async fn fetch_usage(&self, token: &str) -> Result<UsageResponse, String> {
+        let url = format!("{}?t={}", USAGE_API_URL, cache_buster());
         let response = self
             .client
-            .get(USAGE_API_URL)
+            .get(url)
             .header("Accept", "application/json")
             .header("Content-Type", "application/json")
             .header("Authorization", format!("Bearer {}", token))
             .header("anthropic-beta", ANTHROPIC_BETA)
+            .header("Cache-Control", "no-cache, no-store, max-age=0")
+            .header("Pragma", "no-cache")
             .send()
             .await
             .map_err(|e| format!("[network_error] {e}"))?;
@@ -198,13 +201,19 @@ impl ClaudeClient {
         session_key: &str,
         org_id: &str,
     ) -> Result<UsageResponse, String> {
-        let url = format!("https://claude.ai/api/organizations/{}/usage", org_id);
+        let url = format!(
+            "https://claude.ai/api/organizations/{}/usage?t={}",
+            org_id,
+            cache_buster()
+        );
 
         let response = self
             .client
             .get(&url)
             .header("Accept", "application/json")
             .header("Cookie", format!("sessionKey={}", session_key))
+            .header("Cache-Control", "no-cache, no-store, max-age=0")
+            .header("Pragma", "no-cache")
             .send()
             .await
             .map_err(|e| format!("[network_error] {e}"))?;
@@ -227,6 +236,13 @@ impl ClaudeClient {
 
         parse_web_response(value)
     }
+}
+
+fn cache_buster() -> u128 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
 }
 
 /// Parse the claude.ai web API response into UsageResponse.
