@@ -74,6 +74,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func startAgent() {
         guard agent?.isRunning != true else { return }
+        // Kill any orphaned agents left behind by a prior app instance or a
+        // LaunchAgent relaunch. Without this they keep polling forever, and the
+        // combined poll rate from stacked agents trips the API rate limiter.
+        killOrphanedAgents()
         let process = Process()
         process.executableURL = agentURL()
         process.arguments = ["--agent"]
@@ -84,6 +88,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             agent = process
         } catch {
             writeLog("Failed to start agent: \(error)")
+        }
+    }
+
+    private func killOrphanedAgents() {
+        let pkill = Process()
+        pkill.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
+        // Match the full command line so we only target the polling agent.
+        pkill.arguments = ["-f", "claudemeter-agent --agent"]
+        pkill.standardOutput = FileHandle.nullDevice
+        pkill.standardError = FileHandle.nullDevice
+        do {
+            try pkill.run()
+            pkill.waitUntilExit()
+        } catch {
+            writeLog("Failed to kill orphaned agents: \(error)")
         }
     }
 
