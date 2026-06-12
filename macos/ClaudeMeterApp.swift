@@ -159,6 +159,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 } else {
                     menu.addItem(disabled("\(metric.name): \(metric.percent)%"))
                 }
+                if metric.key == "seven_day", let pace = weeklyPaceLine() {
+                    menu.addItem(disabled("   \(pace)"))
+                }
             }
         }
         menu.addItem(NSMenuItem.separator())
@@ -212,6 +215,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// The weekly (all-models) metric, shown as the trailing percent.
     private func weeklyMetric() -> Metric? {
         currentStatus.metrics.first(where: { $0.key == "seven_day" })
+    }
+
+    /// Linear projection of where the weekly limit lands at reset, assuming
+    /// usage continues at the average rate since the week began. Over 100%
+    /// means you are on pace to hit the wall before the window resets.
+    private func weeklyPaceLine() -> String? {
+        guard let weekly = weeklyMetric(),
+              let iso = weekly.resetsAt,
+              let reset = parseISO(iso) else { return nil }
+        let weekLen = 7.0 * 24 * 3600
+        let secsLeft = reset.timeIntervalSinceNow
+        guard secsLeft > 0 else { return nil }
+        let frac = (weekLen - secsLeft) / weekLen
+        guard frac > 0.05 else { return "Pace: too early to project" }
+        let projected = Int((Double(weekly.percent) / frac).rounded())
+        let dot = projected > 110 ? "🔴" : (projected >= 90 ? "🟡" : "🟢")
+        return "Pace: on track for ~\(projected)% by reset  \(dot)"
     }
 
     /// Severity dot colored by the worst (max) limit, so the icon warns even
