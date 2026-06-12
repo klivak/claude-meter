@@ -1,12 +1,20 @@
 use crate::config::ConfigManager;
 use crate::credentials::read_claude_token;
 use crate::db::Database;
-use crate::providers::claude::{ClaudeClient, UsageResponse};
+use crate::providers::claude::{format_metric_name, ClaudeClient, UsageResponse};
 use chrono::Local;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::Duration;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct MetricEntry {
+    /// Human-readable name, e.g. "Weekly (7-day)"
+    name: String,
+    percent: u32,
+    resets_at: Option<String>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MacStatus {
@@ -15,6 +23,9 @@ struct MacStatus {
     detail: String,
     plan: Option<String>,
     percent: Option<u32>,
+    /// Per-limit breakdown (5-hour, weekly, Sonnet, Opus, ...). Empty until first fetch.
+    #[serde(default)]
+    metrics: Vec<MetricEntry>,
     last_api_update: Option<String>,
     data_age_seconds: Option<u64>,
     error: Option<String>,
@@ -28,6 +39,7 @@ impl MacStatus {
             detail: "Requesting fresh Claude usage data".to_string(),
             plan: None,
             percent: None,
+            metrics: Vec::new(),
             last_api_update: None,
             data_age_seconds: None,
             error: None,
@@ -41,6 +53,7 @@ impl MacStatus {
             detail: message.clone(),
             plan: None,
             percent: None,
+            metrics: Vec::new(),
             last_api_update: None,
             data_age_seconds: None,
             error: Some(message),
@@ -164,12 +177,23 @@ fn publish_status(exe_dir: &Path, usage: &UsageResponse) {
     let last_api_update = now.to_rfc3339();
     let message = format!("{plan}: {percent}% max usage");
 
+    let metrics = usage
+        .all_metrics()
+        .into_iter()
+        .map(|(key, m)| MetricEntry {
+            name: format_metric_name(&key),
+            percent: m.utilization.round() as u32,
+            resets_at: m.resets_at.clone(),
+        })
+        .collect();
+
     let status = MacStatus {
         state: "live".to_string(),
         title: format!("{percent}%"),
         detail: message.clone(),
         plan: Some(plan),
         percent: Some(percent),
+        metrics,
         last_api_update: Some(last_api_update),
         data_age_seconds: Some(0),
         error: None,

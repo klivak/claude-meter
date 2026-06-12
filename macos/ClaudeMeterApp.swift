@@ -2,11 +2,17 @@ import AppKit
 import Foundation
 import UniformTypeIdentifiers
 
+struct Metric {
+    let name: String
+    let percent: Int
+}
+
 struct Status {
     let state: String
     let title: String
     let detail: String
     let percent: Int?
+    let metrics: [Metric]
     let lastApiUpdate: String?
     let error: String?
 
@@ -15,6 +21,7 @@ struct Status {
         title: "...",
         detail: "Starting ClaudeMeter",
         percent: nil,
+        metrics: [],
         lastApiUpdate: nil,
         error: nil
     )
@@ -77,7 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func refreshNow() {
-        currentStatus = Status(state: "refreshing", title: "...", detail: "Refreshing...", percent: nil, lastApiUpdate: nil, error: nil)
+        currentStatus = Status(state: "refreshing", title: "...", detail: "Refreshing...", percent: nil, metrics: [], lastApiUpdate: nil, error: nil)
         renderMenu()
 
         DispatchQueue.global(qos: .utility).async {
@@ -107,11 +114,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        var metrics: [Metric] = []
+        if let rawMetrics = object["metrics"] as? [[String: Any]] {
+            for entry in rawMetrics {
+                guard let name = entry["name"] as? String,
+                      let percent = entry["percent"] as? Int else { continue }
+                metrics.append(Metric(name: name, percent: percent))
+            }
+        }
+
         currentStatus = Status(
             state: object["state"] as? String ?? "unknown",
             title: object["title"] as? String ?? "...",
             detail: object["detail"] as? String ?? "No data yet",
             percent: object["percent"] as? Int,
+            metrics: metrics,
             lastApiUpdate: object["last_api_update"] as? String,
             error: object["error"] as? String
         )
@@ -125,6 +142,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu = NSMenu()
         menu.addItem(disabled("ClaudeMeter \(menuBarTitle())"))
         menu.addItem(disabled(currentStatus.detail))
+        if !currentStatus.metrics.isEmpty {
+            menu.addItem(NSMenuItem.separator())
+            for metric in currentStatus.metrics {
+                menu.addItem(disabled("\(metric.name): \(metric.percent)%"))
+            }
+        }
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(disabled("Freshness: \(freshnessText())"))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(item("Refresh Now", #selector(refreshAction)))
