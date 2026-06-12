@@ -15,6 +15,7 @@ struct Status {
     let detail: String
     let percent: Int?
     let metrics: [Metric]
+    let tierNote: String?
     let lastApiUpdate: String?
     let error: String?
 
@@ -24,6 +25,7 @@ struct Status {
         detail: "Starting ClaudeMeter",
         percent: nil,
         metrics: [],
+        tierNote: nil,
         lastApiUpdate: nil,
         error: nil
     )
@@ -86,7 +88,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func refreshNow() {
-        currentStatus = Status(state: "refreshing", title: "...", detail: "Refreshing...", percent: nil, metrics: [], lastApiUpdate: nil, error: nil)
+        currentStatus = Status(state: "refreshing", title: "...", detail: "Refreshing...", percent: nil, metrics: [], tierNote: nil, lastApiUpdate: nil, error: nil)
         renderMenu()
 
         DispatchQueue.global(qos: .utility).async {
@@ -133,6 +135,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             detail: object["detail"] as? String ?? "No data yet",
             percent: object["percent"] as? Int,
             metrics: metrics,
+            tierNote: object["tier_note"] as? String,
             lastApiUpdate: object["last_api_update"] as? String,
             error: object["error"] as? String
         )
@@ -163,6 +166,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     menu.addItem(disabled("   \(pace)"))
                 }
             }
+        }
+        if let note = currentStatus.tierNote, !note.isEmpty {
+            menu.addItem(NSMenuItem.separator())
+            menu.addItem(disabled(note))
         }
         menu.addItem(NSMenuItem.separator())
         menu.addItem(disabled("Freshness: \(freshnessText())"))

@@ -28,6 +28,9 @@ struct MacStatus {
     /// Per-limit breakdown (5-hour, weekly, Sonnet, Opus, ...). Empty until first fetch.
     #[serde(default)]
     metrics: Vec<MetricEntry>,
+    /// Downgrade comparison, e.g. "On Max 5x: weekly ~96%, session ~124%".
+    #[serde(default)]
+    tier_note: Option<String>,
     last_api_update: Option<String>,
     data_age_seconds: Option<u64>,
     error: Option<String>,
@@ -42,6 +45,7 @@ impl MacStatus {
             plan: None,
             percent: None,
             metrics: Vec::new(),
+            tier_note: None,
             last_api_update: None,
             data_age_seconds: None,
             error: None,
@@ -56,6 +60,7 @@ impl MacStatus {
             plan: None,
             percent: None,
             metrics: Vec::new(),
+            tier_note: None,
             last_api_update: None,
             data_age_seconds: None,
             error: Some(message),
@@ -98,8 +103,11 @@ pub fn run() {
             }
         };
 
+        let plan_override = config_mgr.config.plan_override.clone();
+        let login_warning = config_mgr.config.token_expiry_warning;
+
         if once {
-            poll_once(&exe_dir, &client, config_mgr.config.token_expiry_warning).await;
+            poll_once(&exe_dir, &client, login_warning, plan_override.as_deref()).await;
             return;
         }
 
@@ -108,14 +116,19 @@ pub fn run() {
         }
 
         loop {
-            poll_once(&exe_dir, &client, config_mgr.config.token_expiry_warning).await;
+            poll_once(&exe_dir, &client, login_warning, plan_override.as_deref()).await;
             let interval = config_mgr.config.polling_interval_seconds.max(60);
             tokio::time::sleep(Duration::from_secs(interval)).await;
         }
     });
 }
 
-async fn poll_once(exe_dir: &Path, client: &ClaudeClient, login_warning_enabled: bool) {
+async fn poll_once(
+    exe_dir: &Path,
+    client: &ClaudeClient,
+    login_warning_enabled: bool,
+    plan_override: Option<&str>,
+) {
     mark_refreshing(exe_dir);
 
     let credential = match read_claude_token() {
@@ -148,7 +161,7 @@ async fn poll_once(exe_dir: &Path, client: &ClaudeClient, login_warning_enabled:
     usage.rate_limit_tier = credential.rate_limit_tier;
 
     save_history(exe_dir, &usage);
-    publish_status(exe_dir, &usage);
+    publish_status(exe_dir, &usage, plan_override);
 }
 
 fn save_history(exe_dir: &Path, usage: &UsageResponse) {
@@ -172,9 +185,11 @@ fn save_history(exe_dir: &Path, usage: &UsageResponse) {
     }
 }
 
-fn publish_status(exe_dir: &Path, usage: &UsageResponse) {
+fn publish_status(exe_dir: &Path, usage: &UsageResponse, plan_override: Option<&str>) {
     let percent = usage.max_utilization().unwrap_or(0.0).round() as u32;
-    let plan = usage.detected_plan();
+    let plan = plan_override
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| usage.detected_plan());
     let now = Local::now();
     let last_api_update = now.to_rfc3339();
     let message = format!("{plan}: {percent}% max usage");
@@ -190,6 +205,8 @@ fn publish_status(exe_dir: &Path, usage: &UsageResponse) {
         })
         .collect();
 
+    let tier_note = plan_override.and_then(|p| build_tier_note(p, usage));
+
     let status = MacStatus {
         state: "live".to_string(),
         title: format!("{percent}%"),
@@ -197,6 +214,7 @@ fn publish_status(exe_dir: &Path, usage: &UsageResponse) {
         plan: Some(plan),
         percent: Some(percent),
         metrics,
+        tier_note,
         last_api_update: Some(last_api_update),
         data_age_seconds: Some(0),
         error: None,
@@ -211,6 +229,66 @@ fn publish_status(exe_dir: &Path, usage: &UsageResponse) {
     if percent >= 90 {
         notify("ClaudeMeter: high usage", &message);
     }
+}
+
+/// Plan tier as a multiple of the Pro base allowance. Used to estimate what
+/// usage would look like on a smaller plan. Recognized labels: Pro, Max 5x,
+/// Max 20x (bare "Max" assumed 5x, its entry tier).
+fn plan_multiplier(plan: &str) -> Option<f64> {
+    let p = plan.to_lowercase();
+    if p.contains("20x") {
+        Some(20.0)
+    } else if p.contains("5x") {
+        Some(5.0)
+    } else if p.contains("max") {
+        Some(5.0)
+    } else if p.contains("pro") {
+        Some(1.0)
+    } else {
+        None
+    }
+}
+
+/// The next cheaper tier and its multiplier, or None if already at the bottom.
+fn lower_tier(mult: f64) -> Option<(&'static str, f64)> {
+    if mult >= 20.0 {
+        Some(("Max 5x", 5.0))
+    } else if mult >= 5.0 {
+        Some(("Pro", 1.0))
+    } else {
+        None
+    }
+}
+
+/// "On Max 5x: weekly ~96%, session ~124% — would throttle": estimate the
+/// session and weekly usage if the same work ran on the next tier down.
+/// Assumes limits scale linearly with the tier multiplier.
+fn build_tier_note(plan: &str, usage: &UsageResponse) -> Option<String> {
+    let mult = plan_multiplier(plan)?;
+    let (lower_name, lower_mult) = lower_tier(mult)?;
+    let factor = mult / lower_mult;
+
+    let week = usage.seven_day.as_ref().map(|m| m.utilization);
+    let five = usage.five_hour.as_ref().map(|m| m.utilization);
+
+    let mut parts = Vec::new();
+    if let Some(w) = week {
+        parts.push(format!("weekly ~{}%", (w * factor).round() as i64));
+    }
+    if let Some(f) = five {
+        parts.push(format!("session ~{}%", (f * factor).round() as i64));
+    }
+    if parts.is_empty() {
+        return None;
+    }
+
+    let over = week.is_some_and(|w| w * factor > 100.0) || five.is_some_and(|f| f * factor > 100.0);
+    let verdict = if over {
+        " — would throttle"
+    } else {
+        " — would fit"
+    };
+    Some(format!("On {}: {}{}", lower_name, parts.join(", "), verdict))
 }
 
 fn write_status(exe_dir: &Path, status: &MacStatus) {

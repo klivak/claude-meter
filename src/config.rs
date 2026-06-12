@@ -91,6 +91,11 @@ pub struct Config {
     /// Organization ID for claude.ai web API fallback (optional)
     #[serde(default)]
     pub web_api_org_id: Option<String>,
+    /// Manual plan label override, e.g. "Max 20x". The usage API does not
+    /// return the plan tier, so set this for a correct label and the
+    /// downgrade comparison. Recognized: "Pro", "Max 5x", "Max 20x".
+    #[serde(default)]
+    pub plan_override: Option<String>,
 }
 
 fn default_dashboard_layout() -> String {
@@ -130,6 +135,7 @@ impl Default for Config {
             quiet_hours: QuietHoursConfig::default(),
             web_api_session_key: None,
             web_api_org_id: None,
+            plan_override: None,
         }
     }
 }
