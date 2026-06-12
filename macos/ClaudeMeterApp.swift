@@ -150,6 +150,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         menu.addItem(NSMenuItem.separator())
         menu.addItem(disabled("Freshness: \(freshnessText())"))
+        if let err = currentStatus.error, !err.isEmpty {
+            menu.addItem(disabled("\u{26A0}\u{FE0E} \(err)"))
+        }
         menu.addItem(NSMenuItem.separator())
         menu.addItem(item("Refresh Now", #selector(refreshAction)))
         menu.addItem(item("Open Claude Usage", #selector(openClaude)))

@@ -91,7 +91,7 @@ pub fn run() {
             Err(e) => {
                 let message = format!("Failed to create Claude client: {e}");
                 append_log(&exe_dir, &message);
-                write_status(&exe_dir, &MacStatus::error(message));
+                write_error(&exe_dir, message);
                 return;
             }
         };
@@ -114,7 +114,7 @@ pub fn run() {
 }
 
 async fn poll_once(exe_dir: &Path, client: &ClaudeClient, login_warning_enabled: bool) {
-    write_status(exe_dir, &MacStatus::refreshing());
+    mark_refreshing(exe_dir);
 
     let credential = match read_claude_token() {
         Ok(credential) => credential,
@@ -127,7 +127,7 @@ async fn poll_once(exe_dir: &Path, client: &ClaudeClient, login_warning_enabled:
                     "Claude login not found. Run `claude` in Terminal.",
                 );
             }
-            write_status(exe_dir, &MacStatus::error(message));
+            write_error(exe_dir, message);
             return;
         }
     };
@@ -137,7 +137,7 @@ async fn poll_once(exe_dir: &Path, client: &ClaudeClient, login_warning_enabled:
         Err(e) => {
             let message = format!("Usage poll failed: {e}");
             append_log(exe_dir, &message);
-            write_status(exe_dir, &MacStatus::error(message));
+            write_error(exe_dir, message);
             return;
         }
     };
@@ -220,6 +220,42 @@ fn write_status(exe_dir: &Path, status: &MacStatus) {
         }
         Err(e) => log::warn!("Failed to serialize macOS status: {e}"),
     }
+}
+
+/// Begin a refresh without blanking the menu. If a prior good reading exists,
+/// keep its numbers on screen (and clear any stale error) instead of flashing
+/// an empty "refreshing" state every poll. Only show the blank refreshing
+/// placeholder on the very first run, when there is no data yet.
+fn mark_refreshing(exe_dir: &Path) {
+    let path = exe_dir.join("status.json");
+    if let Ok(contents) = std::fs::read_to_string(&path) {
+        if let Ok(mut prev) = serde_json::from_str::<MacStatus>(&contents) {
+            if prev.percent.is_some() {
+                prev.error = None;
+                write_status(exe_dir, &prev);
+                return;
+            }
+        }
+    }
+    write_status(exe_dir, &MacStatus::refreshing());
+}
+
+/// Record a fetch failure without discarding the last good reading.
+/// If a prior live status exists, keep its data and metrics (so the menu
+/// keeps showing the numbers with a staleness indicator) and just attach
+/// the error. Only blank out when there is no prior data to show.
+fn write_error(exe_dir: &Path, message: String) {
+    let path = exe_dir.join("status.json");
+    if let Ok(contents) = std::fs::read_to_string(&path) {
+        if let Ok(mut prev) = serde_json::from_str::<MacStatus>(&contents) {
+            if prev.percent.is_some() {
+                prev.error = Some(message);
+                write_status(exe_dir, &prev);
+                return;
+            }
+        }
+    }
+    write_status(exe_dir, &MacStatus::error(message));
 }
 
 fn print_status(exe_dir: &Path) {
