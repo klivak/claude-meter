@@ -143,13 +143,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func renderMenu() {
-        if let icon = statusIcon() {
-            statusItem.button?.image = icon
-            statusItem.button?.imagePosition = .imageLeading
-        } else {
+        // Fire means "on track to blow the weekly budget" — but being nearly
+        // maxed right now (raw red) is more urgent, so that wins.
+        let rawCritical = (currentStatus.percent ?? 0) >= 90
+        if !rawCritical && paceIsHot() {
             statusItem.button?.image = nil
+            statusItem.button?.title = "🔥 " + menuBarTitle()
+        } else {
+            statusItem.button?.image = dotImage(dotName())
+            statusItem.button?.imagePosition = .imageLeading
+            statusItem.button?.title = menuBarTitle()
         }
-        statusItem.button?.title = menuBarTitle()
         statusItem.button?.toolTip = currentStatus.detail
 
         menu = NSMenu()
@@ -225,9 +229,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// Linear projection of where the weekly limit lands at reset, assuming
-    /// usage continues at the average rate since the week began. Over 100%
-    /// means you are on pace to hit the wall before the window resets.
-    private func weeklyPaceLine() -> String? {
+    /// usage continues at the average rate since the week began, along with
+    /// the fraction of the week elapsed. Over 100% means on pace to hit the
+    /// wall before reset. Nil before ~8h in, when the projection is too noisy.
+    private func weeklyProjection() -> (proj: Int, frac: Double)? {
         guard let weekly = weeklyMetric(),
               let iso = weekly.resetsAt,
               let reset = parseISO(iso) else { return nil }
@@ -235,22 +240,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let secsLeft = reset.timeIntervalSinceNow
         guard secsLeft > 0 else { return nil }
         let frac = (weekLen - secsLeft) / weekLen
-        guard frac > 0.05 else { return "Pace: too early to project" }
-        let projected = Int((Double(weekly.percent) / frac).rounded())
-        let dot = projected > 110 ? "🔴" : (projected >= 90 ? "🟡" : "🟢")
-        return "Pace: on track for ~\(projected)% by reset  \(dot)"
+        guard frac > 0.05 else { return nil }
+        return (Int((Double(weekly.percent) / frac).rounded()), frac)
     }
 
-    /// Severity dot colored by the worst (max) limit, so the icon warns even
-    /// when the session number shown is low but another limit is near full.
-    private func statusIcon() -> NSImage? {
-        let name: String
+    /// True when on track to overshoot the weekly budget: projected >=115%,
+    /// but only after ~1.5 days into the window so early noise does not trip it.
+    private func paceIsHot() -> Bool {
+        guard let pj = weeklyProjection() else { return false }
+        return pj.frac >= 0.20 && pj.proj >= 115
+    }
+
+    private func weeklyPaceLine() -> String? {
+        guard weeklyMetric() != nil else { return nil }
+        guard let pj = weeklyProjection() else { return "Pace: too early to project" }
+        let indicator = paceIsHot() ? "🔥" : (pj.proj >= 100 ? "🟡" : "🟢")
+        return "Pace: on track for ~\(pj.proj)% by reset  \(indicator)"
+    }
+
+    /// Current-level dot by the worst (max) raw limit. Pace/trajectory is shown
+    /// separately as the 🔥 indicator, not folded into the dot color.
+    private func dotName() -> String {
         switch currentStatus.percent {
-        case .some(let p) where p >= 90: name = "dot_red"
-        case .some(let p) where p >= 60: name = "dot_yellow"
-        case .some: name = "dot_green"
-        case .none: name = "dot_gray"
+        case .some(let p) where p >= 90: return "dot_red"
+        case .some(let p) where p >= 60: return "dot_yellow"
+        case .some: return "dot_green"
+        case .none: return "dot_gray"
         }
+    }
+
+    private func dotImage(_ name: String) -> NSImage? {
         guard let url = Bundle.main.url(forResource: name, withExtension: "png"),
               let img = NSImage(contentsOf: url) else { return nil }
         img.size = NSSize(width: 14, height: 14)
