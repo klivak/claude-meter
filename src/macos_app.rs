@@ -10,6 +10,8 @@ use std::time::Duration;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MetricEntry {
+    /// Raw API key, e.g. "five_hour" — used by the UI to pick the session metric.
+    key: String,
     /// Human-readable name, e.g. "Weekly (7-day)"
     name: String,
     percent: u32,
@@ -184,6 +186,7 @@ fn publish_status(exe_dir: &Path, usage: &UsageResponse) {
             name: format_metric_name(&key),
             percent: m.utilization.round() as u32,
             resets_at: m.resets_at.clone(),
+            key,
         })
         .collect();
 

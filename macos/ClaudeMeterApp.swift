@@ -3,8 +3,10 @@ import Foundation
 import UniformTypeIdentifiers
 
 struct Metric {
+    let key: String
     let name: String
     let percent: Int
+    let resetsAt: String?
 }
 
 struct Status {
@@ -119,7 +121,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             for entry in rawMetrics {
                 guard let name = entry["name"] as? String,
                       let percent = entry["percent"] as? Int else { continue }
-                metrics.append(Metric(name: name, percent: percent))
+                let key = entry["key"] as? String ?? ""
+                let resetsAt = entry["resets_at"] as? String
+                metrics.append(Metric(key: key, name: name, percent: percent, resetsAt: resetsAt))
             }
         }
 
@@ -136,16 +140,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func renderMenu() {
+        if let icon = statusIcon() {
+            statusItem.button?.image = icon
+            statusItem.button?.imagePosition = .imageLeading
+        } else {
+            statusItem.button?.image = nil
+        }
         statusItem.button?.title = menuBarTitle()
         statusItem.button?.toolTip = currentStatus.detail
 
         menu = NSMenu()
-        menu.addItem(disabled("ClaudeMeter \(menuBarTitle())"))
-        menu.addItem(disabled(currentStatus.detail))
+        menu.addItem(disabled("ClaudeMeter — \(currentStatus.detail)"))
         if !currentStatus.metrics.isEmpty {
             menu.addItem(NSMenuItem.separator())
             for metric in currentStatus.metrics {
-                menu.addItem(disabled("\(metric.name): \(metric.percent)%"))
+                if let left = timeLeftLong(metric.resetsAt) {
+                    menu.addItem(disabled("\(metric.name): \(metric.percent)%  ·  resets in \(left)"))
+                } else {
+                    menu.addItem(disabled("\(metric.name): \(metric.percent)%"))
+                }
             }
         }
         menu.addItem(NSMenuItem.separator())
@@ -170,16 +183,77 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.menu = menu
     }
 
+    /// Menu bar text: 5-hour session usage and time left in that window,
+    /// e.g. "30% · 1h03m". The leading severity dot is set as the button image.
     private func menuBarTitle() -> String {
-        if currentStatus.state == "refreshing" { return "Claude ..." }
-        if currentStatus.state == "error" { return "Claude !" }
-        if let percent = currentStatus.percent { return "Claude \(percent)%" }
-        return "Claude --"
+        guard currentStatus.percent != nil else {
+            return currentStatus.state == "error" ? "!" : "…"
+        }
+        guard let session = sessionMetric() else {
+            return "\(currentStatus.percent ?? 0)%"
+        }
+        if let left = timeLeftShort(session.resetsAt) {
+            return "\(session.percent)% · \(left)"
+        }
+        return "\(session.percent)%"
+    }
+
+    /// The 5-hour session metric drives the menu bar; fall back to the first.
+    private func sessionMetric() -> Metric? {
+        currentStatus.metrics.first(where: { $0.key == "five_hour" })
+            ?? currentStatus.metrics.first
+    }
+
+    /// Severity dot colored by the worst (max) limit, so the icon warns even
+    /// when the session number shown is low but another limit is near full.
+    private func statusIcon() -> NSImage? {
+        let name: String
+        switch currentStatus.percent {
+        case .some(let p) where p >= 90: name = "dot_red"
+        case .some(let p) where p >= 60: name = "dot_yellow"
+        case .some: name = "dot_green"
+        case .none: name = "dot_gray"
+        }
+        guard let url = Bundle.main.url(forResource: name, withExtension: "png"),
+              let img = NSImage(contentsOf: url) else { return nil }
+        img.size = NSSize(width: 14, height: 14)
+        return img
+    }
+
+    private func parseISO(_ iso: String) -> Date? {
+        let frac = ISO8601DateFormatter()
+        frac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = frac.date(from: iso) { return d }
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        return plain.date(from: iso)
+    }
+
+    /// Compact countdown for the menu bar: "45m", "1h03m", "5d10h".
+    private func timeLeftShort(_ iso: String?) -> String? {
+        guard let iso = iso, let date = parseISO(iso) else { return nil }
+        let secs = Int(date.timeIntervalSinceNow)
+        if secs <= 0 { return nil }
+        let h = secs / 3600, m = (secs % 3600) / 60
+        if h >= 24 { return "\(h / 24)d\(h % 24)h" }
+        if h >= 1 { return String(format: "%dh%02dm", h, m) }
+        return "\(m)m"
+    }
+
+    /// Readable countdown for the dropdown: "45m", "1h 3m", "5d 10h".
+    private func timeLeftLong(_ iso: String?) -> String? {
+        guard let iso = iso, let date = parseISO(iso) else { return nil }
+        let secs = Int(date.timeIntervalSinceNow)
+        if secs <= 0 { return nil }
+        let h = secs / 3600, m = (secs % 3600) / 60
+        if h >= 24 { return "\(h / 24)d \(h % 24)h" }
+        if h >= 1 { return "\(h)h \(m)m" }
+        return "\(m)m"
     }
 
     private func freshnessText() -> String {
         guard let iso = currentStatus.lastApiUpdate,
-              let date = ISO8601DateFormatter().date(from: iso) else {
+              let date = parseISO(iso) else {
             return currentStatus.state == "error" ? "API error" : "Cached / no API data yet"
         }
         let age = max(0, Int(Date().timeIntervalSince(date)))
