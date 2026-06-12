@@ -21,6 +21,20 @@ struct Status {
 }
 
 @main
+enum ClaudeMeterMain {
+    // Strong reference: NSApplication.delegate is weak, so the delegate must be
+    // retained for the lifetime of the run loop. main() never returns, so this
+    // stack-held reference keeps it alive.
+    static func main() {
+        let app = NSApplication.shared
+        let delegate = AppDelegate()
+        app.delegate = delegate
+        app.setActivationPolicy(.accessory)
+        app.run()
+        _ = delegate
+    }
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private var menu = NSMenu()
