@@ -183,8 +183,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.menu = menu
     }
 
-    /// Menu bar text: 5-hour session usage and time left in that window,
-    /// e.g. "30% · 1h03m". The leading severity dot is set as the button image.
+    /// Menu bar text: 5-hour session usage with time left, then the weekly
+    /// percent (no label), e.g. "30% · 1h03m | 24%". The leading severity dot
+    /// is set as the button image.
     private func menuBarTitle() -> String {
         guard currentStatus.percent != nil else {
             return currentStatus.state == "error" ? "!" : "…"
@@ -192,16 +193,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let session = sessionMetric() else {
             return "\(currentStatus.percent ?? 0)%"
         }
+        var text = "\(session.percent)%"
         if let left = timeLeftShort(session.resetsAt) {
-            return "\(session.percent)% · \(left)"
+            text += " · \(left)"
         }
-        return "\(session.percent)%"
+        if let weekly = weeklyMetric() {
+            text += " | \(weekly.percent)%"
+        }
+        return text
     }
 
     /// The 5-hour session metric drives the menu bar; fall back to the first.
     private func sessionMetric() -> Metric? {
         currentStatus.metrics.first(where: { $0.key == "five_hour" })
             ?? currentStatus.metrics.first
+    }
+
+    /// The weekly (all-models) metric, shown as the trailing percent.
+    private func weeklyMetric() -> Metric? {
+        currentStatus.metrics.first(where: { $0.key == "seven_day" })
     }
 
     /// Severity dot colored by the worst (max) limit, so the icon warns even
