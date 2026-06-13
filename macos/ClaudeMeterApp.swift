@@ -18,6 +18,10 @@ struct Status {
     let tierNote: String?
     let lastApiUpdate: String?
     let error: String?
+    // 24h usage history, 48 buckets oldest-first (0 = 24h ago, 47 = now), 0-100.
+    let chart: [Int]
+    // Past 5-hour session reset points as "hours ago" (0-24), for dashed lines.
+    let chartResets: [Double]
 
     static let loading = Status(
         state: "refreshing",
@@ -27,7 +31,9 @@ struct Status {
         metrics: [],
         tierNote: nil,
         lastApiUpdate: nil,
-        error: nil
+        error: nil,
+        chart: [],
+        chartResets: []
     )
 }
 
@@ -107,7 +113,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func refreshNow() {
-        currentStatus = Status(state: "refreshing", title: "...", detail: "Refreshing...", percent: nil, metrics: [], tierNote: nil, lastApiUpdate: nil, error: nil)
+        currentStatus = Status(state: "refreshing", title: "...", detail: "Refreshing...", percent: nil, metrics: [], tierNote: nil, lastApiUpdate: nil, error: nil, chart: currentStatus.chart, chartResets: currentStatus.chartResets)
         renderMenu()
 
         DispatchQueue.global(qos: .utility).async {
@@ -156,7 +162,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             metrics: metrics,
             tierNote: object["tier_note"] as? String,
             lastApiUpdate: object["last_api_update"] as? String,
-            error: object["error"] as? String
+            error: object["error"] as? String,
+            chart: (object["chart"] as? [Int]) ?? [],
+            chartResets: (object["chart_resets"] as? [Double]) ?? []
         )
         renderMenu()
     }
@@ -193,6 +201,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let note = currentStatus.tierNote, !note.isEmpty {
             menu.addItem(NSMenuItem.separator())
             menu.addItem(disabled(note))
+        }
+        if currentStatus.chart.contains(where: { $0 > 0 }) {
+            menu.addItem(NSMenuItem.separator())
+            menu.addItem(disabled("Usage History (24h)"))
+            let chartItem = NSMenuItem()
+            chartItem.view = ChartView(data: currentStatus.chart, resets: currentStatus.chartResets)
+            menu.addItem(chartItem)
         }
         menu.addItem(NSMenuItem.separator())
         menu.addItem(disabled("Freshness: \(freshnessText())"))
@@ -508,5 +523,112 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func escapeAppleScript(_ value: String) -> String {
         value.replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
+    }
+}
+
+/// "Usage History (24h)" bar chart, ported from the Windows popup design
+/// (src/ui/render.rs draw_chart): surface background, 25/50/75 grid lines,
+/// and one bar per bucket colored by threshold (>=80 red, >=50 yellow, else
+/// green). Data is 48 buckets oldest-first, each 0-100.
+final class ChartView: NSView {
+    private let data: [Int]
+    private let resets: [Double]
+
+    // Catppuccin palette, matching src/ui/colors.rs. Resolved per-appearance
+    // so the chart tracks the menu's light/dark mode.
+    private func palette() -> (surface: NSColor, grid: NSColor, green: NSColor, yellow: NSColor, red: NSColor, accent: NSColor) {
+        let dark = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let green = hex(0x40a02b)
+        let yellow = hex(0xdf8e1d)
+        let red = hex(0xd20f39)
+        if dark {
+            return (hex(0x313244), hex(0x45475a), green, yellow, red, hex(0x89b4fa))
+        } else {
+            return (hex(0xdce0e8), hex(0xbcc0cc), green, yellow, red, hex(0x1e66f5))
+        }
+    }
+
+    private func hex(_ rgb: Int) -> NSColor {
+        NSColor(
+            srgbRed: CGFloat((rgb >> 16) & 0xff) / 255.0,
+            green: CGFloat((rgb >> 8) & 0xff) / 255.0,
+            blue: CGFloat(rgb & 0xff) / 255.0,
+            alpha: 1.0
+        )
+    }
+
+    init(data: [Int], resets: [Double]) {
+        self.data = data
+        self.resets = resets
+        // Width is a starting size; autoresizing stretches it to the menu width.
+        super.init(frame: NSRect(x: 0, y: 0, width: 260, height: 96))
+        autoresizingMask = [.width]
+    }
+
+    required init?(coder: NSCoder) { fatalError("not used") }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let pad: CGFloat = 14
+        let labelH: CGFloat = 14
+        let chartX = pad
+        let chartW = bounds.width - pad * 2
+        let chartTop = bounds.height - 6
+        let chartBottom = labelH + 4
+        let chartH = chartTop - chartBottom
+        guard chartW > 0, chartH > 0 else { return }
+
+        let colors = palette()
+
+        // Chart background
+        colors.surface.setFill()
+        NSBezierPath(rect: NSRect(x: chartX, y: chartBottom, width: chartW, height: chartH)).fill()
+
+        // Grid lines at 25/50/75%
+        colors.grid.setStroke()
+        for pct in [25, 50, 75] {
+            let gy = chartBottom + chartH * CGFloat(pct) / 100.0
+            let line = NSBezierPath()
+            line.lineWidth = 1
+            line.move(to: NSPoint(x: chartX, y: gy))
+            line.line(to: NSPoint(x: chartX + chartW, y: gy))
+            line.stroke()
+        }
+
+        // Bars (note: AppKit y-axis is bottom-up, so bars grow upward directly)
+        if !data.isEmpty {
+            let barW = max(chartW / CGFloat(data.count), 2.0)
+            let gap = max(1.0, barW / 6.0)
+            for (i, val) in data.enumerated() {
+                let h = CGFloat(val) / 100.0 * chartH
+                guard h > 0.5 else { continue }
+                let x = chartX + CGFloat(i) * barW
+                let color = val >= 80 ? colors.red : (val >= 50 ? colors.yellow : colors.green)
+                color.setFill()
+                NSBezierPath(rect: NSRect(x: x + gap, y: chartBottom, width: barW - gap * 2, height: h)).fill()
+            }
+        }
+
+        // Dashed vertical lines at past 5-hour session resets. hours_ago=0 is
+        // "now" (right edge), 24 is the left edge: x = left + w * (1 - ago/24).
+        colors.accent.setStroke()
+        for ago in resets where ago >= 0 && ago <= 24 {
+            let rx = chartX + chartW * CGFloat(1.0 - ago / 24.0)
+            let line = NSBezierPath()
+            line.lineWidth = 1
+            line.setLineDash([3, 3], count: 2, phase: 0)
+            line.move(to: NSPoint(x: rx, y: chartBottom))
+            line.line(to: NSPoint(x: rx, y: chartTop))
+            line.stroke()
+        }
+
+        // Axis labels: "24h ago" left, "now" right
+        let labelAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 9),
+            .foregroundColor: NSColor.secondaryLabelColor,
+        ]
+        let left = NSAttributedString(string: "24h ago", attributes: labelAttrs)
+        left.draw(at: NSPoint(x: chartX, y: 0))
+        let right = NSAttributedString(string: "now", attributes: labelAttrs)
+        right.draw(at: NSPoint(x: chartX + chartW - right.size().width, y: 0))
     }
 }

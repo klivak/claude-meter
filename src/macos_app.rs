@@ -34,6 +34,15 @@ struct MacStatus {
     last_api_update: Option<String>,
     data_age_seconds: Option<u64>,
     error: Option<String>,
+    /// 24h usage history for the five_hour metric, 48 buckets oldest-first
+    /// (index 0 = 24h ago, index 47 = now). Each value is a 0-100 percent.
+    /// Mirrors the Windows popup's "Usage History (24h)" chart.
+    #[serde(default)]
+    chart: Vec<u32>,
+    /// Past 5-hour session reset points, as "hours ago" (0-24). Drawn as dashed
+    /// vertical lines on the chart, matching the Windows popup.
+    #[serde(default)]
+    chart_resets: Vec<f64>,
 }
 
 impl MacStatus {
@@ -49,6 +58,8 @@ impl MacStatus {
             last_api_update: None,
             data_age_seconds: None,
             error: None,
+            chart: Vec::new(),
+            chart_resets: Vec::new(),
         }
     }
 
@@ -64,6 +75,8 @@ impl MacStatus {
             last_api_update: None,
             data_age_seconds: None,
             error: Some(message),
+            chart: Vec::new(),
+            chart_resets: Vec::new(),
         }
     }
 }
@@ -207,6 +220,32 @@ fn publish_status(exe_dir: &Path, usage: &UsageResponse, plan_override: Option<&
 
     let tier_note = plan_override.and_then(|p| build_tier_note(p, usage));
 
+    // 24h history for the menu-bar chart. save_history() already inserted this
+    // poll's reading, so reopening the DB here picks up the freshest bucket.
+    let chart = Database::open(exe_dir)
+        .and_then(|db| db.query_24h_chart())
+        .map(|slots| slots.iter().map(|v| v.round() as u32).collect())
+        .unwrap_or_default();
+
+    // Past 5-hour session reset points as "hours ago", stepping back by 5h from
+    // the most recent reset up to 24h. Same logic as windows_app.rs.
+    let mut chart_resets = Vec::new();
+    if let Some(secs) = usage
+        .five_hour
+        .as_ref()
+        .and_then(|fh| fh.resets_at.as_deref())
+        .and_then(seconds_until)
+    {
+        let hours_until = secs as f64 / 3600.0;
+        let mut hours_ago = 5.0 - hours_until;
+        while hours_ago <= 24.0 {
+            if hours_ago > 0.0 {
+                chart_resets.push(hours_ago);
+            }
+            hours_ago += 5.0;
+        }
+    }
+
     let status = MacStatus {
         state: "live".to_string(),
         title: format!("{percent}%"),
@@ -218,6 +257,8 @@ fn publish_status(exe_dir: &Path, usage: &UsageResponse, plan_override: Option<&
         last_api_update: Some(last_api_update),
         data_age_seconds: Some(0),
         error: None,
+        chart,
+        chart_resets,
     };
 
     append_log(
@@ -289,6 +330,13 @@ fn build_tier_note(plan: &str, usage: &UsageResponse) -> Option<String> {
         " — would fit"
     };
     Some(format!("On {}: {}{}", lower_name, parts.join(", "), verdict))
+}
+
+/// Seconds until an RFC3339 reset timestamp (negative if already past).
+/// Local copy of the i18n helper, which is Windows-gated.
+fn seconds_until(resets_at: &str) -> Option<i64> {
+    let reset: chrono::DateTime<chrono::Utc> = resets_at.parse().ok()?;
+    Some(reset.signed_duration_since(chrono::Utc::now()).num_seconds())
 }
 
 fn write_status(exe_dir: &Path, status: &MacStatus) {
