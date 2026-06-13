@@ -196,6 +196,7 @@ impl ClaudeClient {
 
     /// Fetch usage from claude.ai web API (fallback when OAuth is unavailable).
     /// Uses session cookie authentication.
+    #[cfg_attr(not(windows), allow(dead_code))] // consumed by the Windows app
     pub async fn fetch_usage_web(
         &self,
         session_key: &str,
@@ -247,6 +248,7 @@ fn cache_buster() -> u128 {
 
 /// Parse the claude.ai web API response into UsageResponse.
 /// The web API may return a different structure than the OAuth API.
+#[cfg_attr(not(windows), allow(dead_code))] // used by fetch_usage_web on the Windows app
 fn parse_web_response(value: serde_json::Value) -> Result<UsageResponse, String> {
     // The web API may return the same structure as OAuth, or a wrapper.
     // Try direct parse first (same format as OAuth API).

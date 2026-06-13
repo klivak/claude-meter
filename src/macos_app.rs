@@ -279,9 +279,7 @@ fn plan_multiplier(plan: &str) -> Option<f64> {
     let p = plan.to_lowercase();
     if p.contains("20x") {
         Some(20.0)
-    } else if p.contains("5x") {
-        Some(5.0)
-    } else if p.contains("max") {
+    } else if p.contains("5x") || p.contains("max") {
         Some(5.0)
     } else if p.contains("pro") {
         Some(1.0)
@@ -329,7 +327,12 @@ fn build_tier_note(plan: &str, usage: &UsageResponse) -> Option<String> {
     } else {
         " — would fit"
     };
-    Some(format!("On {}: {}{}", lower_name, parts.join(", "), verdict))
+    Some(format!(
+        "On {}: {}{}",
+        lower_name,
+        parts.join(", "),
+        verdict
+    ))
 }
 
 /// Seconds until an RFC3339 reset timestamp (negative if already past).

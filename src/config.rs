@@ -145,6 +145,7 @@ impl Config {
     /// Within 15 minutes before the top of the hour: 120-180 seconds.
     /// Otherwise: 120-300 seconds.
     /// Uses system time nanoseconds for simple randomness without external crate.
+    #[cfg_attr(not(windows), allow(dead_code))] // consumed by the Windows app
     pub fn random_polling_interval() -> u64 {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -245,6 +246,7 @@ impl ConfigManager {
     }
 
     /// Check if config file changed on disk and reload if so.
+    #[cfg_attr(not(windows), allow(dead_code))] // consumed by the Windows app
     pub fn reload_if_changed(&mut self) {
         let mtime = fs::metadata(&self.path)
             .ok()
