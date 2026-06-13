@@ -104,6 +104,7 @@ impl Database {
     /// Query last 7 days of `five_hour` metric, bucketed into 4-hour intervals.
     /// Always returns exactly 42 elements (oldest first: index 0 = 7d ago, index 41 = now).
     /// Missing slots are filled with 0.0.
+    #[cfg_attr(not(windows), allow(dead_code))] // consumed by the Windows app
     pub fn query_7d_chart(&self) -> SqlResult<Vec<f64>> {
         let mut stmt = self.conn.prepare(
             "SELECT
@@ -133,6 +134,7 @@ impl Database {
     /// Query last 30 days of `five_hour` metric, bucketed into 1-day intervals.
     /// Always returns exactly 30 elements (oldest first: index 0 = 30d ago, index 29 = now).
     /// Missing slots are filled with 0.0.
+    #[cfg_attr(not(windows), allow(dead_code))] // consumed by the Windows app
     pub fn query_30d_chart(&self) -> SqlResult<Vec<f64>> {
         let mut stmt = self.conn.prepare(
             "SELECT
@@ -161,6 +163,7 @@ impl Database {
 
     /// Query the most recent utilization value for each metric.
     /// Returns a list of (metric_name, utilization, resets_at) tuples.
+    #[cfg_attr(not(windows), allow(dead_code))] // consumed by the Windows app
     pub fn query_latest(&self) -> SqlResult<Vec<(String, f64, Option<String>)>> {
         let mut stmt = self.conn.prepare(
             "SELECT metric, utilization, resets_at
@@ -186,6 +189,7 @@ impl Database {
 
     /// Compute rate of change (%/hour) for each metric by comparing current values
     /// against values from `lookback_minutes` ago.
+    #[cfg_attr(not(windows), allow(dead_code))] // consumed by the Windows app
     pub fn query_rate_of_change(&self, lookback_minutes: i64) -> SqlResult<HashMap<String, f64>> {
         let latest = self.query_latest()?;
 
@@ -250,6 +254,7 @@ impl Database {
     }
 
     /// Export all usage history to a CSV file. Returns the number of rows written.
+    #[cfg_attr(not(windows), allow(dead_code))] // consumed by the Windows app
     pub fn export_csv(&self, path: &Path) -> SqlResult<usize> {
         let mut stmt = self.conn.prepare(
             "SELECT timestamp, provider, metric, utilization, resets_at

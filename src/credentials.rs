@@ -11,12 +11,14 @@ pub struct CredentialInfo {
     /// e.g. "default_claude_max_5x" — rate limit tier from credentials
     pub rate_limit_tier: Option<String>,
     /// Token expiry time in milliseconds since epoch
+    #[cfg_attr(not(windows), allow(dead_code))] // read by the Windows app
     pub expires_at: Option<u64>,
 }
 
 #[derive(Debug)]
 pub enum CredentialError {
     NotFound,
+    #[cfg_attr(not(windows), allow(dead_code))] // constructed by the Windows credential path
     WindowsError(String),
     ParseError(String),
 }

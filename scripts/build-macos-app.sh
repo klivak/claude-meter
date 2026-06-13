@@ -16,6 +16,13 @@ mkdir -p "$MACOS_DIR" "$RESOURCES"
 cp "$TARGET_DIR/claudemeter" "$RESOURCES/claudemeter-agent"
 chmod +x "$RESOURCES/claudemeter-agent"
 
+# Menu bar severity dots: convert the .ico assets to PNGs the Swift app loads
+# from its bundle. Selected at runtime by usage level (green/yellow/red/gray).
+for color in green yellow red gray; do
+  sips -s format png "$ROOT/assets/icon_$color.ico" \
+    --out "$RESOURCES/dot_$color.png" >/dev/null 2>&1 || true
+done
+
 swiftc \
   -parse-as-library \
   -O \
