@@ -470,7 +470,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func installAutostart() {
-        let appPath = Bundle.main.bundleURL.path
+        // Keep this plist identical to scripts/install-macos-launchagent.sh.
+        // Launch the bundle executable directly, NOT via /usr/bin/open: open
+        // exits immediately, which with KeepAlive made launchd relaunch in a
+        // tight loop. KeepAlive=false lets the app start at login yet still be
+        // quit from its menu. See commit 4769be3.
+        let binPath = Bundle.main.executablePath ?? Bundle.main.bundleURL
+            .appendingPathComponent("Contents/MacOS/ClaudeMeter").path
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
         let plist = """
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -480,11 +487,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
           <string>com.klivak.claudemeter</string>
           <key>ProgramArguments</key>
           <array>
-            <string>/usr/bin/open</string>
-            <string>\(appPath)</string>
+            <string>\(binPath)</string>
           </array>
           <key>RunAtLoad</key>
           <true/>
+          <key>KeepAlive</key>
+          <false/>
+          <key>StandardOutPath</key>
+          <string>\(home)/Library/Logs/claudemeter.out.log</string>
+          <key>StandardErrorPath</key>
+          <string>\(home)/Library/Logs/claudemeter.err.log</string>
         </dict>
         </plist>
         """
