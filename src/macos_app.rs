@@ -336,7 +336,11 @@ fn build_tier_note(plan: &str, usage: &UsageResponse) -> Option<String> {
 /// Local copy of the i18n helper, which is Windows-gated.
 fn seconds_until(resets_at: &str) -> Option<i64> {
     let reset: chrono::DateTime<chrono::Utc> = resets_at.parse().ok()?;
-    Some(reset.signed_duration_since(chrono::Utc::now()).num_seconds())
+    Some(
+        reset
+            .signed_duration_since(chrono::Utc::now())
+            .num_seconds(),
+    )
 }
 
 fn write_status(exe_dir: &Path, status: &MacStatus) {
