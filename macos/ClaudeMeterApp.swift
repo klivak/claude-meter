@@ -491,10 +491,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let path = launchAgentPath()
         try? FileManager.default.createDirectory(at: path.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? plist.write(to: path, atomically: true, encoding: .utf8)
+        // Register with launchd now so it's active without needing a re-login.
+        runLaunchctl(["load", "-w", path.path])
     }
 
     private func removeAutostart() {
-        try? FileManager.default.removeItem(at: launchAgentPath())
+        let path = launchAgentPath()
+        // Unregister from launchd first, then delete the file. Without the
+        // unload the job stays live in the current session and only stops
+        // autostarting after the next login.
+        runLaunchctl(["unload", "-w", path.path])
+        try? FileManager.default.removeItem(at: path)
+    }
+
+    private func runLaunchctl(_ args: [String]) {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+        process.arguments = args
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            writeLog("launchctl \(args.joined(separator: " ")) failed: \(error)")
+        }
     }
 
     private func notify(_ title: String, _ message: String) {
