@@ -15,6 +15,8 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("credentials_not_found", "Credentials not found");
     m.insert("connection_error", "Connection error");
     m.insert("token_expired", "Token expired");
+    m.insert("stale_token_expired", "Stale \u{2014} token expired");
+    m.insert("stale_data", "Stale \u{2014} last known");
     m.insert(
         "token_expired_desc",
         "Your OAuth token has expired. Run `claude login` in your terminal to refresh it.",

@@ -5,6 +5,14 @@ All notable changes to ClaudeMeter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2026-06-30
+
+### Added
+- **Stale data warning** — the popup now flags cached numbers as stale (with a ⚠ marker) when the OAuth token has expired or no live poll has succeeded this session, instead of showing them as if current
+
+### Security
+- **quinn-proto 0.11.15** — bumped from 0.11.14 to fix RUSTSEC-2026-0185 (remote memory exhaustion via unbounded out-of-order stream reassembly)
+
 ## [4.0.1] - 2026-05-31
 
 ### Fixed

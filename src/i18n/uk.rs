@@ -15,6 +15,8 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("credentials_not_found", "Облікові дані не знайдено");
     m.insert("connection_error", "Помилка з'єднання");
     m.insert("token_expired", "Токен протермінувався");
+    m.insert("stale_token_expired", "Застаріло \u{2014} токен протух");
+    m.insert("stale_data", "Застаріло \u{2014} останнє відоме");
     m.insert(
         "token_expired_desc",
         "Ваш OAuth токен протермінувався. Виконайте `claude login` у терміналі, щоб оновити його.",

@@ -659,6 +659,7 @@ impl PopupRenderer {
                 w,
                 y + self.sf(SEPARATOR_H),
                 last_updated,
+                last_error,
                 colors,
                 i18n,
                 hovered,
@@ -2494,6 +2495,7 @@ impl PopupRenderer {
         w: f32,
         y: f32,
         last_updated: &str,
+        last_error: &Option<String>,
         colors: &ThemeColors,
         i18n: &I18n,
         hovered: &HoveredElement,
@@ -2518,12 +2520,39 @@ impl PopupRenderer {
             &surface_brush,
         );
 
-        // Last updated text
-        let updated_text = format!("{} {}", i18n.t("Last updated:"), last_updated);
+        // Honest "stale data" detection. We are showing cached numbers that are
+        // NOT confirmed live in two cases the user cares about:
+        //   1. the OAuth token is expired (cannot refresh until `claude login`), or
+        //   2. we never got a live poll this session (last_updated is still "(cached)").
+        // Transient errors right after a successful refresh are NOT flagged — the
+        // displayed data is only seconds old and still trustworthy.
+        let error_tag = last_error
+            .as_deref()
+            .and_then(|e| e.strip_prefix('['))
+            .and_then(|s| s.split_once(']'))
+            .map(|(tag, _)| tag);
+        let token_expired = error_tag == Some("token_expired");
+        let stale = token_expired || (last_error.is_some() && last_updated == "(cached)");
+
+        // Last updated / stale-warning text
+        let (updated_text, text_color, bold) = if stale {
+            let msg = if token_expired {
+                i18n.t("stale_token_expired").to_string()
+            } else {
+                format!("{} ({})", i18n.t("stale_data"), last_updated)
+            };
+            (format!("\u{26A0} {}", msg), colors.yellow, true)
+        } else {
+            (
+                format!("{} {}", i18n.t("Last updated:"), last_updated),
+                colors.text_secondary,
+                false,
+            )
+        };
         let updated_wide = wide(&updated_text);
-        let updated_format = d2d.get_text_format(10, false, 0, 1).clone();
+        let updated_format = d2d.get_text_format(10, bold, 0, 1).clone();
         let text_brush = rt
-            .CreateSolidColorBrush(&colorref_to_d2d(colors.text_secondary) as *const _, None)
+            .CreateSolidColorBrush(&colorref_to_d2d(text_color) as *const _, None)
             .unwrap();
         rt.DrawText(
             &updated_wide[..updated_wide.len() - 1],
