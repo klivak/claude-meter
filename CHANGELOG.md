@@ -5,6 +5,25 @@ All notable changes to ClaudeMeter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.2] - 2026-07-14
+
+### Added
+- **macOS menu-bar usage history chart** — 24h bar chart in the dropdown (ported from the Windows popup), with 25/50/75% grid lines, threshold-colored bars, and dashed 5-hour session reset lines.
+- **macOS per-limit breakdown** — 5-hour / weekly / Sonnet / Opus entries in the menu, matching the Windows layout.
+- **macOS weekly pace projection** — flags when usage is on track to exhaust the weekly budget before reset, with a 🔥 indicator in the menu-bar title on overshoot.
+- **Plan override + downgrade comparison** — new `plan_override` config field (`"Pro"`, `"Max 5x"`, `"Max 20x"`) for a correct plan label and a "what usage would look like on a smaller tier" comparison.
+- **Compact macOS menu-bar title** — severity dot + session % + time-left, plus weekly %.
+
+### Fixed
+- **macOS app never finished launching** (NSApplication lifecycle).
+- **macOS LaunchAgent relaunch loop / unquittable app** — launch the bundle executable directly with `KeepAlive=false` instead of via `/usr/bin/open`.
+- **Orphaned macOS agents** — kill leftover `--agent` pollers on startup so their combined poll rate no longer trips the API rate limiter.
+- **macOS keeps last-known usage** on a failed poll instead of blanking the menu.
+- **macOS autostart applies immediately** — Enable/Disable now run `launchctl load/unload -w` for the current session, not just next login.
+
+### Credits
+- macOS improvements contributed by @kenschwartz (#1).
+
 ## [4.1.1] - 2026-07-13
 
 ### Fixed
