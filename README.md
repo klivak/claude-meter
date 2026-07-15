@@ -33,7 +33,7 @@ See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening
 <table>
   <tr>
     <td align="center"><a href="https://hits.sh/github.com/klivak/claude-meter/"><img alt="README loads" src="https://hits.sh/github.com/klivak/claude-meter.svg?view=total&style=flat-square&label=README%20loads&color=00bfa5&labelColor=20232a&logo=github"></a><br><sub>Approximate page loads</sub></td>
-    <td align="center"><a href="https://github.com/klivak/claude-meter/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/klivak/claude-meter?style=flat-square&logo=github&label=stars&color=f5b942&labelColor=20232a"></a><br><sub>Community stars</sub></td>
+    <td align="center"><a href="https://github.com/klivak/claude-meter"><img alt="GitHub stars" src="https://img.shields.io/github/stars/klivak/claude-meter?style=flat-square&logo=github&label=stars&color=f5b942&labelColor=20232a"></a><br><sub>Community stars</sub></td>
     <td align="center"><a href="https://github.com/klivak/claude-meter/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/klivak/claude-meter?style=flat-square&logo=github&label=latest%20release&color=5b8def&labelColor=20232a"></a><br><sub>Current stable version</sub></td>
   </tr>
   <tr>
