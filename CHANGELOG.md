@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.2.0] - 2026-07-15
+
 ### Added
-- **Project website** — added a responsive GitHub Pages landing page with live repository metrics, theme previews, feature explanations, download links, and a separate privacy-friendly long-term page-load counter.
+- **Project website** — launched a responsive GitHub Pages landing page with platform badges, feature explanations, theme previews, direct downloads, FAQ, and clear Windows 10/11 and macOS 12+ support.
+- **Website Project Pulse** — added a separate privacy-friendly long-term page-load counter plus public stars, release, and issue metrics.
+- **Automatic Pages deployment** — added a dedicated GitHub Actions workflow that builds and deploys the static site and refreshes public project metrics every day.
+- **Optional Codex website showcase** — the landing page now highlights the additional Codex panel alongside Claude usage, including its Settings-based activation and compact-mode support.
 
 ### Changed
 - **Simpler README counter** — the Project Pulse badge now shows one clearly labeled approximate `README loads` total instead of a today/total pair.
+- **README website documentation** — added the live project URL, a current website screenshot, analytics behavior, platform coverage, and Pages deployment details.
+- **Refined website hero** — reduced headline scale, removed the redundant release pill, and resized dashboard previews so both screenshots remain fully visible.
 
 ## [5.1.0] - 2026-07-15
 

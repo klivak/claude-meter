@@ -26,7 +26,7 @@ See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening
 
 <br>
 
-<img src="screenshots/dashboard-light-v5.1.png" alt="ClaudeMeter 5.1 Light theme dashboard with Claude and Codex usage" width="360"> <img src="screenshots/dashboard-dark-v5.1.png" alt="ClaudeMeter 5.1 Dark theme dashboard with Claude and Codex usage" width="360">
+<img src="screenshots/dashboard-light-v5.1.png" alt="ClaudeMeter Light theme dashboard with Claude and Codex usage" width="360"> <img src="screenshots/dashboard-dark-v5.1.png" alt="ClaudeMeter Dark theme dashboard with Claude and Codex usage" width="360">
 
 ### 📊 Project Pulse
 
@@ -46,6 +46,24 @@ See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening
 **⭐ Finding ClaudeMeter useful? [Star the repository](https://github.com/klivak/claude-meter) — it helps more people discover it.**
 
 <sub>README loads count badge requests since this counter was added, not unique visitors. Caching, bots, repeat visits, and service checks can affect the number. The separate [project website](https://klivak.github.io/claude-meter/) keeps its own long-term page-load history.</sub>
+
+</div>
+
+## 🌐 Project Website
+
+Visit **[klivak.github.io/claude-meter](https://klivak.github.io/claude-meter/)** for a polished, responsive overview of ClaudeMeter:
+
+- Clear **Windows 10/11** and **macOS 12+** support with direct release downloads
+- Claude usage by default plus the optional **Codex panel** in the same dashboard
+- Interactive Light/Dark website appearance and previews of all four app themes
+- Live GitHub stars, latest release, open issues, and a separate privacy-friendly page-load history
+- Automatic GitHub Pages deployment and daily public-metric refreshes through GitHub Actions
+
+<div align="center">
+
+[![Open Website](https://img.shields.io/badge/Open-Project%20Website-ff6655?style=for-the-badge&logo=githubpages&logoColor=white)](https://klivak.github.io/claude-meter/)
+
+<a href="https://klivak.github.io/claude-meter/"><img src="screenshots/website.png" alt="ClaudeMeter project website with Windows, macOS, Claude, and optional Codex support" width="900"></a>
 
 </div>
 
