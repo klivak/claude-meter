@@ -259,9 +259,37 @@ a {
 
 .hero-lead {
   max-width: 650px;
-  margin: 26px 0 32px;
+  margin: 26px 0 22px;
   color: var(--muted);
   font-size: 1.13rem;
+}
+
+.platform-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 28px;
+  padding: 0;
+  list-style: none;
+}
+
+.platform-row li {
+  display: inline-flex;
+  min-height: 34px;
+  padding: 0 11px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.platform-row strong {
+  color: var(--teal);
+  font-size: 0.9rem;
 }
 
 .trust-row {
