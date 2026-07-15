@@ -9,8 +9,7 @@ use crate::providers::claude::{ClaudeClient, UsageResponse};
 use crate::theme::{resolve_theme, ThemeMode};
 use crate::tray::{
     build_tooltip, TrayIcon, IDM_ABOUT, IDM_AUTOSTART, IDM_EXIT, IDM_EXPORT_CSV, IDM_EXPORT_JSON,
-    IDM_OPEN_CHATGPT,
-    IDM_OPEN_CLAUDE, IDM_OPEN_DASHBOARD, IDM_REFRESH, IDM_SETTINGS, WM_TRAY_ICON,
+    IDM_OPEN_CHATGPT, IDM_OPEN_CLAUDE, IDM_OPEN_DASHBOARD, IDM_REFRESH, IDM_SETTINGS, WM_TRAY_ICON,
 };
 use crate::ui::colors::colorref_to_d2d;
 use crate::ui::render::{draw_settings_panel, D2DResources, HoveredElement, PopupRenderer};
@@ -1166,7 +1165,11 @@ unsafe extern "system" fn popup_wnd_proc(
                         state.config_mgr.config.compact_mode,
                         &state.config_mgr.config.dashboard_layout,
                         !state.config_mgr.config.show_extra_usage,
-                        state.codex_status.as_ref().map(|s| s.window_count()).unwrap_or(0),
+                        state
+                            .codex_status
+                            .as_ref()
+                            .map(|s| s.window_count())
+                            .unwrap_or(0),
                     );
                     resize_popup(hwnd, h);
                     state.slide_anim_offset = -(crate::ui::render::POPUP_WIDTH as f32);
@@ -1573,7 +1576,11 @@ unsafe fn show_popup(_main_hwnd: HWND) {
                 state.config_mgr.config.compact_mode,
                 &state.config_mgr.config.dashboard_layout,
                 !state.config_mgr.config.show_extra_usage,
-                state.codex_status.as_ref().map(|s| s.window_count()).unwrap_or(0),
+                state
+                    .codex_status
+                    .as_ref()
+                    .map(|s| s.window_count())
+                    .unwrap_or(0),
             )
         };
 
@@ -2426,7 +2433,11 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
                 state.config_mgr.config.compact_mode,
                 &state.config_mgr.config.dashboard_layout,
                 !state.config_mgr.config.show_extra_usage,
-                state.codex_status.as_ref().map(|s| s.window_count()).unwrap_or(0),
+                state
+                    .codex_status
+                    .as_ref()
+                    .map(|s| s.window_count())
+                    .unwrap_or(0),
             );
             resize_popup(state.popup_hwnd, h);
             let _ = windows::Win32::Graphics::Gdi::InvalidateRect(state.popup_hwnd, None, true);

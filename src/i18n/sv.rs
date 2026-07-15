@@ -57,7 +57,10 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Export History (CSV)", "Exportera historik (CSV)");
     m.insert("Export History (JSON)", "Exportera historik (JSON)");
     m.insert("Show extra usage", "Visa extra anv\u{00e4}ndning");
-    m.insert("Usage link icons", "Ikoner f\u{00f6}r anv\u{00e4}ndningsl\u{00e4}nkar");
+    m.insert(
+        "Usage link icons",
+        "Ikoner f\u{00f6}r anv\u{00e4}ndningsl\u{00e4}nkar",
+    );
     m.insert("Open usage", "\u{00d6}ppna anv\u{00e4}ndning");
     m.insert("Service status", "Tj\u{00e4}nstestatus");
     m.insert("CODEX", "CODEX");

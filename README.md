@@ -331,6 +331,12 @@ cargo build --release
 
 **Requirements:** Rust 1.75+ and Windows SDK (included with [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)).
 
+Enable the repository pre-commit hook to format Rust sources automatically:
+
+```powershell
+scripts\install-git-hooks.cmd
+```
+
 ### macOS
 
 ```bash

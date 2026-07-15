@@ -53,7 +53,10 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Open Dashboard", "Deschide panoul");
     m.insert("Export History (CSV)", "Export\u{0103} istoricul (CSV)");
     m.insert("Export History (JSON)", "Export\u{0103} istoricul (JSON)");
-    m.insert("Show extra usage", "Afi\u{015f}eaz\u{0103} utilizarea suplimentar\u{0103}");
+    m.insert(
+        "Show extra usage",
+        "Afi\u{015f}eaz\u{0103} utilizarea suplimentar\u{0103}",
+    );
     m.insert("Usage link icons", "Pictograme linkuri de utilizare");
     m.insert("Open usage", "Deschide utilizarea");
     m.insert("Service status", "Starea serviciului");
