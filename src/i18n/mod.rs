@@ -1,22 +1,27 @@
 mod ar;
 mod bg;
 mod bn;
+mod ca;
 mod cs;
 mod da;
 mod de;
 mod el;
 mod en;
 mod es;
+mod et;
 mod fa;
 mod fi;
 mod fr;
 mod he;
 mod hi;
+mod hr;
 mod hu;
 mod id;
 mod it;
 mod ja;
 mod ko;
+mod lt;
+mod lv;
 mod ms;
 mod nl;
 mod no;
@@ -73,6 +78,11 @@ pub enum Locale {
     Sk,
     Sr,
     Tl,
+    Ca,
+    Hr,
+    Et,
+    Lv,
+    Lt,
 }
 
 impl Locale {
@@ -113,6 +123,11 @@ impl Locale {
             "sk" => Some(Self::Sk),
             "sr" => Some(Self::Sr),
             "tl" | "fil" => Some(Self::Tl),
+            "ca" => Some(Self::Ca),
+            "hr" => Some(Self::Hr),
+            "et" => Some(Self::Et),
+            "lv" => Some(Self::Lv),
+            "lt" => Some(Self::Lt),
             _ => None,
         }
     }
@@ -154,6 +169,11 @@ impl Locale {
             Self::Sk => "sk",
             Self::Sr => "sr",
             Self::Tl => "tl",
+            Self::Ca => "ca",
+            Self::Hr => "hr",
+            Self::Et => "et",
+            Self::Lv => "lv",
+            Self::Lt => "lt",
         }
     }
 
@@ -197,6 +217,11 @@ impl Locale {
             Self::Sk => "Sloven\u{010d}ina",
             Self::Sr => "\u{0421}\u{0440}\u{043f}\u{0441}\u{043a}\u{0438}",
             Self::Tl => "Filipino",
+            Self::Ca => "Català",
+            Self::Hr => "Hrvatski",
+            Self::Et => "Eesti",
+            Self::Lv => "Latviešu",
+            Self::Lt => "Lietuvių",
         }
     }
 
@@ -205,13 +230,18 @@ impl Locale {
         &[
             Self::Id, // Bahasa Indonesia
             Self::Ms, // Bahasa Melayu
+            Self::Ca, // Català
             Self::Cs, // Čeština
             Self::Da, // Dansk
             Self::De, // Deutsch
+            Self::Et, // Eesti
             Self::En, // English
             Self::Es, // Español
             Self::Fr, // Français
+            Self::Hr, // Hrvatski
             Self::It, // Italiano
+            Self::Lv, // Latviešu
+            Self::Lt, // Lietuvių
             Self::Hu, // Magyar
             Self::Nl, // Nederlands
             Self::No, // Norsk
@@ -245,6 +275,9 @@ impl Locale {
     pub fn detect_from_windows() -> Self {
         use windows::Win32::Globalization::GetUserDefaultUILanguage;
         let lang_id = unsafe { GetUserDefaultUILanguage() };
+        if lang_id == 0x041A {
+            return Self::Hr; // Croatian (shares primary LANGID with Serbian)
+        }
         // Primary language ID is the low 10 bits
         let primary = lang_id & 0x3FF;
         match primary {
@@ -282,6 +315,10 @@ impl Locale {
             0x1B => Self::Sk, // Slovak
             0x1A => Self::Sr, // Serbian
             0x64 => Self::Tl, // Filipino
+            0x03 => Self::Ca, // Catalan
+            0x25 => Self::Et, // Estonian
+            0x26 => Self::Lv, // Latvian
+            0x27 => Self::Lt, // Lithuanian
             _ => Self::En,
         }
     }
@@ -332,6 +369,11 @@ impl I18n {
             Locale::Sk => sk::strings(),
             Locale::Sr => sr::strings(),
             Locale::Tl => tl::strings(),
+            Locale::Ca => ca::strings(),
+            Locale::Hr => hr::strings(),
+            Locale::Et => et::strings(),
+            Locale::Lv => lv::strings(),
+            Locale::Lt => lt::strings(),
         };
         let fallback = en::strings();
         Self {
@@ -492,5 +534,19 @@ mod tests {
         let i18n = I18n::new(Locale::Uk);
         assert_eq!(i18n.t("Plan"), "План");
         assert_eq!(i18n.t("Pro"), "Pro"); // same in all languages
+    }
+
+    #[test]
+    fn test_new_locales_have_full_key_coverage() {
+        let english = en::strings();
+        for locale in [Locale::Ca, Locale::Hr, Locale::Et, Locale::Lv, Locale::Lt] {
+            let localized = I18n::new(locale);
+            assert_eq!(localized.strings.len(), english.len());
+            assert!(english
+                .keys()
+                .all(|key| localized.strings.contains_key(key)));
+            assert_ne!(localized.t("Settings"), "Settings");
+        }
+        assert_eq!(Locale::all().len(), 40);
     }
 }

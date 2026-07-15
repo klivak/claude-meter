@@ -40,11 +40,11 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Install Claude Code \u{2192}",
     );
     m.insert(
-        "openai_no_api",
-        "OpenAI does not provide an API to track ChatGPT subscription usage programmatically.",
+        "codex_no_api",
+        "OpenAI does not provide a public API to track Codex subscription usage programmatically.",
     );
     m.insert("Check your usage manually:", "Check your usage manually:");
-    m.insert("Open ChatGPT Usage \u{2192}", "Open ChatGPT Usage \u{2192}");
+    m.insert("Open Codex Usage \u{2192}", "Open Codex Usage \u{2192}");
     m.insert("Refresh Now", "Refresh Now");
     m.insert("Open Dashboard", "Open Dashboard");
     m.insert("Export History (CSV)", "Export History (CSV)");
@@ -69,7 +69,13 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Dark", "Dark");
     m.insert("Light", "Light");
     m.insert("Auto", "Auto");
-    m.insert("Show ChatGPT section", "Show ChatGPT section");
+    m.insert("Midnight", "Midnight");
+    m.insert("Sunset", "Sunset");
+    m.insert("Show Codex section", "Show Codex section");
+    m.insert(
+        "Reopen the tray popup to refresh",
+        "Reopen the tray popup to refresh",
+    );
     m.insert("Enabled", "Enabled");
     m.insert("Sound", "Sound");
     m.insert("Thresholds", "Thresholds");
@@ -81,7 +87,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Open Claude.ai \u{2192}", "Open Claude.ai \u{2192}");
     m.insert("ClaudeMeter", "ClaudeMeter");
     m.insert("CLAUDE", "CLAUDE");
-    m.insert("CHATGPT / CODEX", "CHATGPT / CODEX");
     m.insert("CODEX", "CODEX");
     m.insert("Plan", "Plan");
     m.insert("Usage link icons", "Usage link icons");

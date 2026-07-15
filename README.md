@@ -26,7 +26,18 @@ See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening
 
 <br>
 
-<img src="screenshots/main.png" alt="ClaudeMeter dashboard showing Claude AI usage bars and reset timers" width="360"> <img src="screenshots/main2.png" alt="ClaudeMeter light theme with usage history chart" width="360">
+<img src="screenshots/main.png" alt="ClaudeMeter Light theme dashboard with Claude and Codex usage" width="360"> <img src="screenshots/main2.png" alt="ClaudeMeter Dark theme dashboard with Claude and Codex usage" width="360">
+
+### 📊 Project Pulse
+
+[![README views](https://hits.sh/github.com/klivak/claude-meter.svg?view=today-total&style=for-the-badge&label=views&color=ff5f57&labelColor=20232a&logo=github)](https://hits.sh/github.com/klivak/claude-meter/)
+[![GitHub stars](https://img.shields.io/github/stars/klivak/claude-meter?style=for-the-badge&logo=github&color=f5b942&labelColor=20232a)](https://github.com/klivak/claude-meter/stargazers)
+[![Total downloads](https://img.shields.io/github/downloads/klivak/claude-meter/total?style=for-the-badge&logo=github&color=2ea44f&labelColor=20232a)](https://github.com/klivak/claude-meter/releases)
+[![GitHub forks](https://img.shields.io/github/forks/klivak/claude-meter?style=for-the-badge&logo=github&color=5b8def&labelColor=20232a)](https://github.com/klivak/claude-meter/forks)
+[![Open issues](https://img.shields.io/github/issues/klivak/claude-meter?style=for-the-badge&logo=github&color=a970ff&labelColor=20232a)](https://github.com/klivak/claude-meter/issues)
+[![Languages](https://img.shields.io/badge/languages-40-00bfa5?style=for-the-badge&labelColor=20232a)](#-languages-40)
+
+<sub>The view counter is privacy-friendly and approximate: it counts badge requests rather than unique visitors, so caching, bots, and repeat visits may affect the total. Click it to open daily, weekly, and monthly analytics.</sub>
 
 </div>
 
@@ -108,9 +119,9 @@ On macOS, use the menu bar item → **Enable Autostart**. The app uses a LaunchA
 | Plan badge | Color-coded badge (Pro/Max/5X/20X) with automatic detection |
 | Future metrics | Any new API fields are auto-displayed |
 
-### ChatGPT / Codex (Optional)
+### Codex (Optional)
 
-OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription usage. Instead, ClaudeMeter reads your local `~/.codex` logs to show **live Codex (OpenAI) subscription usage** directly in the dashboard — a "CODEX · Plan" header with rolling-window progress bars, rendered in a distinct teal hue so they read as a different provider from Claude's bars. If no local Codex logs are found, the panel falls back to a direct link to your ChatGPT usage page. Enable the panel in Settings.
+OpenAI does not provide a public API for checking Codex subscription usage. Instead, ClaudeMeter reads your local `~/.codex` logs to show **live Codex usage** directly in the dashboard — a "CODEX · Plan" header with rolling-window progress bars, rendered in a distinct teal hue so they read as a different provider from Claude's bars. Codex also appears in compact mode, where every row is prefixed with `CLAUDE ·` or `CODEX ·` for clarity. If no local Codex logs are found, the panel falls back to a direct Codex usage link. Enable the panel in Settings; a small hint reminds you to reopen the tray popup so its size refreshes.
 
 ### System Tray
 
@@ -121,6 +132,7 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 - **📋 Context menu** — right-click for refresh, export CSV, settings, links
 - **📊 Dashboard** — left-click to open the detailed popup
 - **⚠ Blink on critical** — tray icon blinks when usage exceeds 90%
+- **Branded application icon** — the executable, File Explorer entry, and Windows balloon notifications use the ClaudeMeter usage-gauge mark
 
 <img src="screenshots/hover.png" alt="ClaudeMeter system tray tooltip showing Claude usage percentages and reset times" width="280">
 
@@ -140,7 +152,8 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 - **Easing animations** — smooth ease-out progress bars with cascading staggered appearance (~60fps)
 - **Fade-in animation** — popup appears with accelerating opacity transition
 - **Slide animation** — smooth horizontal slide between Dashboard and Settings views
-- **24-hour / 7-day / 30-day chart** — usage history with toggleable time ranges, session reset lines, and hover tooltips
+- **24-hour / 7-day / 30-day chart** — usage history with toggleable time ranges, evenly spaced 0–100% Y-axis labels, session reset lines, and hover tooltips
+- **Provider-aware compact mode** — compact rows include both Claude and enabled Codex limits with explicit provider prefixes
 - **Clickable plan name** — click the plan name in the header to open claude.ai/settings/usage
 - **D2D-rendered UI** — custom-drawn gear icon, close button, and checkboxes using Direct2D primitives
 - **Keyboard shortcuts** — ESC to close, F5 to refresh
@@ -156,11 +169,27 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 
 - **Dark** — easy on the eyes (Catppuccin Mocha palette)
 - **Light** — for bright environments (Catppuccin Latte palette)
+- **Midnight** — deep navy surfaces with indigo, teal, and rose accents
+- **Sunset** — warm charcoal surfaces with coral and peach accents
 - **Auto** (default) — follows your Windows system theme automatically
+- **Extensible palettes** — surfaces, accents, thresholds, gradients, DWM chrome, and the mini widget stay synchronized per theme
+
+<table>
+  <tr>
+    <td align="center"><strong>Light</strong><br><img src="screenshots/main.png" alt="ClaudeMeter Light theme" width="260"></td>
+    <td align="center"><strong>Dark</strong><br><img src="screenshots/main2.png" alt="ClaudeMeter Dark theme" width="260"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Sunset</strong><br><img src="screenshots/theme-sunset.png" alt="ClaudeMeter Sunset theme" width="260"></td>
+    <td align="center"><strong>Midnight</strong><br><img src="screenshots/theme-midnight.png" alt="ClaudeMeter Midnight theme" width="260"></td>
+  </tr>
+</table>
+
+#### Settings
 
 <img src="screenshots/settings.png" alt="ClaudeMeter settings — theme, language, notifications, icon style" width="360">
 
-### 🌐 Languages (35)
+### 🌐 Languages (40)
 
 - 🇬🇧 English (default)
 - 🇺🇦 Українська
@@ -197,11 +226,16 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 - 🇮🇷 فارسی
 - 🇸🇰 Slovenčina
 - 🇷🇸 Српски
+- 🇪🇸 Català
+- 🇭🇷 Hrvatski
+- 🇪🇪 Eesti
+- 🇱🇻 Latviešu
+- 🇱🇹 Lietuvių
 
 ### 🧩 Mini Widget
 
 - **Floating PiP window** — always-on-top 52x28px window showing current usage %
-- **Color-coded** — green/yellow/red background matching usage level
+- **Theme-aware colors** — threshold colors follow the selected theme palette and custom color overrides
 - **Draggable** — drag anywhere on screen
 - **Click to open** — click the widget to open the full dashboard
 - **Disabled by default** — enable in Settings → "Show widget"
@@ -224,6 +258,7 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 - **Informative alerts** — shows metric name, current %, exceeded threshold, and reset countdown
 - **Sound alerts** — system notification sound (configurable on/off)
 - **Startup notification** — confirmation that ClaudeMeter is running in the tray
+- **Branded notification icon** — Windows balloons use the embedded ClaudeMeter app icon instead of a generic placeholder
 - **Deduplication** — won't spam; resets when usage drops below threshold
 
 <img src="screenshots/notification.png" alt="ClaudeMeter Windows toast notification warning about Claude usage threshold" width="360">
@@ -294,10 +329,10 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 | `notifications.enabled` | `true` | — | Enable/disable toast notifications |
 | `notifications.thresholds` | `[50,75,90]` | 1–100 | Usage % levels that trigger alerts |
 | `notifications.sound` | `true` | — | Play system sound with notifications |
-| `theme` | `"auto"` | auto/dark/light | Color theme |
-| `language` | `"auto"` | auto/en/uk/.../zh | UI language (35 languages) |
+| `theme` | `"auto"` | auto/dark/light/midnight/sunset | Color theme |
+| `language` | `"auto"` | auto/en/uk/.../lt | UI language (40 languages) |
 | `compact_mode` | `false` | — | Compact dashboard layout |
-| `show_chatgpt_section` | `false` | — | Show ChatGPT quick-link panel |
+| `show_chatgpt_section` | `false` | — | Show the Codex usage panel (legacy config key retained for compatibility) |
 | `autostart` | `false` | — | Start with Windows or macOS LaunchAgent |
 | `show_widget` | `false` | — | Show floating mini-widget |
 | `check_updates` | `true` | — | Check for updates on startup |
@@ -394,8 +429,8 @@ A: Typically **3–8 MB**. Built in Rust with native Win32 API — no Electron, 
 **Q: Is it safe? Does it send my data anywhere?**
 A: ClaudeMeter is fully open source. It only communicates with `api.anthropic.com` to fetch YOUR usage data using YOUR existing OAuth token. Zero telemetry. Every release binary is automatically scanned by [VirusTotal](https://www.virustotal.com/) (60+ antivirus engines) — check the scan link in each [release](https://github.com/klivak/claudemeter/releases/latest).
 
-**Q: Why isn't ChatGPT tracking automatic?**
-A: OpenAI deliberately does not expose ChatGPT subscription usage via any public API.
+**Q: How does Codex tracking work?**
+A: ClaudeMeter reads Codex CLI session logs from `~/.codex`; OpenAI does not expose subscription usage through a public API.
 
 **Q: How do I check my Claude usage limits?**
 A: Just run ClaudeMeter — it reads your Claude Code OAuth token and shows all your limits (5-hour session, weekly cap, Sonnet/Opus quotas) in a system tray popup. No manual checking needed.
@@ -416,7 +451,7 @@ A: Yes. Starting with v4.0.1, ClaudeMeter ships a native AppKit menu bar app wit
 A: On macOS, the menu shows freshness state such as Live, seconds/minutes old, cached/no data, refreshing, or API error. On Windows, use the tray refresh/dashboard behavior and settings to force a refresh.
 
 **Q: Does it support multiple languages?**
-A: Yes — 35 languages: English, Ukrainian, Spanish, German, French, Portuguese, Italian, Hindi, Turkish, Dutch, Polish, Vietnamese, Russian, Thai, Indonesian, Swedish, Czech, Japanese, Korean, Chinese (Simplified), Bulgarian, Greek, Hebrew, Malay, Norwegian, Arabic, Romanian, Danish, Finnish, Hungarian, Filipino, Bengali, Persian, Slovak, and Serbian.
+A: Yes — 40 languages: English, Ukrainian, Spanish, German, French, Portuguese, Italian, Hindi, Turkish, Dutch, Polish, Vietnamese, Russian, Thai, Indonesian, Swedish, Czech, Japanese, Korean, Chinese (Simplified), Bulgarian, Greek, Hebrew, Malay, Norwegian, Arabic, Romanian, Danish, Finnish, Hungarian, Filipino, Bengali, Persian, Slovak, Serbian, Catalan, Croatian, Estonian, Latvian, and Lithuanian.
 
 ## 📄 License
 

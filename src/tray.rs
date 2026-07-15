@@ -8,8 +8,8 @@ use windows::Win32::Graphics::Gdi::{
     DT_VCENTER, FF_DONTCARE, FW_BOLD, OUT_DEFAULT_PRECIS, PROOF_QUALITY, TRANSPARENT,
 };
 use windows::Win32::UI::Shell::{
-    Shell_NotifyIconW, NIF_ICON, NIF_INFO, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NIM_MODIFY,
-    NOTIFYICONDATAW,
+    Shell_NotifyIconW, NIF_ICON, NIF_INFO, NIF_MESSAGE, NIF_TIP, NIIF_USER, NIM_ADD, NIM_DELETE,
+    NIM_MODIFY, NOTIFYICONDATAW,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateIconIndirect, DestroyIcon, LoadIconW, LoadImageW, HICON, ICONINFO, IDI_APPLICATION,
@@ -24,7 +24,7 @@ pub const TRAY_ID: u32 = 1;
 pub const IDM_REFRESH: u32 = 1001;
 pub const IDM_OPEN_DASHBOARD: u32 = 1002;
 pub const IDM_OPEN_CLAUDE: u32 = 1003;
-pub const IDM_OPEN_CHATGPT: u32 = 1004;
+pub const IDM_OPEN_CODEX: u32 = 1004;
 pub const IDM_SETTINGS: u32 = 1005;
 pub const IDM_AUTOSTART: u32 = 1006;
 pub const IDM_ABOUT: u32 = 1007;
@@ -76,16 +76,18 @@ pub struct TrayIcon {
     icon_yellow: HICON,
     icon_red: HICON,
     icon_gray: HICON,
+    icon_app: HICON,
     dynamic_icon: Option<HICON>,
 }
 
 // Resource IDs for embedded tray icons (must match build.rs)
+const ICON_APP_ID: u16 = 100;
 const ICON_GREEN_ID: u16 = 101;
 const ICON_YELLOW_ID: u16 = 102;
 const ICON_RED_ID: u16 = 103;
 const ICON_GRAY_ID: u16 = 104;
 
-fn load_icon_from_resource(resource_id: u16) -> Result<HICON, String> {
+fn load_icon_from_resource(resource_id: u16, size: i32) -> Result<HICON, String> {
     unsafe {
         let hinstance = windows::Win32::System::LibraryLoader::GetModuleHandleW(None)
             .map_err(|e| format!("GetModuleHandleW: {e}"))?;
@@ -93,8 +95,8 @@ fn load_icon_from_resource(resource_id: u16) -> Result<HICON, String> {
             hinstance,
             windows::core::PCWSTR(resource_id as usize as *const u16),
             IMAGE_ICON,
-            16,
-            16,
+            size,
+            size,
             LR_DEFAULTSIZE | LR_SHARED,
         )
         .map_err(|e| format!("Failed to load icon resource {resource_id}: {e}"))?;
@@ -610,10 +612,11 @@ impl TrayIcon {
     pub fn new(hwnd: HWND) -> Result<Self, String> {
         let fallback = unsafe { LoadIconW(None, IDI_APPLICATION).map_err(|e| e.to_string())? };
 
-        let icon_green = load_icon_from_resource(ICON_GREEN_ID).unwrap_or(fallback);
-        let icon_yellow = load_icon_from_resource(ICON_YELLOW_ID).unwrap_or(fallback);
-        let icon_red = load_icon_from_resource(ICON_RED_ID).unwrap_or(fallback);
-        let icon_gray = load_icon_from_resource(ICON_GRAY_ID).unwrap_or(fallback);
+        let icon_green = load_icon_from_resource(ICON_GREEN_ID, 16).unwrap_or(fallback);
+        let icon_yellow = load_icon_from_resource(ICON_YELLOW_ID, 16).unwrap_or(fallback);
+        let icon_red = load_icon_from_resource(ICON_RED_ID, 16).unwrap_or(fallback);
+        let icon_gray = load_icon_from_resource(ICON_GRAY_ID, 16).unwrap_or(fallback);
+        let icon_app = load_icon_from_resource(ICON_APP_ID, 32).unwrap_or(fallback);
 
         let tray = Self {
             hwnd,
@@ -622,6 +625,7 @@ impl TrayIcon {
             icon_yellow,
             icon_red,
             icon_gray,
+            icon_app,
             dynamic_icon: None,
         };
 
@@ -747,6 +751,8 @@ impl TrayIcon {
     pub fn show_balloon(&self, title: &str, body: &str) {
         let mut nid = self.make_nid();
         nid.uFlags = NIF_INFO;
+        nid.dwInfoFlags = NIIF_USER;
+        nid.hBalloonIcon = self.icon_app;
 
         let title_wide: Vec<u16> = title.encode_utf16().chain(std::iter::once(0)).collect();
         let copy_len = title_wide.len().min(63);
@@ -845,7 +851,7 @@ pub fn build_tooltip_full(
     }
 
     if show_chatgpt {
-        lines.push("ChatGPT: click to open usage".to_string());
+        lines.push("Codex: click to open usage".to_string());
     }
 
     lines.join("\n")

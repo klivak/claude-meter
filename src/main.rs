@@ -15,7 +15,6 @@ mod i18n;
 mod notifications;
 #[cfg(windows)]
 mod popup;
-#[cfg(windows)]
 mod theme;
 #[cfg(windows)]
 mod tray;

@@ -5,6 +5,28 @@ All notable changes to ClaudeMeter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [5.1.0] - 2026-07-15
+
+### Added
+- **Midnight and Sunset themes** — added two complete palettes with theme-specific surfaces, accents, thresholds, and progress gradients.
+- **Chart percentage scale** — added a dedicated 0–100% Y-axis panel and more breathing room above the history plot.
+- **Five new languages** — added complete Catalan, Croatian, Estonian, Latvian, and Lithuanian localizations, bringing the total to 40 languages.
+
+### Changed
+- **Codex naming** — renamed the visible ChatGPT section, menu action, tooltip, documentation, and empty-state copy to Codex while retaining legacy config keys for compatibility.
+- **Extensible theme registry** — centralized selectable theme metadata and moved progress gradients into each palette so future themes require fewer UI changes.
+- **README feature gallery** — refreshed the main and Settings screenshots, added a four-theme gallery, and documented all current dashboard, Codex, icon, notification, and theme behavior.
+- **README Project Pulse** — added live views, stars, downloads, forks, issues, and language-count badges, with a privacy-friendly traffic dashboard behind the views counter.
+
+### Fixed
+- **Codex in compact mode** — compact dashboards now include enabled Codex rolling-window usage rows with their distinct teal styling.
+- **Codex activation hint** — settings now explains that the tray popup should be reopened after enabling the Codex section.
+- **Compact provider labels** — Claude and Codex rows are now explicitly labeled when both providers are visible in compact mode.
+- **Chart axis alignment** — percentage labels now use evenly spaced centers with symmetric top and bottom padding.
+- **Balloon notification icon** — Windows notifications now receive the embedded ClaudeMeter app icon through `NIIF_USER` and `hBalloonIcon`.
+
 ## [5.0.3] - 2026-07-15
 
 ### Changed

@@ -459,11 +459,17 @@ impl PopupRenderer {
         };
 
         if compact {
-            let metric_count = usage
+            let claude_metric_count = usage
                 .as_ref()
                 .map(|u| u.all_metrics().len() - extra_hidden(u))
                 .unwrap_or(1)
                 .max(1) as i32;
+            let codex_metric_count = if show_chatgpt {
+                codex_windows.max(1)
+            } else {
+                0
+            };
+            let metric_count = claude_metric_count + codex_metric_count;
             return self.scale(
                 HEADER_HEIGHT
                     + SEPARATOR_H
@@ -528,7 +534,7 @@ impl PopupRenderer {
         }
 
         h += SEPARATOR_H + PADDING;
-        h += 22 + 70 + 4 + 14;
+        h += 22 + 8 + 82 + 4 + 14;
         h += PADDING;
         h += SEPARATOR_H + FOOTER_H;
 
@@ -599,7 +605,18 @@ impl PopupRenderer {
             y += self.sf(PADDING);
 
             if compact {
-                y = self.draw_compact_metrics(&rt, d2d, w, y, usage, colors, hide_extra_usage);
+                y = self.draw_compact_metrics(
+                    &rt,
+                    d2d,
+                    w,
+                    y,
+                    usage,
+                    colors,
+                    i18n,
+                    hide_extra_usage,
+                    show_chatgpt,
+                    codex_status,
+                );
             } else {
                 match usage {
                     None => {
@@ -677,7 +694,7 @@ impl PopupRenderer {
                 if show_chatgpt {
                     y = self.draw_separator(&rt, w, y, colors);
                     y += self.sf(8);
-                    y = self.draw_chatgpt_section(
+                    y = self.draw_codex_section(
                         &rt,
                         d2d,
                         w,
@@ -1174,8 +1191,6 @@ impl PopupRenderer {
             .max(0.0)
             .min(content_w);
         if fill_w > 0.5 {
-            use crate::ui::colors::{GRADIENT_HIGH, GRADIENT_LOW, GRADIENT_MID};
-
             let fill_rect = D2D1_ROUNDED_RECT {
                 rect: D2D_RECT_F {
                     left: pad,
@@ -1229,15 +1244,15 @@ impl PopupRenderer {
                 let stops = [
                     D2D1_GRADIENT_STOP {
                         position: 0.0,
-                        color: GRADIENT_LOW,
+                        color: colors.gradient_low,
                     },
                     D2D1_GRADIENT_STOP {
                         position: 0.5,
-                        color: GRADIENT_MID,
+                        color: colors.gradient_mid,
                     },
                     D2D1_GRADIENT_STOP {
                         position: 1.0,
-                        color: GRADIENT_HIGH,
+                        color: colors.gradient_high,
                     },
                 ];
                 if let Ok(stop_coll) =
@@ -1449,7 +1464,6 @@ impl PopupRenderer {
 
         let fill_w = (content_w * util as f32 / 100.0).max(0.0).min(content_w);
         if fill_w > 0.5 {
-            use crate::ui::colors::{GRADIENT_HIGH, GRADIENT_LOW, GRADIENT_MID};
             let fill_rect = D2D1_ROUNDED_RECT {
                 rect: D2D_RECT_F {
                     left: pad,
@@ -1463,15 +1477,15 @@ impl PopupRenderer {
             let stops = [
                 D2D1_GRADIENT_STOP {
                     position: 0.0,
-                    color: GRADIENT_LOW,
+                    color: colors.gradient_low,
                 },
                 D2D1_GRADIENT_STOP {
                     position: 0.5,
-                    color: GRADIENT_MID,
+                    color: colors.gradient_mid,
                 },
                 D2D1_GRADIENT_STOP {
                     position: 1.0,
-                    color: GRADIENT_HIGH,
+                    color: colors.gradient_high,
                 },
             ];
             if let Ok(stop_coll) =
@@ -1847,22 +1861,59 @@ impl PopupRenderer {
         mut y: f32,
         usage: &Option<UsageResponse>,
         colors: &ThemeColors,
+        i18n: &I18n,
         hide_extra_usage: bool,
+        show_codex: bool,
+        codex_status: Option<&crate::providers::codex::CodexStatus>,
     ) -> f32 {
         let pad = self.sf(PADDING);
         let content_w = w - pad * 2.0;
 
-        let metrics: Vec<(String, f64)> = match usage {
+        let mut metrics: Vec<(String, f64, Option<ColorRef>)> = match usage {
             Some(u) => u
                 .all_metrics()
                 .iter()
                 .filter(|(k, _)| !hide_extra_usage || k != "extra_usage")
-                .map(|(k, m)| (format_metric_name(k), m.utilization))
+                .map(|(k, m)| {
+                    let metric_name = format_metric_name(k);
+                    let label = if show_codex {
+                        format!("{} · {}", i18n.t("CLAUDE"), metric_name)
+                    } else {
+                        metric_name
+                    };
+                    (label, m.utilization, None)
+                })
                 .collect(),
-            None => vec![("No data".to_string(), 0.0)],
+            None => vec![(i18n.t("No data").to_string(), 0.0, None)],
         };
 
-        for (name, utilization) in &metrics {
+        if show_codex {
+            let codex_teal = crate::ui::colors::rgb(20, 184, 166);
+            if let Some(status) = codex_status {
+                let bars: [(&str, &Option<crate::providers::codex::CodexRateLimit>); 2] = [
+                    ("five_hour", &status.five_hour),
+                    ("seven_day", &status.weekly),
+                ];
+                for (key, rate_limit) in bars {
+                    if let Some(rate_limit) = rate_limit {
+                        metrics.push((
+                            format!("{} · {}", i18n.t("CODEX"), format_metric_name(key)),
+                            rate_limit.used_percent,
+                            Some(codex_teal),
+                        ));
+                    }
+                }
+            }
+            if codex_status.map_or(true, |status| status.window_count() == 0) {
+                metrics.push((
+                    format!("{} · {}", i18n.t("CODEX"), i18n.t("No data")),
+                    0.0,
+                    Some(codex_teal),
+                ));
+            }
+        }
+
+        for (name, utilization, override_color) in &metrics {
             // Label
             let label_text = wide(name);
             let label_format = d2d.get_text_format(11, false, 0, 1).clone();
@@ -1887,7 +1938,9 @@ impl PopupRenderer {
             let pct = format!("{:.0}%", utilization);
             let pct_text = wide(&pct);
             let pct_format = d2d.get_text_format(11, false, 1, 1).clone();
-            let pct_color = colorref_to_d2d(colors.progress_color(*utilization));
+            let pct_color = colorref_to_d2d(
+                override_color.unwrap_or_else(|| colors.progress_color(*utilization)),
+            );
             let pct_brush = rt
                 .CreateSolidColorBrush(&pct_color as *const _, None)
                 .unwrap();
@@ -1924,7 +1977,9 @@ impl PopupRenderer {
                 .max(0.0)
                 .min(content_w);
             if fill_w > 0.5 {
-                let fill_color = colorref_to_d2d(colors.progress_color(*utilization));
+                let fill_color = colorref_to_d2d(
+                    override_color.unwrap_or_else(|| colors.progress_color(*utilization)),
+                );
                 let fill_brush = rt
                     .CreateSolidColorBrush(&fill_color as *const _, None)
                     .unwrap();
@@ -2266,7 +2321,7 @@ impl PopupRenderer {
     }
 
     #[allow(clippy::too_many_arguments)]
-    unsafe fn draw_chatgpt_section(
+    unsafe fn draw_codex_section(
         &self,
         rt: &ID2D1HwndRenderTarget,
         d2d: &mut D2DResources,
@@ -2376,7 +2431,7 @@ impl PopupRenderer {
                     },
                     &badge_brush,
                 );
-                // Plan badge is clickable → opens Codex/ChatGPT usage.
+                // Plan badge is clickable → opens Codex usage.
                 *codex_plan_rect = to_win32_rect(&badge_rect);
                 let white = D2D1_COLOR_F {
                     r: 1.0,
@@ -2448,7 +2503,7 @@ impl PopupRenderer {
             }
         } else {
             // No local Codex logs found — section header + explanation + icon.
-            let header_str = format!("\u{25CE} {}", i18n.t("CHATGPT / CODEX"));
+            let header_str = format!("\u{25CE} {}", i18n.t("CODEX"));
             let header_text = wide(&header_str);
             let header_format = d2d.get_text_format(12, true, 0, 1).clone();
             let header_brush = rt
@@ -2485,7 +2540,7 @@ impl PopupRenderer {
             }
             y += self.sf(24);
 
-            let info = format!("\u{24D8} {}", i18n.t("openai_no_api"));
+            let info = format!("\u{24D8} {}", i18n.t("codex_no_api"));
             let info_text = wide(&info);
             let info_format = d2d.get_text_format_wrap(11, false);
             let info_brush = rt
@@ -2625,16 +2680,24 @@ impl PopupRenderer {
         };
 
         y += self.sf(22);
+        y += self.sf(8);
 
-        let chart_h = self.sf(70);
-        let chart_w = w - pad * 2.0;
+        let chart_h = self.sf(82);
+        let plot_top = y + self.sf(8);
+        let plot_h = chart_h - self.sf(16);
+        let plot_bottom = plot_top + plot_h;
+        let axis_w = self.sf(34);
+        let chart_left = pad;
+        let plot_left = chart_left + axis_w;
+        let plot_w = w - pad - plot_left;
+        let chart_w = axis_w + plot_w;
 
         // Output chart area for hit-testing
         *chart_rect_out = RECT {
-            left: pad as i32,
-            top: y as i32,
-            right: (pad + chart_w) as i32,
-            bottom: (y + chart_h) as i32,
+            left: plot_left as i32,
+            top: plot_top as i32,
+            right: (plot_left + plot_w) as i32,
+            bottom: plot_bottom as i32,
         };
         *chart_bar_count_out = data.len();
 
@@ -2644,24 +2707,55 @@ impl PopupRenderer {
             .unwrap();
         rt.FillRectangle(
             &D2D_RECT_F {
-                left: pad,
+                left: chart_left,
                 top: y,
-                right: pad + chart_w,
+                right: chart_left + chart_w,
                 bottom: y + chart_h,
             },
             &bg_brush,
+        );
+
+        // Dedicated Y-axis panel keeps the percentage scale readable without
+        // competing with bars or reset markers.
+        let axis_bg = rt
+            .CreateSolidColorBrush(&colorref_to_d2d(colors.background) as *const _, None)
+            .unwrap();
+        rt.FillRectangle(
+            &D2D_RECT_F {
+                left: chart_left,
+                top: y,
+                right: plot_left,
+                bottom: y + chart_h,
+            },
+            &axis_bg,
         );
 
         // Grid lines at 25%, 50%, 75%
         let grid_brush = rt
             .CreateSolidColorBrush(&colorref_to_d2d(colors.separator) as *const _, None)
             .unwrap();
+        rt.DrawLine(
+            D2D_POINT_2F {
+                x: plot_left,
+                y: plot_top,
+            },
+            D2D_POINT_2F {
+                x: plot_left,
+                y: plot_bottom,
+            },
+            &grid_brush,
+            1.0,
+            None,
+        );
         for pct in [25, 50, 75] {
-            let gy = y + chart_h - (chart_h * pct as f32 / 100.0);
+            let gy = plot_bottom - (plot_h * pct as f32 / 100.0);
             rt.DrawLine(
-                D2D_POINT_2F { x: pad, y: gy },
                 D2D_POINT_2F {
-                    x: pad + chart_w,
+                    x: plot_left,
+                    y: gy,
+                },
+                D2D_POINT_2F {
+                    x: plot_left + plot_w,
                     y: gy,
                 },
                 &grid_brush,
@@ -2670,13 +2764,36 @@ impl PopupRenderer {
             );
         }
 
+        let axis_format = d2d.get_text_format(8, false, 1, 1).clone();
+        let axis_brush = rt
+            .CreateSolidColorBrush(&colorref_to_d2d(colors.text_secondary) as *const _, None)
+            .unwrap();
+        for pct in [100, 75, 50, 25, 0] {
+            let gy = plot_bottom - (plot_h * pct as f32 / 100.0);
+            let label_top = gy - self.sf(7);
+            let label = wide(&format!("{pct}%"));
+            rt.DrawText(
+                &label[..label.len() - 1],
+                &axis_format,
+                &D2D_RECT_F {
+                    left: chart_left,
+                    top: label_top,
+                    right: plot_left - self.sf(5),
+                    bottom: label_top + self.sf(14),
+                },
+                &axis_brush,
+                D2D1_DRAW_TEXT_OPTIONS_NONE,
+                DWRITE_MEASURING_MODE_NATURAL,
+            );
+        }
+
         if !data.is_empty() {
-            let bar_w = (chart_w / data.len() as f32).max(2.0);
+            let bar_w = (plot_w / data.len() as f32).max(2.0);
             let gap = 1.0f32.max(bar_w / 6.0);
             for (i, &val) in data.iter().enumerate() {
-                let bar_h_px = (val / 100.0) * chart_h as f64;
+                let bar_h_px = (val / 100.0) * plot_h as f64;
                 if bar_h_px > 0.5 {
-                    let bar_x = pad + i as f32 * bar_w;
+                    let bar_x = plot_left + i as f32 * bar_w;
                     let color = if val >= 80.0 {
                         colorref_to_d2d(colors.red)
                     } else if val >= 50.0 {
@@ -2688,9 +2805,9 @@ impl PopupRenderer {
                     rt.FillRectangle(
                         &D2D_RECT_F {
                             left: bar_x + gap,
-                            top: y + chart_h - bar_h_px as f32,
+                            top: plot_bottom - bar_h_px as f32,
                             right: bar_x + bar_w - gap,
-                            bottom: y + chart_h,
+                            bottom: plot_bottom,
                         },
                         &bar_brush,
                     );
@@ -2703,14 +2820,14 @@ impl PopupRenderer {
             let reset_brush = rt
                 .CreateSolidColorBrush(&colorref_to_d2d(colors.accent) as *const _, None)
                 .unwrap();
-            let chart_top = y;
+            let chart_top = plot_top;
             for &hours_ago in reset_lines {
-                let rx = pad + chart_w * (1.0 - hours_ago as f32 / 24.0);
-                if rx >= pad && rx <= pad + chart_w {
+                let rx = plot_left + plot_w * (1.0 - hours_ago as f32 / 24.0);
+                if rx >= plot_left && rx <= plot_left + plot_w {
                     let dash = 3.0f32;
                     let mut dy = chart_top;
-                    while dy < chart_top + chart_h {
-                        let end = (dy + dash).min(chart_top + chart_h);
+                    while dy < plot_bottom {
+                        let end = (dy + dash).min(plot_bottom);
                         rt.DrawLine(
                             D2D_POINT_2F { x: rx, y: dy },
                             D2D_POINT_2F { x: rx, y: end },
@@ -2729,8 +2846,8 @@ impl PopupRenderer {
             let idx = *idx;
             if idx < data.len() {
                 let val = data[idx];
-                let bar_w = (chart_w / data.len() as f32).max(2.0);
-                let bar_cx = pad + idx as f32 * bar_w + bar_w / 2.0;
+                let bar_w = (plot_w / data.len() as f32).max(2.0);
+                let bar_cx = plot_left + idx as f32 * bar_w + bar_w / 2.0;
                 let total_hours = match chart_mode {
                     1 => 168.0,
                     2 => 720.0,
@@ -2752,9 +2869,9 @@ impl PopupRenderer {
 
                 let tip_w = self.sf(100);
                 let tip_h = self.sf(22);
-                let tip_x = (bar_cx - tip_w / 2.0).clamp(pad, pad + chart_w - tip_w);
-                let bar_h_px = (val / 100.0) * chart_h as f64;
-                let tip_y = (y + chart_h - bar_h_px as f32 - tip_h - self.sf(4)).max(y - tip_h);
+                let tip_x = (bar_cx - tip_w / 2.0).clamp(plot_left, plot_left + plot_w - tip_w);
+                let bar_h_px = (val / 100.0) * plot_h as f64;
+                let tip_y = (plot_bottom - bar_h_px as f32 - tip_h - self.sf(4)).max(y - tip_h);
 
                 // Tooltip background
                 let tip_bg = rt
@@ -2806,7 +2923,7 @@ impl PopupRenderer {
             _ => &["24h", "18h", "12h", "6h", "now"],
         };
         for (i, label) in labels.iter().enumerate() {
-            let lx = pad + (i as f32 * chart_w / 4.0);
+            let lx = plot_left + (i as f32 * plot_w / 4.0);
             let text = wide(label);
             let format = d2d.get_text_format(9, false, 0, 0).clone();
             let brush = rt
@@ -3246,7 +3363,10 @@ pub unsafe fn draw_settings_panel(
     let rows: Vec<(String, Option<String>, Option<bool>)> = vec![
         (
             i18n.t("Theme").to_string(),
-            Some(i18n.t(&capitalize(&config.theme)).to_string()),
+            Some(
+                i18n.t(crate::theme::ThemeMode::from_str(&config.theme).label_key())
+                    .to_string(),
+            ),
             None,
         ),
         (i18n.t("Language").to_string(), Some(lang_display), None),
@@ -3256,7 +3376,7 @@ pub unsafe fn draw_settings_panel(
             Some(config.compact_mode),
         ),
         (
-            i18n.t("Show ChatGPT section").to_string(),
+            i18n.t("Show Codex section").to_string(),
             None,
             Some(config.show_chatgpt_section),
         ),
@@ -3344,6 +3464,7 @@ pub unsafe fn draw_settings_panel(
         };
 
         // Label (left)
+        let show_codex_hint = i == 3 && config.show_chatgpt_section;
         let label_text = wide(label);
         let label_format = d2d.get_text_format(12, false, 0, 1).clone();
         let label_brush = rt
@@ -3354,14 +3475,35 @@ pub unsafe fn draw_settings_panel(
             &label_format,
             &D2D_RECT_F {
                 left: pad,
-                top: y,
+                top: if show_codex_hint { y + 1.0 } else { y },
                 right: w / 2.0 + 40.0,
-                bottom: y + row_h,
+                bottom: if show_codex_hint { y + 21.0 } else { y + row_h },
             },
             &label_brush,
             D2D1_DRAW_TEXT_OPTIONS_NONE,
             DWRITE_MEASURING_MODE_NATURAL,
         );
+
+        if show_codex_hint {
+            let hint_text = wide(i18n.t("Reopen the tray popup to refresh"));
+            let hint_format = d2d.get_text_format(8, false, 0, 1).clone();
+            let hint_brush = rt
+                .CreateSolidColorBrush(&colorref_to_d2d(colors.text_secondary) as *const _, None)
+                .unwrap();
+            rt.DrawText(
+                &hint_text[..hint_text.len() - 1],
+                &hint_format,
+                &D2D_RECT_F {
+                    left: pad,
+                    top: y + 17.0,
+                    right: w - pad - 22.0,
+                    bottom: y + row_h - 1.0,
+                },
+                &hint_brush,
+                D2D1_DRAW_TEXT_OPTIONS_NONE,
+                DWRITE_MEASURING_MODE_NATURAL,
+            );
+        }
 
         // Value (right) — either text or D2D checkbox
         if let Some(checked) = bool_val {
@@ -3751,5 +3893,18 @@ mod tests {
         let t = std::f32::consts::TAU / num_teeth as f32;
         let pts = gear_outline_points(10.0, 10.0, 8.0, 5.0, num_teeth, t * 0.17, t * 0.30, t);
         assert!(pts[1].y < 10.0 && pts[2].y < 10.0);
+    }
+
+    #[test]
+    fn compact_height_reserves_rows_for_codex() {
+        let renderer = PopupRenderer { dpi_scale: 1.0 };
+        let usage = None;
+        let base = renderer.calculate_height(&usage, false, true, "standard", true, 0);
+        let no_data = renderer.calculate_height(&usage, true, true, "standard", true, 0);
+        let two_windows = renderer.calculate_height(&usage, true, true, "standard", true, 2);
+        let row_height = 16 + 8 + ITEM_GAP;
+
+        assert_eq!(no_data - base, row_height);
+        assert_eq!(two_windows - base, row_height * 2);
     }
 }

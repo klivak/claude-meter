@@ -13,7 +13,8 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WNDCLASSEXW, WS_EX_LAYERED, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_POPUP,
 };
 
-use crate::ui::colors::rgb;
+use crate::theme::{resolve_theme, ThemeMode};
+use crate::ui::colors::{rgb, ThemeColors};
 
 pub const WIDGET_CLASS: &str = "ClaudeMeterWidget";
 const WIDGET_W: i32 = 52;
@@ -218,16 +219,18 @@ unsafe extern "system" fn widget_wnd_proc(
 
             // Show 5-hour session utilization (not max across all metrics)
             let (text, bg_color) = if let Some(state) = crate::APP_STATE.as_ref() {
+                let colors = ThemeColors::for_theme(resolve_theme(ThemeMode::from_str(
+                    &state.config_mgr.config.theme,
+                )))
+                .with_overrides(&state.config_mgr.config.custom_colors);
                 let five_hour_util = state
                     .usage
                     .as_ref()
                     .and_then(|u| u.five_hour.as_ref())
                     .map(|m| m.utilization);
                 match five_hour_util {
-                    Some(u) if u >= 80.0 => (format!("{}%", u.round() as u32), rgb(210, 15, 57)),
-                    Some(u) if u >= 50.0 => (format!("{}%", u.round() as u32), rgb(223, 142, 29)),
-                    Some(u) => (format!("{}%", u.round() as u32), rgb(64, 160, 43)),
-                    None => ("\u{2014}".to_string(), rgb(128, 128, 128)),
+                    Some(u) => (format!("{}%", u.round() as u32), colors.progress_color(u)),
+                    None => ("\u{2014}".to_string(), colors.progress_bg),
                 }
             } else {
                 ("\u{2014}".to_string(), rgb(128, 128, 128))

@@ -2,6 +2,7 @@
 fn main() {
     let mut res = winres::WindowsResource::new();
     res.set_icon("assets/icon_app.ico");
+    res.set_icon_with_id("assets/icon_app.ico", "100");
     // Embed tray icons as resources (IDs 101-104)
     res.set_icon_with_id("assets/icon_green.ico", "101");
     res.set_icon_with_id("assets/icon_yellow.ico", "102");

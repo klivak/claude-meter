@@ -21,6 +21,16 @@ fn hex(hex: &str) -> ColorRef {
     rgb(r, g, b)
 }
 
+fn d2d_hex(value: &str) -> D2D1_COLOR_F {
+    let (r, g, b) = hex_to_rgb(value);
+    D2D1_COLOR_F {
+        r: r as f32 / 255.0,
+        g: g as f32 / 255.0,
+        b: b as f32 / 255.0,
+        a: 1.0,
+    }
+}
+
 /// Convert a COLORREF (0x00BBGGRR) to D2D1_COLOR_F (r,g,b,a as f32 in 0.0..1.0)
 pub fn colorref_to_d2d(cr: ColorRef) -> D2D1_COLOR_F {
     let val = cr.0;
@@ -31,26 +41,6 @@ pub fn colorref_to_d2d(cr: ColorRef) -> D2D1_COLOR_F {
         a: 1.0,
     }
 }
-
-/// Pleasant gradient colors for progress bars (green → amber → coral)
-pub const GRADIENT_LOW: D2D1_COLOR_F = D2D1_COLOR_F {
-    r: 0.18,
-    g: 0.80,
-    b: 0.44,
-    a: 1.0,
-}; // #2ecc71
-pub const GRADIENT_MID: D2D1_COLOR_F = D2D1_COLOR_F {
-    r: 0.95,
-    g: 0.77,
-    b: 0.06,
-    a: 1.0,
-}; // #f1c40f
-pub const GRADIENT_HIGH: D2D1_COLOR_F = D2D1_COLOR_F {
-    r: 0.91,
-    g: 0.30,
-    b: 0.24,
-    a: 1.0,
-}; // #e74c3c
 
 #[derive(Debug, Clone)]
 pub struct ThemeColors {
@@ -66,6 +56,9 @@ pub struct ThemeColors {
     pub separator: ColorRef,
     pub hover: ColorRef,
     pub border: ColorRef,
+    pub gradient_low: D2D1_COLOR_F,
+    pub gradient_mid: D2D1_COLOR_F,
+    pub gradient_high: D2D1_COLOR_F,
     /// True when custom color overrides are applied (disables gradient progress bars)
     pub has_overrides: bool,
 }
@@ -75,6 +68,8 @@ impl ThemeColors {
         match theme {
             ResolvedTheme::Dark => Self::dark(),
             ResolvedTheme::Light => Self::light(),
+            ResolvedTheme::Midnight => Self::midnight(),
+            ResolvedTheme::Sunset => Self::sunset(),
         }
     }
 
@@ -140,6 +135,9 @@ impl ThemeColors {
             separator: hex("45475a"),
             hover: hex("3b3c50"),
             border: hex("45475a"),
+            gradient_low: d2d_hex("2ecc71"),
+            gradient_mid: d2d_hex("f1c40f"),
+            gradient_high: d2d_hex("e74c3c"),
             has_overrides: false,
         }
     }
@@ -158,6 +156,51 @@ impl ThemeColors {
             separator: hex("bcc0cc"),
             hover: hex("ced3dd"),
             border: hex("9ca0b0"),
+            gradient_low: d2d_hex("2a9d62"),
+            gradient_mid: d2d_hex("d99000"),
+            gradient_high: d2d_hex("d94040"),
+            has_overrides: false,
+        }
+    }
+
+    fn midnight() -> Self {
+        Self {
+            background: hex("0b1020"),
+            surface: hex("151b2e"),
+            text_primary: hex("e6edf7"),
+            text_secondary: hex("94a3b8"),
+            progress_bg: hex("27324a"),
+            green: hex("2dd4bf"),
+            yellow: hex("fbbf24"),
+            red: hex("fb7185"),
+            accent: hex("818cf8"),
+            separator: hex("293551"),
+            hover: hex("1f2940"),
+            border: hex("33415c"),
+            gradient_low: d2d_hex("2dd4bf"),
+            gradient_mid: d2d_hex("fbbf24"),
+            gradient_high: d2d_hex("fb7185"),
+            has_overrides: false,
+        }
+    }
+
+    fn sunset() -> Self {
+        Self {
+            background: hex("21151b"),
+            surface: hex("38222b"),
+            text_primary: hex("ffe8de"),
+            text_secondary: hex("d8a99a"),
+            progress_bg: hex("5a3540"),
+            green: hex("6fcf97"),
+            yellow: hex("f2b84b"),
+            red: hex("ff6b6b"),
+            accent: hex("ff8a65"),
+            separator: hex("5a3540"),
+            hover: hex("462a35"),
+            border: hex("70424f"),
+            gradient_low: d2d_hex("59c98c"),
+            gradient_mid: d2d_hex("ffad5a"),
+            gradient_high: d2d_hex("ff5e78"),
             has_overrides: false,
         }
     }
@@ -239,6 +282,15 @@ mod tests {
     }
 
     #[test]
+    fn test_stylish_themes_have_distinct_palettes() {
+        let midnight = ThemeColors::for_theme(ResolvedTheme::Midnight);
+        let sunset = ThemeColors::for_theme(ResolvedTheme::Sunset);
+        assert_ne!(midnight.background.0, sunset.background.0);
+        assert_ne!(midnight.accent.0, sunset.accent.0);
+        assert_ne!(midnight.gradient_mid.r, sunset.gradient_mid.r);
+    }
+
+    #[test]
     fn test_has_overrides_default_false() {
         let dark = ThemeColors::for_theme(ResolvedTheme::Dark);
         assert!(!dark.has_overrides);
@@ -280,8 +332,20 @@ mod tests {
     }
 
     #[test]
-    fn test_gradient_constants_valid_range() {
-        for c in [&GRADIENT_LOW, &GRADIENT_MID, &GRADIENT_HIGH] {
+    fn test_theme_gradients_valid_range() {
+        let themes = [
+            ThemeColors::for_theme(ResolvedTheme::Dark),
+            ThemeColors::for_theme(ResolvedTheme::Light),
+            ThemeColors::for_theme(ResolvedTheme::Midnight),
+            ThemeColors::for_theme(ResolvedTheme::Sunset),
+        ];
+        for c in themes.iter().flat_map(|theme| {
+            [
+                &theme.gradient_low,
+                &theme.gradient_mid,
+                &theme.gradient_high,
+            ]
+        }) {
             assert!((0.0..=1.0).contains(&c.r));
             assert!((0.0..=1.0).contains(&c.g));
             assert!((0.0..=1.0).contains(&c.b));

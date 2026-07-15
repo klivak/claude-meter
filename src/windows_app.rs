@@ -9,7 +9,7 @@ use crate::providers::claude::{ClaudeClient, UsageResponse};
 use crate::theme::{resolve_theme, ThemeMode};
 use crate::tray::{
     build_tooltip, TrayIcon, IDM_ABOUT, IDM_AUTOSTART, IDM_EXIT, IDM_EXPORT_CSV, IDM_EXPORT_JSON,
-    IDM_OPEN_CHATGPT, IDM_OPEN_CLAUDE, IDM_OPEN_DASHBOARD, IDM_REFRESH, IDM_SETTINGS, WM_TRAY_ICON,
+    IDM_OPEN_CLAUDE, IDM_OPEN_CODEX, IDM_OPEN_DASHBOARD, IDM_REFRESH, IDM_SETTINGS, WM_TRAY_ICON,
 };
 use crate::ui::colors::colorref_to_d2d;
 use crate::ui::render::{draw_settings_panel, D2DResources, HoveredElement, PopupRenderer};
@@ -42,9 +42,7 @@ const IDM_LANG_AUTO: u32 = 5000;
 const IDM_LANG_BASE: u32 = 5001;
 
 // Theme popup menu IDs
-const IDM_THEME_AUTO: u32 = 5100;
-const IDM_THEME_DARK: u32 = 5101;
-const IDM_THEME_LIGHT: u32 = 5102;
+const IDM_THEME_BASE: u32 = 5100;
 
 const WINDOW_CLASS: &str = "ClaudeMeterMain";
 const POPUP_CLASS: &str = "ClaudeMeterPopup";
@@ -131,7 +129,7 @@ pub(crate) struct AppState {
     widget_hwnd: Option<HWND>,
     // Rate of change per metric (%/hour)
     rate_of_change: std::collections::HashMap<String, f64>,
-    // Live OpenAI Codex usage from local ~/.codex logs (when ChatGPT panel on).
+    // Live OpenAI Codex usage from local ~/.codex logs (when Codex panel is on).
     codex_status: Option<crate::providers::codex::CodexStatus>,
     // Slide animation state for settings ↔ dashboard transition
     slide_anim_offset: f32,
@@ -745,7 +743,7 @@ unsafe extern "system" fn popup_wnd_proc(
                     .with_overrides(&state.config_mgr.config.custom_colors);
 
                 // Apply DWM dark mode based on theme
-                apply_dwm_dark_mode(hwnd, matches!(resolved, crate::theme::ResolvedTheme::Dark));
+                apply_dwm_dark_mode(hwnd, resolved.uses_dark_chrome());
 
                 if let Some(d2d) = state.d2d.as_mut() {
                     if d2d.ensure_render_target(hwnd).is_ok() {
@@ -1202,7 +1200,7 @@ unsafe extern "system" fn popup_wnd_proc(
                 } else if state.popup_in_settings
                     && crate::popup::point_in_rect(pt, state.setting_rects[3])
                 {
-                    // Show ChatGPT section: toggle
+                    // Show Codex section: toggle
                     state.config_mgr.config.show_chatgpt_section =
                         !state.config_mgr.config.show_chatgpt_section;
                     state.config_mgr.save();
@@ -1354,7 +1352,7 @@ unsafe extern "system" fn popup_wnd_proc(
                 } else if crate::popup::point_in_rect(pt, state.chatgpt_link_rect)
                     || crate::popup::point_in_rect(pt, state.codex_plan_rect)
                 {
-                    // Codex usage icon or Codex plan badge → ChatGPT/Codex usage page.
+                    // Codex usage icon or Codex plan badge → Codex usage page.
                     let url = state.config_mgr.config.chatgpt_usage_url.clone();
                     let _ = open::that(&url);
                 } else if crate::popup::point_in_rect(pt, state.codex_status_rect) {
@@ -1677,20 +1675,15 @@ unsafe fn show_theme_popup(hwnd: HWND, client_pt: POINT, state: &mut AppState) {
     let menu = CreatePopupMenu().unwrap();
     let current = &state.config_mgr.config.theme;
 
-    let themes = [
-        (IDM_THEME_AUTO, "auto", "Auto"),
-        (IDM_THEME_DARK, "dark", "Dark"),
-        (IDM_THEME_LIGHT, "light", "Light"),
-    ];
-
-    for (id, value, i18n_key) in &themes {
-        let flag = if current == *value {
+    for (index, theme) in ThemeMode::ALL.iter().enumerate() {
+        let flag = if current == theme.as_str() {
             MF_STRING | MF_CHECKED
         } else {
             MF_STRING | MF_UNCHECKED
         };
-        let label = wide(state.i18n.t(i18n_key));
-        let _ = AppendMenuW(menu, flag, *id as usize, PCWSTR(label.as_ptr()));
+        let label = wide(state.i18n.t(theme.label_key()));
+        let id = IDM_THEME_BASE + index as u32;
+        let _ = AppendMenuW(menu, flag, id as usize, PCWSTR(label.as_ptr()));
     }
 
     let mut screen_pt = client_pt;
@@ -1709,14 +1702,17 @@ unsafe fn show_theme_popup(hwnd: HWND, client_pt: POINT, state: &mut AppState) {
     let _ = DestroyMenu(menu);
 
     if cmd.as_bool() {
-        let new_theme = match cmd.0 as u32 {
-            IDM_THEME_DARK => "dark",
-            IDM_THEME_LIGHT => "light",
-            _ => "auto",
+        let index = (cmd.0 as u32).saturating_sub(IDM_THEME_BASE) as usize;
+        let Some(new_theme) = ThemeMode::ALL.get(index).copied() else {
+            return;
         };
-        state.config_mgr.config.theme = new_theme.to_string();
+        state.config_mgr.config.theme = new_theme.as_str().to_string();
+        state.cached_theme = resolve_theme(new_theme);
         state.config_mgr.save();
         let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
+        if let Some(widget) = state.widget_hwnd {
+            widget::invalidate_widget(widget);
+        }
     }
 }
 
@@ -1808,8 +1804,8 @@ unsafe fn show_context_menu(hwnd: HWND) {
         if show_chatgpt {
             append_menu_str(
                 menu,
-                IDM_OPEN_CHATGPT,
-                state.i18n.t("Open ChatGPT Usage \u{2192}"),
+                IDM_OPEN_CODEX,
+                state.i18n.t("Open Codex Usage \u{2192}"),
             );
         }
         append_menu_sep(menu);
@@ -1872,7 +1868,7 @@ unsafe fn handle_menu_command(hwnd: HWND, cmd: u32) {
         IDM_OPEN_CLAUDE => {
             let _ = open::that("https://claude.ai/settings/usage");
         }
-        IDM_OPEN_CHATGPT => {
+        IDM_OPEN_CODEX => {
             if let Some(state) = APP_STATE.as_ref() {
                 let url = state.config_mgr.config.chatgpt_usage_url.clone();
                 let _ = open::that(&url);

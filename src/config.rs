@@ -181,7 +181,7 @@ impl Config {
         }
 
         // Validate theme
-        if !["auto", "dark", "light"].contains(&self.theme.as_str()) {
+        if !crate::theme::ThemeMode::is_valid(&self.theme) {
             self.theme = "auto".to_string();
         }
 
@@ -199,7 +199,7 @@ impl Config {
         if ![
             "auto", "en", "uk", "es", "de", "fr", "pt", "ja", "ko", "zh", "it", "hi", "tr", "nl",
             "pl", "vi", "ru", "th", "id", "sv", "cs", "ar", "ro", "da", "fi", "hu", "bg", "el",
-            "he", "ms", "no",
+            "he", "ms", "no", "ca", "hr", "et", "lv", "lt",
         ]
         .contains(&self.language.as_str())
         {
@@ -323,7 +323,7 @@ mod tests {
     #[test]
     fn test_validate_theme() {
         let mut cfg = Config::default();
-        for valid in ["auto", "dark", "light"] {
+        for valid in ["auto", "dark", "light", "midnight", "sunset"] {
             cfg.theme = valid.to_string();
             cfg.validate();
             assert_eq!(cfg.theme, valid);
@@ -331,6 +331,16 @@ mod tests {
         cfg.theme = "neon".to_string();
         cfg.validate();
         assert_eq!(cfg.theme, "auto");
+    }
+
+    #[test]
+    fn test_validate_language_includes_new_locales() {
+        let mut cfg = Config::default();
+        for valid in ["ca", "hr", "et", "lv", "lt"] {
+            cfg.language = valid.to_string();
+            cfg.validate();
+            assert_eq!(cfg.language, valid);
+        }
     }
 
     #[test]

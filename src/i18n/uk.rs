@@ -40,16 +40,16 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Встановити Claude Code \u{2192}",
     );
     m.insert(
-        "openai_no_api",
-        "OpenAI не надає API для відстеження використання підписки ChatGPT.",
+        "codex_no_api",
+        "OpenAI не надає публічного API для відстеження використання підписки Codex.",
     );
     m.insert(
         "Check your usage manually:",
         "Перевірте використання вручну:",
     );
     m.insert(
-        "Open ChatGPT Usage \u{2192}",
-        "Відкрити використання ChatGPT \u{2192}",
+        "Open Codex Usage \u{2192}",
+        "Відкрити використання Codex \u{2192}",
     );
     m.insert("Refresh Now", "Оновити зараз");
     m.insert("Open Dashboard", "Відкрити панель");
@@ -80,7 +80,13 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Dark", "Темна");
     m.insert("Light", "Світла");
     m.insert("Auto", "Авто");
-    m.insert("Show ChatGPT section", "Показувати секцію ChatGPT");
+    m.insert("Midnight", "Опівніч");
+    m.insert("Sunset", "Захід сонця");
+    m.insert("Show Codex section", "Показувати секцію Codex");
+    m.insert(
+        "Reopen the tray popup to refresh",
+        "Згорніть і знову відкрийте вікно з трея",
+    );
     m.insert("Enabled", "Увімкнено");
     m.insert("Sound", "Звук");
     m.insert("Thresholds", "Порогові значення");
@@ -92,7 +98,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Open Claude.ai \u{2192}", "Відкрити Claude.ai \u{2192}");
     m.insert("ClaudeMeter", "ClaudeMeter");
     m.insert("CLAUDE", "CLAUDE");
-    m.insert("CHATGPT / CODEX", "CHATGPT / CODEX");
     m.insert("Usage History", "Історія використання");
     m.insert("Usage History (24h)", "Історія використання (24г)");
     m.insert("Auto (English)", "Авто (Українська)");
