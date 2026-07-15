@@ -227,28 +227,6 @@ a {
   padding-block: 90px 100px;
 }
 
-.release-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: 26px;
-  padding: 8px 12px;
-  border: 1px solid rgba(85, 230, 193, 0.24);
-  border-radius: 999px;
-  background: rgba(85, 230, 193, 0.08);
-  color: var(--teal);
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--teal);
-  box-shadow: 0 0 0 5px rgba(85, 230, 193, 0.1);
-}
-
 .eyebrow {
   margin: 0 0 12px;
   color: var(--accent-bright);
@@ -269,7 +247,7 @@ a {
 
 .hero h1 {
   max-width: 700px;
-  font-size: clamp(3.4rem, 6.2vw, 5.8rem);
+  font-size: clamp(3rem, 5.2vw, 4.9rem);
 }
 
 .hero h1 span {
@@ -826,7 +804,7 @@ a {
   }
 
   .hero h1 {
-    font-size: clamp(3rem, 14vw, 4.6rem);
+    font-size: clamp(2.65rem, 12vw, 4rem);
   }
 
   .hero-visual {
@@ -872,10 +850,6 @@ a {
 @media (max-width: 520px) {
   .header-actions .button-primary {
     padding-inline: 12px;
-  }
-
-  .release-chip {
-    font-size: 0.7rem;
   }
 
   .hero-visual {

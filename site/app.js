@@ -34,11 +34,9 @@ fetch("metrics.json")
     const starsValue = document.querySelector("#stars-value");
     const issuesValue = document.querySelector("#issues-value");
     const releaseValue = document.querySelector("#release-value");
-    const releaseChip = document.querySelector("#release-chip-text");
 
     if (starsValue) starsValue.textContent = metrics.stars.toLocaleString();
     if (issuesValue) issuesValue.textContent = metrics.openIssues.toLocaleString();
     if (releaseValue) releaseValue.textContent = metrics.latestRelease;
-    if (releaseChip) releaseChip.textContent = `ClaudeMeter ${metrics.latestRelease} is available`;
   })
   .catch(() => {});
