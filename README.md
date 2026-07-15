@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/icon_app.png" alt="ClaudeMeter app icon" width="128">
+
 # ⚡ ClaudeMeter
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/klivak)
