@@ -52,6 +52,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Refresh Now", "Segarkan Sekarang");
     m.insert("Open Dashboard", "Buka Dasbor");
     m.insert("Export History (CSV)", "Ekspor Riwayat (CSV)");
+    m.insert("Export History (JSON)", "Ekspor Riwayat (JSON)");
+    m.insert("Show extra usage", "Tampilkan penggunaan ekstra");
+    m.insert("Usage link icons", "Ikon tautan penggunaan");
+    m.insert("Open usage", "Buka penggunaan");
+    m.insert("Service status", "Status layanan");
+    m.insert("CODEX", "CODEX");
     m.insert("Settings", "Pengaturan");
     m.insert("Start with Windows", "Mulai dengan Windows");
     m.insert("About", "Tentang");

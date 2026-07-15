@@ -5,6 +5,22 @@ All notable changes to ClaudeMeter will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2026-07-15
+
+### Added
+- **Live Codex (OpenAI) usage** — reads local `~/.codex` logs to show your ChatGPT/Codex subscription usage directly in the dashboard, with a "CODEX · Plan" header and rolling-window progress bars. No API key required.
+- **Distinct Codex progress bars** — Codex windows render in a teal hue so they read as a different provider from Claude's green→amber bars.
+- **Compact usage & status icon buttons** — each section header now shows small "open usage" and "service status" icon buttons; toggle them with the new "Usage link icons" setting.
+- **JSON history export** — right-click tray → "Export History (JSON)" to save full usage history as JSON, alongside the existing CSV export.
+
+### Changed
+- **"Show extra usage" setting** — replaces the previous "Hide Extra Usage" toggle (inverted meaning; off by default).
+- **Redrawn settings gear icon** — the gear/cog icon is now a proper filled cog outline with a punched-out center hole instead of a sunburst.
+- **Localization** — all new UI strings translated across every supported language.
+
+### Fixed
+- **Codex panel height** — the dashboard now reserves space for exactly the number of rolling windows Codex actually reports (it may send only the weekly window), instead of always assuming two. This removes the empty gap that appeared below the history chart when only one Codex window was present.
+
 ## [4.2.2] - 2026-07-14
 
 ### Added

@@ -64,6 +64,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Refresh Now", "\u{098f}\u{0996}\u{09a8}\u{0987} \u{09b0}\u{09bf}\u{09ab}\u{09cd}\u{09b0}\u{09c7}\u{09b6} \u{0995}\u{09b0}\u{09c1}\u{09a8}");
     m.insert("Open Dashboard", "\u{09a1}\u{09cd}\u{09af}\u{09be}\u{09b6}\u{09ac}\u{09cb}\u{09b0}\u{09cd}\u{09a1} \u{0996}\u{09c1}\u{09b2}\u{09c1}\u{09a8}");
     m.insert("Export History (CSV)", "\u{0987}\u{09a4}\u{09bf}\u{09b9}\u{09be}\u{09b8} \u{09b0}\u{09aa}\u{09cd}\u{09a4}\u{09be}\u{09a8}\u{09bf} \u{0995}\u{09b0}\u{09c1}\u{09a8} (CSV)");
+    m.insert("Export History (JSON)", "ইতিহাস রপ্তানি করুন (JSON)");
+    m.insert("Show extra usage", "অতিরিক্ত ব্যবহার দেখান");
+    m.insert("Usage link icons", "ব্যবহার লিঙ্ক আইকন");
+    m.insert("Open usage", "ব্যবহার খুলুন");
+    m.insert("Service status", "পরিষেবার অবস্থা");
+    m.insert("CODEX", "CODEX");
     m.insert(
         "Settings",
         "\u{09b8}\u{09c7}\u{099f}\u{09bf}\u{0982}\u{09b8}",

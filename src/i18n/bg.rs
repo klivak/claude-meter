@@ -61,6 +61,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "\u{041e}\u{0442}\u{0432}\u{043e}\u{0440}\u{0438} \u{0442}\u{0430}\u{0431}\u{043b}\u{043e}",
     );
     m.insert("Export History (CSV)", "\u{0415}\u{043a}\u{0441}\u{043f}\u{043e}\u{0440}\u{0442} \u{0438}\u{0441}\u{0442}\u{043e}\u{0440}\u{0438}\u{044f} (CSV)");
+    m.insert("Export History (JSON)", "Експорт история (JSON)");
+    m.insert("Show extra usage", "Показване на допълнителна употреба");
+    m.insert("Usage link icons", "Икони за връзки за употреба");
+    m.insert("Open usage", "Отваряне на употребата");
+    m.insert("Service status", "Състояние на услугата");
+    m.insert("CODEX", "CODEX");
     m.insert(
         "Settings",
         "\u{041d}\u{0430}\u{0441}\u{0442}\u{0440}\u{043e}\u{0439}\u{043a}\u{0438}",

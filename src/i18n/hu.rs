@@ -64,6 +64,15 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Export History (CSV)",
         "El\u{0151}zm\u{00e9}nyek export\u{00e1}l\u{00e1}sa (CSV)",
     );
+    m.insert(
+        "Export History (JSON)",
+        "El\u{0151}zm\u{00e9}nyek export\u{00e1}l\u{00e1}sa (JSON)",
+    );
+    m.insert("Show extra usage", "Extra használat megjelenítése");
+    m.insert("Usage link icons", "Használati hivatkozás ikonok");
+    m.insert("Open usage", "Használat megnyitása");
+    m.insert("Service status", "Szolgáltatás állapota");
+    m.insert("CODEX", "CODEX");
     m.insert("Settings", "Be\u{00e1}ll\u{00ed}t\u{00e1}sok");
     m.insert("Start with Windows", "Ind\u{00ed}t\u{00e1}s a Windows-szal");
     m.insert("About", "N\u{00e9}vjegy");

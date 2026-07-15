@@ -46,6 +46,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Refresh Now", "รีเฟรชตอนนี้");
     m.insert("Open Dashboard", "เปิดแดชบอร์ด");
     m.insert("Export History (CSV)", "ส่งออกประวัติ (CSV)");
+    m.insert("Export History (JSON)", "ส่งออกประวัติ (JSON)");
+    m.insert("Show extra usage", "แสดงการใช้งานเพิ่มเติม");
+    m.insert("Usage link icons", "ไอคอนลิงก์การใช้งาน");
+    m.insert("Open usage", "เปิดการใช้งาน");
+    m.insert("Service status", "สถานะบริการ");
+    m.insert("CODEX", "CODEX");
     m.insert("Settings", "การตั้งค่า");
     m.insert("Start with Windows", "เริ่มต้นกับ Windows");
     m.insert("About", "เกี่ยวกับ");

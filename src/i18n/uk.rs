@@ -54,6 +54,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Refresh Now", "Оновити зараз");
     m.insert("Open Dashboard", "Відкрити панель");
     m.insert("Export History (CSV)", "Експорт історії (CSV)");
+    m.insert("Export History (JSON)", "Експорт історії (JSON)");
+    m.insert("Show extra usage", "Показувати додаткове використання");
+    m.insert("Usage link icons", "Значки посилань використання");
+    m.insert("Open usage", "Відкрити використання");
+    m.insert("Service status", "Стан сервісу");
+    m.insert("CODEX", "CODEX");
     m.insert("Settings", "Налаштування");
     m.insert("Start with Windows", "Запускати з Windows");
     m.insert("About", "Про програму");

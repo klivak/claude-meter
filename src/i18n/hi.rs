@@ -64,6 +64,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Refresh Now", "\u{0905}\u{092d}\u{0940} \u{0930}\u{093f}\u{092b}\u{094d}\u{0930}\u{0947}\u{0936} \u{0915}\u{0930}\u{0947}\u{0902}");
     m.insert("Open Dashboard", "\u{0921}\u{0948}\u{0936}\u{092c}\u{094b}\u{0930}\u{094d}\u{0921} \u{0916}\u{094b}\u{0932}\u{0947}\u{0902}");
     m.insert("Export History (CSV)", "\u{0907}\u{0924}\u{093f}\u{0939}\u{093e}\u{0938} \u{0928}\u{093f}\u{0930}\u{094d}\u{092f}\u{093e}\u{0924} \u{0915}\u{0930}\u{0947}\u{0902} (CSV)");
+    m.insert("Export History (JSON)", "\u{0907}\u{0924}\u{093f}\u{0939}\u{093e}\u{0938} \u{0928}\u{093f}\u{0930}\u{094d}\u{092f}\u{093e}\u{0924} \u{0915}\u{0930}\u{0947}\u{0902} (JSON)");
+    m.insert("Show extra usage", "अतिरिक्त उपयोग दिखाएं");
+    m.insert("Usage link icons", "उपयोग लिंक आइकन");
+    m.insert("Open usage", "उपयोग खोलें");
+    m.insert("Service status", "सेवा स्थिति");
+    m.insert("CODEX", "CODEX");
     m.insert(
         "Settings",
         "\u{0938}\u{0947}\u{091f}\u{093f}\u{0902}\u{0917}\u{094d}\u{0938}",

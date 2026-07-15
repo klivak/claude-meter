@@ -289,6 +289,36 @@ impl Database {
 
         Ok(count)
     }
+
+    /// Export all usage history to a JSON file (array of records).
+    /// Returns the number of records written.
+    #[cfg_attr(not(windows), allow(dead_code))] // consumed by the Windows app
+    pub fn export_json(&self, path: &Path) -> SqlResult<usize> {
+        let mut stmt = self.conn.prepare(
+            "SELECT timestamp, provider, metric, utilization, resets_at
+             FROM usage_history ORDER BY timestamp DESC",
+        )?;
+
+        let rows = stmt.query_map([], |row| {
+            Ok(serde_json::json!({
+                "timestamp": row.get::<_, String>(0)?,
+                "provider": row.get::<_, String>(1)?,
+                "metric": row.get::<_, String>(2)?,
+                "utilization": row.get::<_, f64>(3)?,
+                "resets_at": row.get::<_, Option<String>>(4)?,
+            }))
+        })?;
+
+        let records: Vec<serde_json::Value> = rows.flatten().collect();
+        let count = records.len();
+
+        let json = serde_json::to_string_pretty(&records)
+            .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+        std::fs::write(path, json)
+            .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+
+        Ok(count)
+    }
 }
 
 #[cfg(test)]
@@ -417,6 +447,27 @@ mod tests {
         assert!(content.contains("timestamp,provider,metric,utilization,resets_at"));
         assert!(content.contains("five_hour"));
         assert!(content.contains("seven_day"));
+
+        let _ = std::fs::remove_file(&tmp);
+    }
+
+    #[test]
+    fn test_export_json() {
+        let db = Database::open_in_memory().unwrap();
+        db.insert("claude", "five_hour", 42.0, Some("2026-06-20T05:00:00Z"))
+            .unwrap();
+        db.insert("claude", "seven_day", 15.0, None).unwrap();
+
+        let tmp = std::env::temp_dir().join("claudemeter_test_export.json");
+        let count = db.export_json(&tmp).unwrap();
+        assert_eq!(count, 2);
+
+        let content = std::fs::read_to_string(&tmp).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&content).unwrap();
+        assert!(parsed.is_array());
+        assert_eq!(parsed.as_array().unwrap().len(), 2);
+        assert!(content.contains("five_hour"));
+        assert!(content.contains("utilization"));
 
         let _ = std::fs::remove_file(&tmp);
     }

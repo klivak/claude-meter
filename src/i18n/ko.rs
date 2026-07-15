@@ -64,6 +64,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Export History (CSV)",
         "\u{ae30}\u{b85d} \u{b0b4}\u{bcf4}\u{b0b4}\u{ae30} (CSV)",
     );
+    m.insert("Export History (JSON)", "기록 내보내기 (JSON)");
+    m.insert("Show extra usage", "추가 사용량 표시");
+    m.insert("Usage link icons", "사용량 링크 아이콘");
+    m.insert("Open usage", "사용량 열기");
+    m.insert("Service status", "서비스 상태");
+    m.insert("CODEX", "CODEX");
     m.insert("Settings", "\u{c124}\u{c815}");
     m.insert(
         "Start with Windows",

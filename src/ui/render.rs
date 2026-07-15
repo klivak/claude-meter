@@ -13,8 +13,8 @@ use std::collections::HashMap;
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HWND, RECT};
 use windows::Win32::Graphics::Direct2D::Common::{
-    D2D1_ALPHA_MODE_PREMULTIPLIED, D2D1_COLOR_F, D2D1_GRADIENT_STOP, D2D1_PIXEL_FORMAT,
-    D2D_POINT_2F, D2D_RECT_F, D2D_SIZE_U,
+    D2D1_ALPHA_MODE_PREMULTIPLIED, D2D1_COLOR_F, D2D1_FIGURE_BEGIN_FILLED, D2D1_FIGURE_END_CLOSED,
+    D2D1_GRADIENT_STOP, D2D1_PIXEL_FORMAT, D2D_POINT_2F, D2D_RECT_F, D2D_SIZE_U,
 };
 use windows::Win32::Graphics::Direct2D::{
     D2D1CreateFactory, ID2D1Factory, ID2D1HwndRenderTarget, D2D1_DRAW_TEXT_OPTIONS_NONE,
@@ -43,6 +43,36 @@ pub const ITEM_GAP: i32 = 8;
 pub const SEPARATOR_H: i32 = 1;
 pub const FOOTER_H: i32 = 38;
 
+/// Compute the closed-polygon vertices of a gear/cog outline (4 vertices per
+/// tooth: valley → tip-left → tip-right → valley). Tip vertices sit at `r_out`,
+/// valley vertices at `r_in`, producing trapezoidal teeth. Pure math so the
+/// geometry is unit-testable independent of Direct2D.
+#[allow(clippy::too_many_arguments)]
+fn gear_outline_points(
+    cx: f32,
+    cy: f32,
+    r_out: f32,
+    r_in: f32,
+    num_teeth: usize,
+    tip_half: f32,
+    base_half: f32,
+    tooth_step: f32,
+) -> Vec<D2D_POINT_2F> {
+    let pt = |ang: f32, r: f32| D2D_POINT_2F {
+        x: cx + ang.cos() * r,
+        y: cy + ang.sin() * r,
+    };
+    let mut points = Vec::with_capacity(num_teeth * 4);
+    for i in 0..num_teeth {
+        let c = i as f32 * tooth_step - std::f32::consts::FRAC_PI_2; // start at top
+        points.push(pt(c - base_half, r_in));
+        points.push(pt(c - tip_half, r_out));
+        points.push(pt(c + tip_half, r_out));
+        points.push(pt(c + base_half, r_in));
+    }
+    points
+}
+
 // --- HoveredElement enum ---
 
 #[derive(Debug, Clone, PartialEq)]
@@ -56,6 +86,9 @@ pub enum HoveredElement {
     ChatGptLink,
     StatusLink,
     PlanLink,
+    ClaudeUsageIcon,
+    CodexPlanBadge,
+    CodexStatusIcon,
     BackButton,
     SettingRow(usize),
     ChartBar(usize),
@@ -415,6 +448,7 @@ impl PopupRenderer {
         compact: bool,
         dashboard_layout: &str,
         hide_extra_usage: bool,
+        codex_windows: i32,
     ) -> i32 {
         let extra_hidden = |u: &UsageResponse| -> usize {
             if hide_extra_usage && u.extra.contains_key("extra_usage") {
@@ -482,7 +516,15 @@ impl PopupRenderer {
         }
 
         if show_chatgpt {
-            h += SEPARATOR_H + 8 + 24 + 55 + 28;
+            h += SEPARATOR_H + 8 + 24; // separator + gap + section/plan header
+            if codex_windows > 0 {
+                // One gradient bar per rolling window Codex actually reports
+                // (it may send only the weekly window — reserve exactly that).
+                h += codex_windows
+                    * (METRIC_LABEL_H + 4 + PROGRESS_H + 4 + RESET_LABEL_H + SECTION_GAP);
+            } else {
+                h += 55; // "no API" info text
+            }
         }
 
         h += SEPARATOR_H + PADDING;
@@ -513,6 +555,8 @@ impl PopupRenderer {
         dashboard_layout: &str,
         rate_of_change: &HashMap<String, f64>,
         hide_extra_usage: bool,
+        codex_status: Option<&crate::providers::codex::CodexStatus>,
+        show_usage_links: bool,
         settings_rect: &mut RECT,
         close_rect: &mut RECT,
         refresh_rect: &mut RECT,
@@ -521,6 +565,9 @@ impl PopupRenderer {
         chatgpt_link_rect: &mut RECT,
         status_link_rect: &mut RECT,
         plan_link_rect: &mut RECT,
+        claude_usage_rect: &mut RECT,
+        codex_plan_rect: &mut RECT,
+        codex_status_rect: &mut RECT,
         chart_rect_out: &mut RECT,
         chart_bar_count_out: &mut usize,
         chart_toggle_rect_out: &mut RECT,
@@ -583,6 +630,7 @@ impl PopupRenderer {
                                 hovered,
                                 status_link_rect,
                                 plan_link_rect,
+                                claude_usage_rect,
                                 hide_extra_usage,
                             );
                         }
@@ -601,6 +649,7 @@ impl PopupRenderer {
                                 hovered,
                                 status_link_rect,
                                 plan_link_rect,
+                                claude_usage_rect,
                                 hide_extra_usage,
                             );
                         }
@@ -618,6 +667,7 @@ impl PopupRenderer {
                                 hovered,
                                 status_link_rect,
                                 plan_link_rect,
+                                claude_usage_rect,
                                 hide_extra_usage,
                             );
                         }
@@ -627,7 +677,20 @@ impl PopupRenderer {
                 if show_chatgpt {
                     y = self.draw_separator(&rt, w, y, colors);
                     y += self.sf(8);
-                    y = self.draw_chatgpt_section(&rt, d2d, w, y, colors, i18n, chatgpt_link_rect);
+                    y = self.draw_chatgpt_section(
+                        &rt,
+                        d2d,
+                        w,
+                        y,
+                        colors,
+                        i18n,
+                        hovered,
+                        chatgpt_link_rect,
+                        codex_plan_rect,
+                        codex_status_rect,
+                        codex_status,
+                        show_usage_links,
+                    );
                 }
 
                 // History chart
@@ -673,9 +736,12 @@ impl PopupRenderer {
         }
     }
 
-    /// Draw a gear/cog icon using D2D primitives within the given rect.
+    /// Draw a settings gear/cog icon as a proper filled cog outline (a closed
+    /// path with trapezoidal teeth) plus a punched-out center hole — reads as a
+    /// clean gear rather than a sunburst.
     unsafe fn draw_gear_icon(
         &self,
+        factory: &ID2D1Factory,
         rt: &ID2D1HwndRenderTarget,
         rect: D2D_RECT_F,
         color: ColorRef,
@@ -690,40 +756,34 @@ impl PopupRenderer {
 
         let cx = (rect.left + rect.right) / 2.0;
         let cy = (rect.top + rect.bottom) / 2.0;
-        let size = ((rect.right - rect.left).min(rect.bottom - rect.top)) * 0.40;
+        let size = (rect.right - rect.left).min(rect.bottom - rect.top);
 
-        let body_r = size * 0.58;
-        let tooth_reach = size * 1.05;
-        let tooth_w = size * 0.40;
-        let hole_r = size * 0.22;
-        let num_teeth: i32 = 8;
+        let r_out = size * 0.30; // tooth tip radius
+        let r_in = size * 0.21; // valley / body radius
+        let hole_r = size * 0.095; // center hole
+        let num_teeth = 8usize;
+        let t = std::f32::consts::TAU / num_teeth as f32;
 
-        // 1) Draw teeth as thick lines radiating from center
-        for i in 0..num_teeth {
-            let angle = (i as f32) * std::f32::consts::TAU / num_teeth as f32;
-            rt.DrawLine(
-                D2D_POINT_2F { x: cx, y: cy },
-                D2D_POINT_2F {
-                    x: cx + angle.cos() * tooth_reach,
-                    y: cy + angle.sin() * tooth_reach,
-                },
-                &brush,
-                tooth_w,
-                None,
-            );
+        // Angular half-widths: tip flat is narrower than the base (trapezoid).
+        let tip_half = t * 0.17;
+        let base_half = t * 0.30;
+
+        // Build the cog outline as one closed polygon (4 vertices per tooth).
+        let points = gear_outline_points(cx, cy, r_out, r_in, num_teeth, tip_half, base_half, t);
+
+        let Ok(geometry) = factory.CreatePathGeometry() else {
+            return;
+        };
+        if let Ok(sink) = geometry.Open() {
+            sink.BeginFigure(points[0], D2D1_FIGURE_BEGIN_FILLED);
+            sink.AddLines(&points[1..]);
+            sink.EndFigure(D2D1_FIGURE_END_CLOSED);
+            let _ = sink.Close();
+
+            rt.FillGeometry(&geometry, &brush, None);
         }
 
-        // 2) Draw filled circle body on top (covers inner portions of teeth)
-        rt.FillEllipse(
-            &D2D1_ELLIPSE {
-                point: D2D_POINT_2F { x: cx, y: cy },
-                radiusX: body_r,
-                radiusY: body_r,
-            },
-            &brush,
-        );
-
-        // 3) Cut out center hole with background color
+        // Punch out the center hole with the background color.
         rt.FillEllipse(
             &D2D1_ELLIPSE {
                 point: D2D_POINT_2F { x: cx, y: cy },
@@ -863,7 +923,7 @@ impl PopupRenderer {
         } else {
             colors.text_secondary
         };
-        self.draw_gear_icon(rt, settings_r, gear_color, gear_bg);
+        self.draw_gear_icon(&d2d.factory, rt, settings_r, gear_color, gear_bg);
 
         // × button
         let close_r = D2D_RECT_F {
@@ -937,6 +997,7 @@ impl PopupRenderer {
         hovered: &HoveredElement,
         status_link_rect: &mut RECT,
         plan_link_rect: &mut RECT,
+        claude_usage_rect: &mut RECT,
         hide_extra_usage: bool,
     ) -> f32 {
         // Section header
@@ -951,6 +1012,7 @@ impl PopupRenderer {
             hovered,
             status_link_rect,
             plan_link_rect,
+            claude_usage_rect,
         );
 
         for (i, (key, metric)) in usage.all_metrics().iter().enumerate() {
@@ -974,6 +1036,7 @@ impl PopupRenderer {
                 colors,
                 i18n,
                 rate,
+                None,
             );
             y += self.sf(SECTION_GAP);
         }
@@ -994,6 +1057,7 @@ impl PopupRenderer {
         colors: &ThemeColors,
         i18n: &I18n,
         rate: Option<f64>,
+        override_color: Option<ColorRef>,
     ) -> f32 {
         let pad = self.sf(PADDING);
         let content_w = w - pad * 2.0;
@@ -1039,7 +1103,8 @@ impl PopupRenderer {
         // Percentage (right, bold, colored)
         let pct_text = wide(&pct_str);
         let pct_format = d2d.get_text_format(12, true, 1, 1).clone();
-        let pct_color = colorref_to_d2d(colors.progress_color(utilization));
+        let pct_color =
+            colorref_to_d2d(override_color.unwrap_or_else(|| colors.progress_color(utilization)));
         let pct_brush = rt
             .CreateSolidColorBrush(&pct_color as *const _, None)
             .unwrap();
@@ -1122,9 +1187,16 @@ impl PopupRenderer {
                 radiusY: radius,
             };
 
-            if colors.has_overrides {
-                // Fallback: original 2-stop gradient for custom color themes
-                let fill_color = colorref_to_d2d(colors.progress_color(utilization));
+            // A single-hue override (e.g. Codex teal) draws a 2-stop gradient;
+            // otherwise use the theme's threshold behavior.
+            let single = override_color.map(colorref_to_d2d).or_else(|| {
+                if colors.has_overrides {
+                    Some(colorref_to_d2d(colors.progress_color(utilization)))
+                } else {
+                    None
+                }
+            });
+            if let Some(fill_color) = single {
                 let light_color = lighten_d2d(&fill_color, 0.35);
                 let stops = [
                     D2D1_GRADIENT_STOP {
@@ -1256,6 +1328,7 @@ impl PopupRenderer {
         hovered: &HoveredElement,
         status_link_rect: &mut RECT,
         plan_link_rect: &mut RECT,
+        claude_usage_rect: &mut RECT,
         hide_extra_usage: bool,
     ) -> f32 {
         let pad = self.sf(PADDING);
@@ -1273,6 +1346,7 @@ impl PopupRenderer {
             hovered,
             status_link_rect,
             plan_link_rect,
+            claude_usage_rect,
         );
 
         // Find highest utilization metric
@@ -1472,6 +1546,7 @@ impl PopupRenderer {
         hovered: &HoveredElement,
         status_link_rect: &mut RECT,
         plan_link_rect: &mut RECT,
+        claude_usage_rect: &mut RECT,
         hide_extra_usage: bool,
     ) -> f32 {
         // Section header
@@ -1486,6 +1561,7 @@ impl PopupRenderer {
             hovered,
             status_link_rect,
             plan_link_rect,
+            claude_usage_rect,
         );
 
         let pad = self.sf(PADDING);
@@ -1511,6 +1587,7 @@ impl PopupRenderer {
                 colors,
                 i18n,
                 rate,
+                None,
             );
 
             // Mini sparkline for five_hour metric (we have chart_data for it)
@@ -1581,6 +1658,7 @@ impl PopupRenderer {
         hovered: &HoveredElement,
         status_link_rect: &mut RECT,
         plan_link_rect: &mut RECT,
+        claude_usage_rect: &mut RECT,
     ) -> f32 {
         let pad = self.sf(PADDING);
         let detected = usage.detected_plan();
@@ -1732,34 +1810,31 @@ impl PopupRenderer {
         };
         *plan_link_rect = to_win32_rect(&click_rect);
 
-        // "Status ↗" link
-        let status_str = format!("{} \u{2197}", i18n.t("Status"));
-        let status_text = wide(&status_str);
-        let status_format = d2d.get_text_format(10, false, 1, 1).clone();
-        let is_status_hovered = matches!(hovered, HoveredElement::StatusLink);
-        let status_color = if is_status_hovered {
-            lighten_d2d(&colorref_to_d2d(colors.accent), 0.3)
+        // Two compact icons at header right: usage (mini bars) + status (dot).
+        let show_usage_links = crate::APP_STATE
+            .as_ref()
+            .map(|s| s.config_mgr.config.show_usage_links)
+            .unwrap_or(true);
+        if show_usage_links {
+            let icon_w = self.sf(20);
+            let gap = self.sf(4);
+            let status_left = w - pad - icon_w;
+            let usage_left = status_left - gap - icon_w;
+            *claude_usage_rect = self.draw_icon_button(rt, usage_left, y, false, colors);
+            *status_link_rect = self.draw_icon_button(rt, status_left, y, true, colors);
+            // Hover tooltip label, right-aligned just left of the icons.
+            let tip = match hovered {
+                HoveredElement::ClaudeUsageIcon => Some(i18n.t("Open usage")),
+                HoveredElement::StatusLink => Some(i18n.t("Service status")),
+                _ => None,
+            };
+            if let Some(tip) = tip {
+                self.draw_icon_tooltip(rt, d2d, usage_left - gap, y, tip, colors);
+            }
         } else {
-            colorref_to_d2d(colors.accent)
-        };
-        let status_brush = rt
-            .CreateSolidColorBrush(&status_color as *const _, None)
-            .unwrap();
-        let sr = D2D_RECT_F {
-            left: w - pad - self.sf(56),
-            top: y,
-            right: w - pad,
-            bottom: y + self.sf(20),
-        };
-        *status_link_rect = to_win32_rect(&sr);
-        rt.DrawText(
-            &status_text[..status_text.len() - 1],
-            &status_format,
-            &sr,
-            &status_brush,
-            D2D1_DRAW_TEXT_OPTIONS_NONE,
-            DWRITE_MEASURING_MODE_NATURAL,
-        );
+            *status_link_rect = RECT::default();
+            *claude_usage_rect = RECT::default();
+        }
 
         y + self.sf(24)
     }
@@ -2083,6 +2158,114 @@ impl PopupRenderer {
         y
     }
 
+    /// Draw a small right-aligned tooltip label whose right edge is at
+    /// `right_x`, vertically centered on an 18px icon row starting at `y`.
+    unsafe fn draw_icon_tooltip(
+        &self,
+        rt: &ID2D1HwndRenderTarget,
+        d2d: &mut D2DResources,
+        right_x: f32,
+        y: f32,
+        text: &str,
+        colors: &ThemeColors,
+    ) {
+        let wtext = wide(text);
+        let fmt = d2d.get_text_format(10, false, 1, 1).clone();
+        let brush = rt
+            .CreateSolidColorBrush(&colorref_to_d2d(colors.text_secondary) as *const _, None)
+            .unwrap();
+        rt.DrawText(
+            &wtext[..wtext.len() - 1],
+            &fmt,
+            &D2D_RECT_F {
+                left: right_x - self.sf(120),
+                top: y,
+                right: right_x,
+                bottom: y + self.sf(18),
+            },
+            &brush,
+            D2D1_DRAW_TEXT_OPTIONS_NONE,
+            DWRITE_MEASURING_MODE_NATURAL,
+        );
+    }
+
+    /// Draw a compact icon button at a given left position at row height `y`.
+    /// `is_status` selects a "status/health" dot glyph; otherwise a mini
+    /// bar-chart "usage" glyph. Returns the clickable rect.
+    unsafe fn draw_icon_button(
+        &self,
+        rt: &ID2D1HwndRenderTarget,
+        left: f32,
+        y: f32,
+        is_status: bool,
+        colors: &ThemeColors,
+    ) -> RECT {
+        let box_w = self.sf(20);
+        let box_h = self.sf(18);
+        let rect = D2D_RECT_F {
+            left,
+            top: y,
+            right: left + box_w,
+            bottom: y + box_h,
+        };
+        // Subtle rounded background.
+        let bg = rt
+            .CreateSolidColorBrush(&colorref_to_d2d(colors.hover) as *const _, None)
+            .unwrap();
+        rt.FillRoundedRectangle(
+            &D2D1_ROUNDED_RECT {
+                rect,
+                radiusX: self.sf(4),
+                radiusY: self.sf(4),
+            },
+            &bg,
+        );
+
+        let s = self.dpi_scale;
+        let cx = left + box_w / 2.0;
+        let cy = y + box_h / 2.0;
+
+        if is_status {
+            // Status: a small green "operational" dot.
+            let dot = rt
+                .CreateSolidColorBrush(&colorref_to_d2d(colors.green) as *const _, None)
+                .unwrap();
+            rt.FillEllipse(
+                &D2D1_ELLIPSE {
+                    point: D2D_POINT_2F { x: cx, y: cy },
+                    radiusX: 3.5 * s,
+                    radiusY: 3.5 * s,
+                },
+                &dot,
+            );
+        } else {
+            // Usage: a mini bar chart (three ascending bars).
+            let brush = rt
+                .CreateSolidColorBrush(&colorref_to_d2d(colors.accent) as *const _, None)
+                .unwrap();
+            let bw = 2.4 * s;
+            let gap = 1.6 * s;
+            let base = cy + 5.0 * s;
+            let heights = [4.0 * s, 7.0 * s, 10.0 * s];
+            let total_w = bw * 3.0 + gap * 2.0;
+            let mut bx = cx - total_w / 2.0;
+            for h in heights {
+                rt.FillRectangle(
+                    &D2D_RECT_F {
+                        left: bx,
+                        top: base - h,
+                        right: bx + bw,
+                        bottom: base,
+                    },
+                    &brush,
+                );
+                bx += bw + gap;
+            }
+        }
+        to_win32_rect(&rect)
+    }
+
+    #[allow(clippy::too_many_arguments)]
     unsafe fn draw_chatgpt_section(
         &self,
         rt: &ID2D1HwndRenderTarget,
@@ -2091,77 +2274,238 @@ impl PopupRenderer {
         mut y: f32,
         colors: &ThemeColors,
         i18n: &I18n,
+        hovered: &HoveredElement,
         link_rect: &mut RECT,
+        codex_plan_rect: &mut RECT,
+        codex_status_rect: &mut RECT,
+        codex_status: Option<&crate::providers::codex::CodexStatus>,
+        show_usage_links: bool,
     ) -> f32 {
         let pad = self.sf(PADDING);
+        *link_rect = RECT::default();
+        *codex_plan_rect = RECT::default();
+        *codex_status_rect = RECT::default();
 
-        // Section header
-        let header_str = format!("\u{25CE} {}", i18n.t("CHATGPT / CODEX"));
-        let header_text = wide(&header_str);
-        let header_format = d2d.get_text_format(12, true, 0, 1).clone();
-        let header_brush = rt
-            .CreateSolidColorBrush(&colorref_to_d2d(colors.text_secondary) as *const _, None)
-            .unwrap();
-        rt.DrawText(
-            &header_text[..header_text.len() - 1],
-            &header_format,
-            &D2D_RECT_F {
-                left: pad,
-                top: y,
-                right: w - pad,
-                bottom: y + self.sf(20),
-            },
-            &header_brush,
-            D2D1_DRAW_TEXT_OPTIONS_NONE,
-            DWRITE_MEASURING_MODE_NATURAL,
-        );
-        y += self.sf(24);
+        if let Some(status) = codex_status {
+            // Live Codex usage from local ~/.codex logs — rendered exactly like
+            // the Claude section: a "CODEX · Plan [badge]" header plus gradient
+            // progress bars (reusing draw_metric) for each rolling window.
+            let plan = status
+                .plan_type
+                .as_deref()
+                .map(|p| {
+                    let mut c = p.chars();
+                    match c.next() {
+                        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+                        None => String::new(),
+                    }
+                })
+                .unwrap_or_default();
 
-        // Info text (word wrap)
-        let info = format!("\u{24D8} {}", i18n.t("openai_no_api"));
-        let info_text = wide(&info);
-        let info_format = d2d.get_text_format_wrap(11, false);
-        let info_brush = rt
-            .CreateSolidColorBrush(&colorref_to_d2d(colors.text_secondary) as *const _, None)
-            .unwrap();
-        rt.DrawText(
-            &info_text[..info_text.len() - 1],
-            &info_format,
-            &D2D_RECT_F {
-                left: pad,
-                top: y,
-                right: w - pad,
-                bottom: y + self.sf(50),
-            },
-            &info_brush,
-            D2D1_DRAW_TEXT_OPTIONS_NONE,
-            DWRITE_MEASURING_MODE_NATURAL,
-        );
-        y += self.sf(55);
+            // "◉ CODEX · Plan " prefix + colored plan pill.
+            let prefix = format!("\u{25CE} {} \u{00B7} {} ", i18n.t("CODEX"), i18n.t("Plan"));
+            let prefix_text = wide(&prefix);
+            let pfmt = d2d.get_text_format(12, true, 0, 1).clone();
+            let pbrush = rt
+                .CreateSolidColorBrush(&colorref_to_d2d(colors.text_secondary) as *const _, None)
+                .unwrap();
+            rt.DrawText(
+                &prefix_text[..prefix_text.len() - 1],
+                &pfmt,
+                &D2D_RECT_F {
+                    left: pad,
+                    top: y,
+                    right: w - pad,
+                    bottom: y + self.sf(20),
+                },
+                &pbrush,
+                D2D1_DRAW_TEXT_OPTIONS_NONE,
+                DWRITE_MEASURING_MODE_NATURAL,
+            );
 
-        // Link
-        let link_str = format!("\u{1F4CA} {}", i18n.t("Open ChatGPT Usage \u{2192}"));
-        let link_text = wide(&link_str);
-        let link_format = d2d.get_text_format(12, false, 0, 1).clone();
-        let link_brush = rt
-            .CreateSolidColorBrush(&colorref_to_d2d(colors.accent) as *const _, None)
-            .unwrap();
-        let lr = D2D_RECT_F {
-            left: pad,
-            top: y,
-            right: w - pad,
-            bottom: y + self.sf(22),
-        };
-        *link_rect = to_win32_rect(&lr);
-        rt.DrawText(
-            &link_text[..link_text.len() - 1],
-            &link_format,
-            &lr,
-            &link_brush,
-            D2D1_DRAW_TEXT_OPTIONS_NONE,
-            DWRITE_MEASURING_MODE_NATURAL,
-        );
-        y += self.sf(28);
+            if !plan.is_empty() {
+                let prefix_w = d2d
+                    .dwrite_factory
+                    .CreateTextLayout(&prefix_text[..prefix_text.len() - 1], &pfmt, 999.0, 20.0)
+                    .ok()
+                    .and_then(|l| {
+                        let mut m =
+                            windows::Win32::Graphics::DirectWrite::DWRITE_TEXT_METRICS::default();
+                        l.GetMetrics(&mut m).ok()?;
+                        Some(m.widthIncludingTrailingWhitespace)
+                    })
+                    .unwrap_or(self.sf(110));
+
+                let plan_text = wide(&plan);
+                let plan_format = d2d.get_text_format(10, true, 0, 1).clone();
+                let plan_text_w = d2d
+                    .dwrite_factory
+                    .CreateTextLayout(&plan_text[..plan_text.len() - 1], &plan_format, 200.0, 20.0)
+                    .ok()
+                    .and_then(|l| {
+                        let mut m =
+                            windows::Win32::Graphics::DirectWrite::DWRITE_TEXT_METRICS::default();
+                        l.GetMetrics(&mut m).ok()?;
+                        Some(m.widthIncludingTrailingWhitespace)
+                    })
+                    .unwrap_or(self.sf(30));
+
+                let badge_h = self.sf(16);
+                let badge_pad = self.sf(6);
+                let badge_w = plan_text_w + badge_pad * 2.0;
+                let badge_y = y + (self.sf(20) - badge_h) / 2.0;
+                let badge_rect = D2D_RECT_F {
+                    left: pad + prefix_w,
+                    top: badge_y,
+                    right: pad + prefix_w + badge_w,
+                    bottom: badge_y + badge_h,
+                };
+                // Teal pill for Codex (distinct from Claude's plan colors).
+                let badge_bg = D2D1_COLOR_F {
+                    r: 0.0,
+                    g: 0.59,
+                    b: 0.53,
+                    a: 1.0,
+                };
+                let badge_brush = rt.CreateSolidColorBrush(&badge_bg, None).unwrap();
+                rt.FillRoundedRectangle(
+                    &D2D1_ROUNDED_RECT {
+                        rect: badge_rect,
+                        radiusX: self.sf(4),
+                        radiusY: self.sf(4),
+                    },
+                    &badge_brush,
+                );
+                // Plan badge is clickable → opens Codex/ChatGPT usage.
+                *codex_plan_rect = to_win32_rect(&badge_rect);
+                let white = D2D1_COLOR_F {
+                    r: 1.0,
+                    g: 1.0,
+                    b: 1.0,
+                    a: 1.0,
+                };
+                let white_brush = rt.CreateSolidColorBrush(&white, None).unwrap();
+                rt.DrawText(
+                    &plan_text[..plan_text.len() - 1],
+                    &plan_format,
+                    &D2D_RECT_F {
+                        left: pad + prefix_w + badge_pad,
+                        top: badge_y,
+                        right: pad + prefix_w + badge_w,
+                        bottom: badge_y + badge_h,
+                    },
+                    &white_brush,
+                    D2D1_DRAW_TEXT_OPTIONS_NONE,
+                    DWRITE_MEASURING_MODE_NATURAL,
+                );
+            }
+            // Two compact icons at header right: usage (mini bars) + status (dot).
+            if show_usage_links {
+                let icon_w = self.sf(20);
+                let gap = self.sf(4);
+                let status_left = w - pad - icon_w;
+                let usage_left = status_left - gap - icon_w;
+                *link_rect = self.draw_icon_button(rt, usage_left, y, false, colors);
+                *codex_status_rect = self.draw_icon_button(rt, status_left, y, true, colors);
+                let tip = match hovered {
+                    HoveredElement::ChatGptLink => Some(i18n.t("Open usage")),
+                    HoveredElement::CodexStatusIcon => Some(i18n.t("Service status")),
+                    _ => None,
+                };
+                if let Some(tip) = tip {
+                    self.draw_icon_tooltip(rt, d2d, usage_left - gap, y, tip, colors);
+                }
+            }
+            y += self.sf(24);
+
+            // Gradient bars for each rolling window, keyed to reuse the Claude
+            // metric labels ("5-hour session" / "Weekly (7-day)").
+            let bars: [(&str, &Option<crate::providers::codex::CodexRateLimit>); 2] = [
+                ("five_hour", &status.five_hour),
+                ("seven_day", &status.weekly),
+            ];
+            for (key, rl) in bars {
+                if let Some(rl) = rl {
+                    let reset = rl.resets_at_rfc3339();
+                    // Codex bars use a distinct teal hue (#14b8a6) so they read
+                    // as a different provider from Claude's green→amber bars.
+                    let codex_teal = crate::ui::colors::rgb(20, 184, 166);
+                    y = self.draw_metric(
+                        rt,
+                        d2d,
+                        w,
+                        y,
+                        key,
+                        rl.used_percent,
+                        reset.as_deref(),
+                        colors,
+                        i18n,
+                        None,
+                        Some(codex_teal),
+                    );
+                    y += self.sf(SECTION_GAP);
+                }
+            }
+        } else {
+            // No local Codex logs found — section header + explanation + icon.
+            let header_str = format!("\u{25CE} {}", i18n.t("CHATGPT / CODEX"));
+            let header_text = wide(&header_str);
+            let header_format = d2d.get_text_format(12, true, 0, 1).clone();
+            let header_brush = rt
+                .CreateSolidColorBrush(&colorref_to_d2d(colors.text_secondary) as *const _, None)
+                .unwrap();
+            rt.DrawText(
+                &header_text[..header_text.len() - 1],
+                &header_format,
+                &D2D_RECT_F {
+                    left: pad,
+                    top: y,
+                    right: w - pad,
+                    bottom: y + self.sf(20),
+                },
+                &header_brush,
+                D2D1_DRAW_TEXT_OPTIONS_NONE,
+                DWRITE_MEASURING_MODE_NATURAL,
+            );
+            if show_usage_links {
+                let icon_w = self.sf(20);
+                let gap = self.sf(4);
+                let status_left = w - pad - icon_w;
+                let usage_left = status_left - gap - icon_w;
+                *link_rect = self.draw_icon_button(rt, usage_left, y, false, colors);
+                *codex_status_rect = self.draw_icon_button(rt, status_left, y, true, colors);
+                let tip = match hovered {
+                    HoveredElement::ChatGptLink => Some(i18n.t("Open usage")),
+                    HoveredElement::CodexStatusIcon => Some(i18n.t("Service status")),
+                    _ => None,
+                };
+                if let Some(tip) = tip {
+                    self.draw_icon_tooltip(rt, d2d, usage_left - gap, y, tip, colors);
+                }
+            }
+            y += self.sf(24);
+
+            let info = format!("\u{24D8} {}", i18n.t("openai_no_api"));
+            let info_text = wide(&info);
+            let info_format = d2d.get_text_format_wrap(11, false);
+            let info_brush = rt
+                .CreateSolidColorBrush(&colorref_to_d2d(colors.text_secondary) as *const _, None)
+                .unwrap();
+            rt.DrawText(
+                &info_text[..info_text.len() - 1],
+                &info_format,
+                &D2D_RECT_F {
+                    left: pad,
+                    top: y,
+                    right: w - pad,
+                    bottom: y + self.sf(50),
+                },
+                &info_brush,
+                D2D1_DRAW_TEXT_OPTIONS_NONE,
+                DWRITE_MEASURING_MODE_NATURAL,
+            );
+            y += self.sf(55);
+        }
 
         y
     }
@@ -2747,7 +3091,7 @@ pub unsafe fn draw_settings_panel(
     config: &crate::config::Config,
     back_rect: &mut RECT,
     close_rect: &mut RECT,
-    setting_rects: &mut [RECT; 13],
+    setting_rects: &mut [RECT; 14],
     hovered: &HoveredElement,
 ) {
     let Some(rt) = d2d.render_target.clone() else {
@@ -2947,9 +3291,9 @@ pub unsafe fn draw_settings_panel(
             None,
         ),
         (
-            i18n.t("Hide Extra Usage").to_string(),
+            i18n.t("Show extra usage").to_string(),
             None,
-            Some(config.hide_extra_usage),
+            Some(config.show_extra_usage),
         ),
         (
             i18n.t("Show startup notification").to_string(),
@@ -2960,6 +3304,11 @@ pub unsafe fn draw_settings_panel(
             i18n.t("Show login expiry warning").to_string(),
             None,
             Some(config.token_expiry_warning),
+        ),
+        (
+            i18n.t("Usage link icons").to_string(),
+            None,
+            Some(config.show_usage_links),
         ),
     ];
 
@@ -3363,5 +3712,44 @@ fn to_win32_rect(r: &D2D_RECT_F) -> RECT {
         top: r.top as i32,
         right: r.right as i32,
         bottom: r.bottom as i32,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_gear_outline_geometry() {
+        let num_teeth = 8usize;
+        let t = std::f32::consts::TAU / num_teeth as f32;
+        let (cx, cy, r_out, r_in) = (10.0f32, 10.0f32, 8.0f32, 5.0f32);
+        let pts = gear_outline_points(cx, cy, r_out, r_in, num_teeth, t * 0.17, t * 0.30, t);
+
+        // 4 vertices per tooth.
+        assert_eq!(pts.len(), num_teeth * 4);
+
+        let radius = |p: &D2D_POINT_2F| ((p.x - cx).powi(2) + (p.y - cy).powi(2)).sqrt();
+        for (i, p) in pts.iter().enumerate() {
+            let r = radius(p);
+            match i % 4 {
+                // Valley vertices at r_in, tip vertices at r_out.
+                0 | 3 => assert!((r - r_in).abs() < 1e-3, "vertex {i} expected r_in, got {r}"),
+                _ => assert!(
+                    (r - r_out).abs() < 1e-3,
+                    "vertex {i} expected r_out, got {r}"
+                ),
+            }
+        }
+    }
+
+    #[test]
+    fn test_gear_first_tooth_points_up() {
+        // First tooth is centered at the top (12 o'clock): its tip vertices
+        // should sit above the center (y < cy).
+        let num_teeth = 8usize;
+        let t = std::f32::consts::TAU / num_teeth as f32;
+        let pts = gear_outline_points(10.0, 10.0, 8.0, 5.0, num_teeth, t * 0.17, t * 0.30, t);
+        assert!(pts[1].y < 10.0 && pts[2].y < 10.0);
     }
 }

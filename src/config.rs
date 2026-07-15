@@ -75,8 +75,10 @@ pub struct Config {
     pub tray_icon_style: String,
     #[serde(default = "default_dashboard_layout")]
     pub dashboard_layout: String,
+    /// Show the `extra_usage` metric in the dashboard (off by default — it does
+    /// not fit the standard rolling-limit concept).
     #[serde(default)]
-    pub hide_extra_usage: bool,
+    pub show_extra_usage: bool,
     #[serde(default)]
     pub token_expiry_warning: bool,
     #[serde(default = "default_true")]
@@ -96,6 +98,8 @@ pub struct Config {
     /// downgrade comparison. Recognized: "Pro", "Max 5x", "Max 20x".
     #[serde(default)]
     pub plan_override: Option<String>,
+    #[serde(default = "default_true")]
+    pub show_usage_links: bool,
 }
 
 fn default_dashboard_layout() -> String {
@@ -128,7 +132,7 @@ impl Default for Config {
             accessibility_patterns: false,
             tray_icon_style: "number".to_string(),
             dashboard_layout: "standard".to_string(),
-            hide_extra_usage: false,
+            show_extra_usage: false,
             token_expiry_warning: false,
             show_startup_notification: true,
             custom_colors: CustomColors::default(),
@@ -136,6 +140,7 @@ impl Default for Config {
             web_api_session_key: None,
             web_api_org_id: None,
             plan_override: None,
+            show_usage_links: true,
         }
     }
 }

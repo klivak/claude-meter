@@ -64,6 +64,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Export History (CSV)",
         "Xu\u{1ea5}t l\u{1ecb}ch s\u{1eed} (CSV)",
     );
+    m.insert("Export History (JSON)", "Xuất lịch sử (JSON)");
+    m.insert("Show extra usage", "Hiển thị mức sử dụng bổ sung");
+    m.insert("Usage link icons", "Biểu tượng liên kết sử dụng");
+    m.insert("Open usage", "Mở mức sử dụng");
+    m.insert("Service status", "Trạng thái dịch vụ");
+    m.insert("CODEX", "CODEX");
     m.insert("Settings", "C\u{00e0}i \u{0111}\u{1eb7}t");
     m.insert(
         "Start with Windows",

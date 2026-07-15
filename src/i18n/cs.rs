@@ -49,6 +49,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Refresh Now", "Obnovit nyní");
     m.insert("Open Dashboard", "Otevřít panel");
     m.insert("Export History (CSV)", "Exportovat historii (CSV)");
+    m.insert("Export History (JSON)", "Exportovat historii (JSON)");
+    m.insert("Show extra usage", "Zobrazit extra využití");
+    m.insert("Usage link icons", "Ikony odkazů využití");
+    m.insert("Open usage", "Otevřít využití");
+    m.insert("Service status", "Stav služby");
+    m.insert("CODEX", "CODEX");
     m.insert("Settings", "Nastavení");
     m.insert("Start with Windows", "Spustit s Windows");
     m.insert("About", "O aplikaci");

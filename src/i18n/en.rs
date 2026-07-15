@@ -48,6 +48,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Refresh Now", "Refresh Now");
     m.insert("Open Dashboard", "Open Dashboard");
     m.insert("Export History (CSV)", "Export History (CSV)");
+    m.insert("Export History (JSON)", "Export History (JSON)");
     m.insert("Settings", "Settings");
     m.insert("Start with Windows", "Start with Windows");
     m.insert("About", "About");
@@ -81,6 +82,11 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("ClaudeMeter", "ClaudeMeter");
     m.insert("CLAUDE", "CLAUDE");
     m.insert("CHATGPT / CODEX", "CHATGPT / CODEX");
+    m.insert("CODEX", "CODEX");
+    m.insert("Plan", "Plan");
+    m.insert("Usage link icons", "Usage link icons");
+    m.insert("Open usage", "Open usage");
+    m.insert("Service status", "Service status");
     m.insert("Usage History", "Usage History");
     m.insert("Usage History (24h)", "Usage History (24h)");
     m.insert("Auto (English)", "Auto (English)");
@@ -110,6 +116,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Standard", "Standard");
     m.insert("Detailed", "Detailed");
     m.insert("Hide Extra Usage", "Hide Extra Usage");
+    m.insert("Show extra usage", "Show extra usage");
     m.insert("Show startup notification", "Show startup notification");
     m.insert("Show login expiry warning", "Show login expiry warning");
     m

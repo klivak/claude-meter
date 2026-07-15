@@ -108,7 +108,7 @@ On macOS, use the menu bar item → **Enable Autostart**. The app uses a LaunchA
 
 ### ChatGPT / Codex (Optional)
 
-OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription usage. ClaudeMeter includes an optional panel (disabled by default) with a direct link to your ChatGPT usage page. Enable it in Settings if you want quick access.
+OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription usage. Instead, ClaudeMeter reads your local `~/.codex` logs to show **live Codex (OpenAI) subscription usage** directly in the dashboard — a "CODEX · Plan" header with rolling-window progress bars, rendered in a distinct teal hue so they read as a different provider from Claude's bars. If no local Codex logs are found, the panel falls back to a direct link to your ChatGPT usage page. Enable the panel in Settings.
 
 ### System Tray
 
@@ -145,7 +145,8 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 - **Auto-refresh** — automatically polls when data is older than 60 seconds
 - **Acrylic backdrop** — Windows 11 translucent blur effect (falls back gracefully on Win10)
 - **Segoe UI Variable** — uses Windows 11's variable font with automatic fallback to Segoe UI
-- **Hide Extra Usage** — toggle in Settings to hide the extra_usage metric from the dashboard
+- **Show extra usage** — toggle in Settings to show the extra_usage metric in the dashboard (off by default)
+- **Usage & status icon buttons** — each section header shows compact "open usage" and "service status" icon buttons; toggle them with the "Usage link icons" setting
 - **Notification toggles** — Settings exposes "Show startup notification" (silence the "Running in tray" balloon on launch) and "Show login expiry warning" (silence the `claude login` reminder)
 - **Clickable update balloon** — clicking the "Update available" tray balloon opens the GitHub release page in your browser
 
@@ -228,6 +229,7 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 ### 📤 Data Export
 
 - **CSV export** — right-click tray → "Export History (CSV)" to save full usage history
+- **JSON export** — right-click tray → "Export History (JSON)" to save full usage history as JSON
 - **SQLite database** — 30-day rolling history stored next to the .exe
 
 ### ⚙ Smart Polling
@@ -271,7 +273,8 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
   "accessibility_patterns": false,
   "tray_icon_style": "number",
   "dashboard_layout": "standard",
-  "hide_extra_usage": false,
+  "show_extra_usage": false,
+  "show_usage_links": true,
   "custom_colors": {},
   "quiet_hours": {
     "enabled": false,
@@ -299,7 +302,8 @@ OpenAI does not provide a public API for checking ChatGPT Plus/Pro subscription 
 | `tray_icon_style` | `"number"` | number/ring/bar/pie | Tray icon style: number (%), ring (circular), bar (vertical), pie (multi-metric) |
 | `accessibility_patterns` | `false` | — | Colorblind overlay patterns on progress bars |
 | `dashboard_layout` | `"standard"` | minimal/standard/detailed | Dashboard layout mode |
-| `hide_extra_usage` | `false` | — | Hide extra_usage metric from dashboard |
+| `show_extra_usage` | `false` | — | Show extra_usage metric in dashboard |
+| `show_usage_links` | `true` | — | Show usage/status icon buttons in section headers |
 | `custom_colors` | `{}` | hex strings | Override theme colors (e.g. `{"green": "#00ff00"}`) |
 | `quiet_hours.enabled` | `false` | — | Suppress notifications during quiet hours |
 | `quiet_hours.start` | `"22:00"` | HH:MM | Quiet hours start time |

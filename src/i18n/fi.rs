@@ -61,6 +61,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Refresh Now", "P\u{00e4}ivit\u{00e4} nyt");
     m.insert("Open Dashboard", "Avaa hallintapaneeli");
     m.insert("Export History (CSV)", "Vie historia (CSV)");
+    m.insert("Export History (JSON)", "Vie historia (JSON)");
+    m.insert("Show extra usage", "Näytä lisäkäyttö");
+    m.insert("Usage link icons", "Käyttölinkkien kuvakkeet");
+    m.insert("Open usage", "Avaa käyttö");
+    m.insert("Service status", "Palvelun tila");
+    m.insert("CODEX", "CODEX");
     m.insert("Settings", "Asetukset");
     m.insert(
         "Start with Windows",

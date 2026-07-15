@@ -29,6 +29,7 @@ pub const IDM_SETTINGS: u32 = 1005;
 pub const IDM_AUTOSTART: u32 = 1006;
 pub const IDM_ABOUT: u32 = 1007;
 pub const IDM_EXPORT_CSV: u32 = 1009;
+pub const IDM_EXPORT_JSON: u32 = 1010;
 pub const IDM_EXIT: u32 = 1008;
 
 #[derive(Debug, Clone, Copy, PartialEq)]

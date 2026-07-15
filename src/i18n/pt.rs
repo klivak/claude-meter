@@ -58,6 +58,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Refresh Now", "Atualizar agora");
     m.insert("Open Dashboard", "Abrir painel");
     m.insert("Export History (CSV)", "Exportar hist\u{00f3}rico (CSV)");
+    m.insert("Export History (JSON)", "Exportar hist\u{00f3}rico (JSON)");
+    m.insert("Show extra usage", "Mostrar uso extra");
+    m.insert("Usage link icons", "\u{00cd}cones de links de uso");
+    m.insert("Open usage", "Abrir uso");
+    m.insert("Service status", "Estado do servi\u{00e7}o");
+    m.insert("CODEX", "CODEX");
     m.insert("Settings", "Configura\u{00e7}\u{00f5}es");
     m.insert("Start with Windows", "Iniciar com o Windows");
     m.insert("About", "Sobre");

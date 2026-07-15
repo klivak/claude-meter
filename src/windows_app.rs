@@ -8,7 +8,8 @@ use crate::notifications::NotificationTracker;
 use crate::providers::claude::{ClaudeClient, UsageResponse};
 use crate::theme::{resolve_theme, ThemeMode};
 use crate::tray::{
-    build_tooltip, TrayIcon, IDM_ABOUT, IDM_AUTOSTART, IDM_EXIT, IDM_EXPORT_CSV, IDM_OPEN_CHATGPT,
+    build_tooltip, TrayIcon, IDM_ABOUT, IDM_AUTOSTART, IDM_EXIT, IDM_EXPORT_CSV, IDM_EXPORT_JSON,
+    IDM_OPEN_CHATGPT,
     IDM_OPEN_CLAUDE, IDM_OPEN_DASHBOARD, IDM_REFRESH, IDM_SETTINGS, WM_TRAY_ICON,
 };
 use crate::ui::colors::colorref_to_d2d;
@@ -87,8 +88,12 @@ pub(crate) struct AppState {
     chatgpt_link_rect: RECT,
     status_link_rect: RECT,
     plan_link_rect: RECT,
+    // Compact usage/status icon rects (Claude usage icon, Codex plan, Codex status).
+    claude_usage_rect: RECT,
+    codex_plan_rect: RECT,
+    codex_status_rect: RECT,
     back_rect: RECT,
-    setting_rects: [RECT; 13],
+    setting_rects: [RECT; 14],
     notification_tracker: NotificationTracker,
     exe_dir: std::path::PathBuf,
     chart_data: Vec<f64>,
@@ -127,6 +132,8 @@ pub(crate) struct AppState {
     widget_hwnd: Option<HWND>,
     // Rate of change per metric (%/hour)
     rate_of_change: std::collections::HashMap<String, f64>,
+    // Live OpenAI Codex usage from local ~/.codex logs (when ChatGPT panel on).
+    codex_status: Option<crate::providers::codex::CodexStatus>,
     // Slide animation state for settings ↔ dashboard transition
     slide_anim_offset: f32,
     slide_anim_target: f32,
@@ -265,8 +272,11 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
         chatgpt_link_rect: RECT::default(),
         status_link_rect: RECT::default(),
         plan_link_rect: RECT::default(),
+        claude_usage_rect: RECT::default(),
+        codex_plan_rect: RECT::default(),
+        codex_status_rect: RECT::default(),
         back_rect: RECT::default(),
-        setting_rects: [RECT::default(); 13],
+        setting_rects: [RECT::default(); 14],
         notification_tracker: NotificationTracker::new(),
         exe_dir,
         chart_data: Vec::new(),
@@ -293,6 +303,7 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
         token_expiry_warned: false,
         widget_hwnd: None,
         rate_of_change: std::collections::HashMap::new(),
+        codex_status: None,
         slide_anim_offset: 0.0,
         slide_anim_target: 0.0,
         slide_anim_active: false,
@@ -622,6 +633,7 @@ unsafe extern "system" fn main_wnd_proc(
                     state.chart_data_7d = db_result.chart_data_7d;
                     state.chart_data_30d = db_result.chart_data_30d;
                     state.rate_of_change = db_result.rate_of_change;
+                    state.codex_status = db_result.codex_status;
 
                     // Repaint popup if visible to show updated charts
                     if state.popup_visible {
@@ -791,7 +803,9 @@ unsafe extern "system" fn popup_wnd_proc(
                                         &state.anim_current,
                                         &state.config_mgr.config.dashboard_layout,
                                         &state.rate_of_change,
-                                        state.config_mgr.config.hide_extra_usage,
+                                        !state.config_mgr.config.show_extra_usage,
+                                        state.codex_status.as_ref(),
+                                        state.config_mgr.config.show_usage_links,
                                         &mut state.settings_rect,
                                         &mut state.close_rect,
                                         &mut state.refresh_rect,
@@ -800,6 +814,9 @@ unsafe extern "system" fn popup_wnd_proc(
                                         &mut state.chatgpt_link_rect,
                                         &mut state.status_link_rect,
                                         &mut state.plan_link_rect,
+                                        &mut state.claude_usage_rect,
+                                        &mut state.codex_plan_rect,
+                                        &mut state.codex_status_rect,
                                         &mut state.chart_rect,
                                         &mut state.chart_bar_count,
                                         &mut state.chart_toggle_rect,
@@ -863,7 +880,9 @@ unsafe extern "system" fn popup_wnd_proc(
                                         &state.anim_current,
                                         &state.config_mgr.config.dashboard_layout,
                                         &state.rate_of_change,
-                                        state.config_mgr.config.hide_extra_usage,
+                                        !state.config_mgr.config.show_extra_usage,
+                                        state.codex_status.as_ref(),
+                                        state.config_mgr.config.show_usage_links,
                                         &mut state.settings_rect,
                                         &mut state.close_rect,
                                         &mut state.refresh_rect,
@@ -872,6 +891,9 @@ unsafe extern "system" fn popup_wnd_proc(
                                         &mut state.chatgpt_link_rect,
                                         &mut state.status_link_rect,
                                         &mut state.plan_link_rect,
+                                        &mut state.claude_usage_rect,
+                                        &mut state.codex_plan_rect,
+                                        &mut state.codex_status_rect,
                                         &mut state.chart_rect,
                                         &mut state.chart_bar_count,
                                         &mut state.chart_toggle_rect,
@@ -922,7 +944,9 @@ unsafe extern "system" fn popup_wnd_proc(
                                     &state.anim_current,
                                     &state.config_mgr.config.dashboard_layout,
                                     &state.rate_of_change,
-                                    state.config_mgr.config.hide_extra_usage,
+                                    !state.config_mgr.config.show_extra_usage,
+                                    state.codex_status.as_ref(),
+                                    state.config_mgr.config.show_usage_links,
                                     &mut state.settings_rect,
                                     &mut state.close_rect,
                                     &mut state.refresh_rect,
@@ -931,6 +955,9 @@ unsafe extern "system" fn popup_wnd_proc(
                                     &mut state.chatgpt_link_rect,
                                     &mut state.status_link_rect,
                                     &mut state.plan_link_rect,
+                                    &mut state.claude_usage_rect,
+                                    &mut state.codex_plan_rect,
+                                    &mut state.codex_status_rect,
                                     &mut state.chart_rect,
                                     &mut state.chart_bar_count,
                                     &mut state.chart_toggle_rect,
@@ -1065,6 +1092,12 @@ unsafe extern "system" fn popup_wnd_proc(
                     HoveredElement::InstallButton
                 } else if crate::popup::point_in_rect(pt, state.chatgpt_link_rect) {
                     HoveredElement::ChatGptLink
+                } else if crate::popup::point_in_rect(pt, state.codex_status_rect) {
+                    HoveredElement::CodexStatusIcon
+                } else if crate::popup::point_in_rect(pt, state.codex_plan_rect) {
+                    HoveredElement::CodexPlanBadge
+                } else if crate::popup::point_in_rect(pt, state.claude_usage_rect) {
+                    HoveredElement::ClaudeUsageIcon
                 } else if crate::popup::point_in_rect(pt, state.status_link_rect) {
                     HoveredElement::StatusLink
                 } else if crate::popup::point_in_rect(pt, state.plan_link_rect) {
@@ -1132,7 +1165,8 @@ unsafe extern "system" fn popup_wnd_proc(
                         state.config_mgr.config.show_chatgpt_section,
                         state.config_mgr.config.compact_mode,
                         &state.config_mgr.config.dashboard_layout,
-                        state.config_mgr.config.hide_extra_usage,
+                        !state.config_mgr.config.show_extra_usage,
+                        state.codex_status.as_ref().map(|s| s.window_count()).unwrap_or(0),
                     );
                     resize_popup(hwnd, h);
                     state.slide_anim_offset = -(crate::ui::render::POPUP_WIDTH as f32);
@@ -1254,9 +1288,9 @@ unsafe extern "system" fn popup_wnd_proc(
                 } else if state.popup_in_settings
                     && crate::popup::point_in_rect(pt, state.setting_rects[10])
                 {
-                    // Hide Extra Usage: toggle
-                    state.config_mgr.config.hide_extra_usage =
-                        !state.config_mgr.config.hide_extra_usage;
+                    // Show extra usage: toggle
+                    state.config_mgr.config.show_extra_usage =
+                        !state.config_mgr.config.show_extra_usage;
                     state.config_mgr.save();
                     let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
                 } else if state.popup_in_settings
@@ -1273,6 +1307,14 @@ unsafe extern "system" fn popup_wnd_proc(
                     // Token expiry warning: toggle
                     state.config_mgr.config.token_expiry_warning =
                         !state.config_mgr.config.token_expiry_warning;
+                    state.config_mgr.save();
+                    let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
+                } else if state.popup_in_settings
+                    && crate::popup::point_in_rect(pt, state.setting_rects[13])
+                {
+                    // Usage link icons: toggle
+                    state.config_mgr.config.show_usage_links =
+                        !state.config_mgr.config.show_usage_links;
                     state.config_mgr.save();
                     let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
                 } else if crate::popup::point_in_rect(pt, state.settings_rect) {
@@ -1306,12 +1348,22 @@ unsafe extern "system" fn popup_wnd_proc(
                 } else if crate::popup::point_in_rect(pt, state.install_rect) {
                     let url = state.config_mgr.config.claude_install_url.clone();
                     let _ = open::that(&url);
-                } else if crate::popup::point_in_rect(pt, state.chatgpt_link_rect) {
+                } else if crate::popup::point_in_rect(pt, state.chatgpt_link_rect)
+                    || crate::popup::point_in_rect(pt, state.codex_plan_rect)
+                {
+                    // Codex usage icon or Codex plan badge → ChatGPT/Codex usage page.
                     let url = state.config_mgr.config.chatgpt_usage_url.clone();
                     let _ = open::that(&url);
+                } else if crate::popup::point_in_rect(pt, state.codex_status_rect) {
+                    // Codex status icon → OpenAI status page.
+                    let _ = open::that("https://status.openai.com/");
                 } else if crate::popup::point_in_rect(pt, state.status_link_rect) {
+                    // Claude status icon → Anthropic/Claude status page.
                     let _ = open::that("https://status.claude.com/");
-                } else if crate::popup::point_in_rect(pt, state.plan_link_rect) {
+                } else if crate::popup::point_in_rect(pt, state.plan_link_rect)
+                    || crate::popup::point_in_rect(pt, state.claude_usage_rect)
+                {
+                    // Claude plan name or Claude usage icon → Claude usage page.
                     let _ = open::that("https://claude.ai/settings/usage");
                 }
             }
@@ -1464,7 +1516,7 @@ fn is_focus_assist_active() -> bool {
 fn settings_panel_height() -> i32 {
     let header_h = 40;
     let row_h = 38;
-    let num_rows = 13;
+    let num_rows = 14;
     let legend_h = 10 + 1 + 10 + 18 + (4 * 18) + 10; // gap + sep + gap + title + 4 rows + bottom padding
     let footer_h = 44;
     header_h + 8 + (num_rows * row_h) + legend_h + footer_h
@@ -1501,6 +1553,15 @@ unsafe fn resize_popup(popup_hwnd: HWND, h: i32) {
 
 unsafe fn show_popup(_main_hwnd: HWND) {
     if let Some(state) = APP_STATE.as_mut() {
+        // Refresh live Codex usage from local logs on open. This is local file
+        // IO (a handful of files) and, crucially, does NOT depend on a
+        // successful Claude API poll — so the Codex panel stays live even when
+        // Claude data is stale/offline.
+        if state.config_mgr.config.show_chatgpt_section {
+            state.codex_status = crate::providers::codex::default_sessions_dir()
+                .and_then(|dir| crate::providers::codex::latest_status(&dir, chrono::Utc::now()));
+        }
+
         // Calculate height based on current mode
         let h = if state.popup_in_settings {
             settings_panel_height()
@@ -1511,7 +1572,8 @@ unsafe fn show_popup(_main_hwnd: HWND) {
                 state.config_mgr.config.show_chatgpt_section,
                 state.config_mgr.config.compact_mode,
                 &state.config_mgr.config.dashboard_layout,
-                state.config_mgr.config.hide_extra_usage,
+                !state.config_mgr.config.show_extra_usage,
+                state.codex_status.as_ref().map(|s| s.window_count()).unwrap_or(0),
             )
         };
 
@@ -1733,6 +1795,7 @@ unsafe fn show_context_menu(hwnd: HWND) {
         append_menu_sep(menu);
         append_menu_str(menu, IDM_OPEN_DASHBOARD, state.i18n.t("Open Dashboard"));
         append_menu_str(menu, IDM_EXPORT_CSV, state.i18n.t("Export History (CSV)"));
+        append_menu_str(menu, IDM_EXPORT_JSON, state.i18n.t("Export History (JSON)"));
         append_menu_sep(menu);
         append_menu_str(menu, IDM_OPEN_CLAUDE, "Open Claude.ai \u{2192}");
         if show_chatgpt {
@@ -1868,6 +1931,29 @@ unsafe fn handle_menu_command(hwnd: HWND, cmd: u32) {
                 }
             }
         }
+        IDM_EXPORT_JSON => {
+            if let Some(state) = APP_STATE.as_ref() {
+                let json_path = state.exe_dir.join("claudemeter_history.json");
+                let (msg, title_icon) = match Database::open(&state.exe_dir)
+                    .and_then(|db| db.export_json(&json_path))
+                {
+                    Ok(count) => (
+                        format!("{} records exported to:\n{}", count, json_path.display()),
+                        windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION,
+                    ),
+                    Err(e) => (
+                        format!("Export failed: {e}"),
+                        windows::Win32::UI::WindowsAndMessaging::MB_ICONERROR,
+                    ),
+                };
+                let _ = windows::Win32::UI::WindowsAndMessaging::MessageBoxW(
+                    hwnd,
+                    windows::core::PCWSTR(wide(&msg).as_ptr()),
+                    windows::core::PCWSTR(wide("Export JSON").as_ptr()),
+                    title_icon | windows::Win32::UI::WindowsAndMessaging::MB_OK,
+                );
+            }
+        }
         IDM_ABOUT => {
             // Show simple about message
             let _ = windows::Win32::UI::WindowsAndMessaging::MessageBoxW(
@@ -1963,6 +2049,7 @@ struct DbResult {
     chart_data_7d: Vec<f64>,
     chart_data_30d: Vec<f64>,
     rate_of_change: std::collections::HashMap<String, f64>,
+    codex_status: Option<crate::providers::codex::CodexStatus>,
 }
 
 async fn do_poll(web_fallback: Option<(String, String)>) -> PollResult {
@@ -2120,6 +2207,7 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
                 .collect();
             let exe_dir = state.exe_dir.clone();
             let hwnd_val = hwnd.0 as isize;
+            let want_codex = state.config_mgr.config.show_chatgpt_section;
             std::thread::spawn(move || {
                 if let Ok(db) = Database::open(&exe_dir) {
                     for (key, utilization, resets_at) in &metrics {
@@ -2129,11 +2217,22 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
                     let chart_data_7d = db.query_7d_chart().unwrap_or_default();
                     let chart_data_30d = db.query_30d_chart().unwrap_or_default();
                     let rate_of_change = db.query_rate_of_change(60).unwrap_or_default();
+
+                    // Live Codex usage from local logs (only when the panel is on).
+                    let codex_status = if want_codex {
+                        crate::providers::codex::default_sessions_dir().and_then(|dir| {
+                            crate::providers::codex::latest_status(&dir, chrono::Utc::now())
+                        })
+                    } else {
+                        None
+                    };
+
                     let result = Box::new(DbResult {
                         chart_data,
                         chart_data_7d,
                         chart_data_30d,
                         rate_of_change,
+                        codex_status,
                     });
                     let result_ptr = Box::into_raw(result) as isize;
                     let hwnd = HWND(hwnd_val as *mut _);
@@ -2326,7 +2425,8 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
                 state.config_mgr.config.show_chatgpt_section,
                 state.config_mgr.config.compact_mode,
                 &state.config_mgr.config.dashboard_layout,
-                state.config_mgr.config.hide_extra_usage,
+                !state.config_mgr.config.show_extra_usage,
+                state.codex_status.as_ref().map(|s| s.window_count()).unwrap_or(0),
             );
             resize_popup(state.popup_hwnd, h);
             let _ = windows::Win32::Graphics::Gdi::InvalidateRect(state.popup_hwnd, None, true);

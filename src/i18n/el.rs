@@ -55,6 +55,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Refresh Now", "\u{0391}\u{03bd}\u{03b1}\u{03bd}\u{03ad}\u{03c9}\u{03c3}\u{03b7} \u{03c4}\u{03ce}\u{03c1}\u{03b1}");
     m.insert("Open Dashboard", "\u{0386}\u{03bd}\u{03bf}\u{03b9}\u{03b3}\u{03bc}\u{03b1} \u{03c0}\u{03af}\u{03bd}\u{03b1}\u{03ba}\u{03b1}");
     m.insert("Export History (CSV)", "\u{0395}\u{03be}\u{03b1}\u{03b3}\u{03c9}\u{03b3}\u{03ae} \u{03b9}\u{03c3}\u{03c4}\u{03bf}\u{03c1}\u{03b9}\u{03ba}\u{03bf}\u{03cd} (CSV)");
+    m.insert("Export History (JSON)", "Εξαγωγή ιστορικού (JSON)");
+    m.insert("Show extra usage", "Εμφάνιση επιπλέον χρήσης");
+    m.insert("Usage link icons", "Εικονίδια συνδέσμων χρήσης");
+    m.insert("Open usage", "Άνοιγμα χρήσης");
+    m.insert("Service status", "Κατάσταση υπηρεσίας");
+    m.insert("CODEX", "CODEX");
     m.insert(
         "Settings",
         "\u{03a1}\u{03c5}\u{03b8}\u{03bc}\u{03af}\u{03c3}\u{03b5}\u{03b9}\u{03c2}",

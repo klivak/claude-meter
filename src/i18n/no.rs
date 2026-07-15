@@ -49,6 +49,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Refresh Now", "Oppdater n\u{00e5}");
     m.insert("Open Dashboard", "\u{00c5}pne dashbord");
     m.insert("Export History (CSV)", "Eksporter historikk (CSV)");
+    m.insert("Export History (JSON)", "Eksporter historikk (JSON)");
+    m.insert("Show extra usage", "Vis ekstra bruk");
+    m.insert("Usage link icons", "Ikoner for brukslenker");
+    m.insert("Open usage", "Åpne bruk");
+    m.insert("Service status", "Tjenestestatus");
+    m.insert("CODEX", "CODEX");
     m.insert("Settings", "Innstillinger");
     m.insert("Start with Windows", "Start med Windows");
     m.insert("About", "Om");

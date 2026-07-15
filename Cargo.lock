@@ -156,7 +156,7 @@ dependencies = [
 
 [[package]]
 name = "claudemeter"
-version = "4.2.2"
+version = "5.0.0"
 dependencies = [
  "chrono",
  "env_logger",

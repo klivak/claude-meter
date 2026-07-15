@@ -76,6 +76,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Refresh Now", "\u{0628}\u{0627}\u{0632}\u{062e}\u{0648}\u{0627}\u{0646}\u{06cc} \u{0627}\u{06a9}\u{0646}\u{0648}\u{0646}");
     m.insert("Open Dashboard", "\u{0628}\u{0627}\u{0632} \u{06a9}\u{0631}\u{062f}\u{0646} \u{062f}\u{0627}\u{0634}\u{0628}\u{0648}\u{0631}\u{062f}");
     m.insert("Export History (CSV)", "\u{062e}\u{0631}\u{0648}\u{062c}\u{06cc} \u{062a}\u{0627}\u{0631}\u{06cc}\u{062e}\u{0686}\u{0647} (CSV)");
+    m.insert("Export History (JSON)", "\u{062e}\u{0631}\u{0648}\u{062c}\u{06cc} \u{062a}\u{0627}\u{0631}\u{06cc}\u{062e}\u{0686}\u{0647} (JSON)");
+    m.insert("Show extra usage", "نمایش مصرف اضافی");
+    m.insert("Usage link icons", "آیکون‌های پیوند مصرف");
+    m.insert("Open usage", "باز کردن مصرف");
+    m.insert("Service status", "وضعیت سرویس");
+    m.insert("CODEX", "CODEX");
     m.insert(
         "Settings",
         "\u{062a}\u{0646}\u{0638}\u{06cc}\u{0645}\u{0627}\u{062a}",

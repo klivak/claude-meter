@@ -70,6 +70,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Export History (CSV)",
         "\u{5c65}\u{6b74}\u{3092}\u{30a8}\u{30af}\u{30b9}\u{30dd}\u{30fc}\u{30c8} (CSV)",
     );
+    m.insert("Export History (JSON)", "履歴をエクスポート (JSON)");
+    m.insert("Show extra usage", "追加使用量を表示");
+    m.insert("Usage link icons", "使用量リンクアイコン");
+    m.insert("Open usage", "使用量を開く");
+    m.insert("Service status", "サービス状態");
+    m.insert("CODEX", "CODEX");
     m.insert("Settings", "\u{8a2d}\u{5b9a}");
     m.insert(
         "Start with Windows",

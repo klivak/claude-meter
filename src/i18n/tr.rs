@@ -58,6 +58,12 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Export History (CSV)",
         "Ge\u{00e7}mi\u{015f}i D\u{0131}\u{015f}a Aktar (CSV)",
     );
+    m.insert("Export History (JSON)", "Geçmişi Dışa Aktar (JSON)");
+    m.insert("Show extra usage", "Ek kullanımı göster");
+    m.insert("Usage link icons", "Kullanım bağlantı simgeleri");
+    m.insert("Open usage", "Kullanımı aç");
+    m.insert("Service status", "Hizmet durumu");
+    m.insert("CODEX", "CODEX");
     m.insert("Settings", "Ayarlar");
     m.insert("Start with Windows", "Windows ile ba\u{015f}lat");
     m.insert("About", "Hakk\u{0131}nda");
