@@ -26,7 +26,7 @@ See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening
 
 <br>
 
-<img src="screenshots/main.png" alt="ClaudeMeter Light theme dashboard with Claude and Codex usage" width="360"> <img src="screenshots/main2.png" alt="ClaudeMeter Dark theme dashboard with Claude and Codex usage" width="360">
+<img src="screenshots/dashboard-light-v5.1.png" alt="ClaudeMeter 5.1 Light theme dashboard with Claude and Codex usage" width="360"> <img src="screenshots/dashboard-dark-v5.1.png" alt="ClaudeMeter 5.1 Dark theme dashboard with Claude and Codex usage" width="360">
 
 ### 📊 Project Pulse
 
@@ -176,8 +176,8 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 
 <table>
   <tr>
-    <td align="center"><strong>Light</strong><br><img src="screenshots/main.png" alt="ClaudeMeter Light theme" width="260"></td>
-    <td align="center"><strong>Dark</strong><br><img src="screenshots/main2.png" alt="ClaudeMeter Dark theme" width="260"></td>
+    <td align="center"><strong>Light</strong><br><img src="screenshots/dashboard-light-v5.1.png" alt="ClaudeMeter 5.1 Light theme" width="260"></td>
+    <td align="center"><strong>Dark</strong><br><img src="screenshots/dashboard-dark-v5.1.png" alt="ClaudeMeter 5.1 Dark theme" width="260"></td>
   </tr>
   <tr>
     <td align="center"><strong>Sunset</strong><br><img src="screenshots/theme-sunset.png" alt="ClaudeMeter Sunset theme" width="260"></td>
