@@ -22,7 +22,7 @@ See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening
 [![RAM](https://img.shields.io/badge/RAM-under%2010MB-brightgreen)](#-why-rust)
 [![VirusTotal](https://img.shields.io/badge/VirusTotal-scanned-4CAF50?logo=virustotal&logoColor=white)](https://github.com/klivak/claudemeter/releases/latest)
 
-[Download](#-quick-start) · [Features](#-features) · [Usage](#-how-to-use) · [FAQ](#-faq)
+[Website](https://klivak.github.io/claude-meter/) · [Download](#-quick-start) · [Features](#-features) · [Usage](#-how-to-use) · [FAQ](#-faq)
 
 <br>
 
@@ -32,7 +32,7 @@ See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening
 
 <table>
   <tr>
-    <td align="center"><a href="https://hits.sh/github.com/klivak/claude-meter/"><img alt="README views" src="https://hits.sh/github.com/klivak/claude-meter.svg?view=today-total&style=flat-square&label=README%20views&color=00bfa5&labelColor=20232a&logo=github"></a><br><sub>Approximate page loads</sub></td>
+    <td align="center"><a href="https://hits.sh/github.com/klivak/claude-meter/"><img alt="README loads" src="https://hits.sh/github.com/klivak/claude-meter.svg?view=total&style=flat-square&label=README%20loads&color=00bfa5&labelColor=20232a&logo=github"></a><br><sub>Approximate page loads</sub></td>
     <td align="center"><a href="https://github.com/klivak/claude-meter/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/klivak/claude-meter?style=flat-square&logo=github&label=stars&color=f5b942&labelColor=20232a"></a><br><sub>Community stars</sub></td>
     <td align="center"><a href="https://github.com/klivak/claude-meter/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/klivak/claude-meter?style=flat-square&logo=github&label=latest%20release&color=5b8def&labelColor=20232a"></a><br><sub>Current stable version</sub></td>
   </tr>
@@ -45,7 +45,7 @@ See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening
 
 **⭐ Finding ClaudeMeter useful? [Star the repository](https://github.com/klivak/claude-meter) — it helps more people discover it.**
 
-<sub>README views count badge requests since this counter was added, not unique visitors. Caching, bots, repeat visits, and service checks can affect the number.</sub>
+<sub>README loads count badge requests since this counter was added, not unique visitors. Caching, bots, repeat visits, and service checks can affect the number. The separate [project website](https://klivak.github.io/claude-meter/) keeps its own long-term page-load history.</sub>
 
 </div>
 

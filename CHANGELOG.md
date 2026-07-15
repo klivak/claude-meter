@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Project website** — added a responsive GitHub Pages landing page with live repository metrics, theme previews, feature explanations, download links, and a separate privacy-friendly long-term page-load counter.
+
+### Changed
+- **Simpler README counter** — the Project Pulse badge now shows one clearly labeled approximate `README loads` total instead of a today/total pair.
+
 ## [5.1.0] - 2026-07-15
 
 ### Added

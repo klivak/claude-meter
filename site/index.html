@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ClaudeMeter is a lightweight native Claude and Codex usage monitor for Windows and macOS.">
+  <meta name="theme-color" content="#0d111b">
+  <meta property="og:title" content="ClaudeMeter — Know your AI limits">
+  <meta property="og:description" content="Real-time Claude and Codex usage from your tray or menu bar. Native Rust, under 10 MB RAM.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://klivak.github.io/claude-meter/">
+  <meta property="og:image" content="https://raw.githubusercontent.com/klivak/claude-meter/main/assets/icon_app.png">
+  <title>ClaudeMeter — Claude &amp; Codex Usage Monitor</title>
+  <link rel="icon" href="assets/icon_app.ico">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="ClaudeMeter home">
+      <img src="assets/icon_app.ico" alt="" width="36" height="36">
+      <span>ClaudeMeter</span>
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="#features">Features</a>
+      <a href="#themes">Themes</a>
+      <a href="#analytics">Pulse</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch color theme">
+        <span class="theme-icon" aria-hidden="true">◐</span>
+      </button>
+      <a class="button button-small button-ghost" href="https://github.com/klivak/claude-meter">GitHub</a>
+      <a class="button button-small button-primary" href="https://github.com/klivak/claude-meter/releases/latest">Download</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero section-shell">
+      <div class="hero-copy reveal">
+        <a class="release-chip" href="https://github.com/klivak/claude-meter/releases/latest">
+          <span class="status-dot"></span>
+          <span id="release-chip-text">ClaudeMeter v5.1.0 is available</span>
+          <span aria-hidden="true">→</span>
+        </a>
+        <p class="eyebrow">Native Claude + Codex usage monitor</p>
+        <h1>Know your limits<br><span>before they stop you.</span></h1>
+        <p class="hero-lead">Real-time subscription usage in your Windows tray or macOS menu bar. No browser tabs, no API keys, no heavy runtime.</p>
+        <div class="hero-actions">
+          <a class="button button-primary button-large" href="https://github.com/klivak/claude-meter/releases/latest">Download latest release</a>
+          <a class="button button-ghost button-large" href="https://github.com/klivak/claude-meter">View source</a>
+        </div>
+        <div class="trust-row">
+          <span><strong>~2 MB</strong> memory</span>
+          <span><strong>40</strong> languages</span>
+          <span><strong>0</strong> telemetry</span>
+          <span><strong>MIT</strong> licensed</span>
+        </div>
+      </div>
+
+      <div class="hero-visual reveal">
+        <div class="visual-glow"></div>
+        <div class="window-card window-card-back">
+          <img src="screenshots/dashboard-dark-v5.1.png" alt="ClaudeMeter dark dashboard showing Claude and Codex limits" fetchpriority="high">
+        </div>
+        <div class="window-card window-card-front">
+          <img src="screenshots/dashboard-light-v5.1.png" alt="ClaudeMeter light dashboard showing Claude and Codex limits" fetchpriority="high">
+        </div>
+        <div class="floating-pill pill-rust">Built with Rust</div>
+        <div class="floating-pill pill-native">Native &amp; lightweight</div>
+      </div>
+    </section>
+
+    <section class="signal-strip" aria-label="Supported capabilities">
+      <div><span class="signal-icon">◉</span> Claude Pro &amp; Max</div>
+      <div><span class="signal-icon">◎</span> Codex usage</div>
+      <div><span class="signal-icon">▥</span> Usage history</div>
+      <div><span class="signal-icon">◒</span> Four themes</div>
+      <div><span class="signal-icon">↗</span> Smart alerts</div>
+    </section>
+
+    <section class="section-shell section-block" id="features">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Everything at a glance</p>
+        <h2>Small app. Surprisingly complete.</h2>
+        <p>ClaudeMeter stays out of the way until you need it, then shows every limit that matters in one native dashboard.</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card feature-card-wide reveal">
+          <div class="feature-icon green">↻</div>
+          <div>
+            <h3>Live Claude limits</h3>
+            <p>Track the 5-hour session, weekly quota, Sonnet and Opus limits with reset times and threshold-aware colors.</p>
+          </div>
+          <div class="mini-progress" aria-hidden="true">
+            <span style="--value: 94%"></span>
+          </div>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon teal">◎</div>
+          <h3>Codex included</h3>
+          <p>Read local Codex session logs and keep both providers visible, including compact mode.</p>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon blue">▥</div>
+          <h3>Usage history</h3>
+          <p>Explore 24-hour, 7-day and 30-day charts with a clear 0–100% scale.</p>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon orange">↗</div>
+          <h3>Useful notifications</h3>
+          <p>Get threshold alerts, reset reminders and update notifications with the branded app icon.</p>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon purple">◇</div>
+          <h3>Tray-first design</h3>
+          <p>Open the dashboard only when needed or keep the optional mini widget visible.</p>
+        </article>
+        <article class="feature-card feature-card-wide reveal">
+          <div class="feature-icon rose">⌁</div>
+          <div>
+            <h3>Private by design</h3>
+            <p>No telemetry, advertising or analytics inside the app. Credentials remain on your device and requests go directly to the provider.</p>
+          </div>
+          <span class="privacy-badge">Zero tracking</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="themes-section section-block" id="themes">
+      <div class="section-shell">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Make it yours</p>
+          <h2>Four polished themes.</h2>
+          <p>Every surface, accent, chart and progress gradient stays synchronized across the dashboard and mini widget.</p>
+        </div>
+        <div class="theme-gallery">
+          <figure class="theme-shot reveal">
+            <img src="screenshots/dashboard-light-v5.1.png" alt="Light theme" loading="lazy">
+            <figcaption><span class="theme-swatch light"></span>Light</figcaption>
+          </figure>
+          <figure class="theme-shot reveal">
+            <img src="screenshots/dashboard-dark-v5.1.png" alt="Dark theme" loading="lazy">
+            <figcaption><span class="theme-swatch dark"></span>Dark</figcaption>
+          </figure>
+          <figure class="theme-shot reveal">
+            <img src="screenshots/theme-sunset.png" alt="Sunset theme" loading="lazy">
+            <figcaption><span class="theme-swatch sunset"></span>Sunset</figcaption>
+          </figure>
+          <figure class="theme-shot reveal">
+            <img src="screenshots/theme-midnight.png" alt="Midnight theme" loading="lazy">
+            <figcaption><span class="theme-swatch midnight"></span>Midnight</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-shell section-block" id="analytics">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Open-source pulse</p>
+        <h2>A project you can inspect.</h2>
+        <p>Live public repository metrics update automatically. Page loads are approximate requests counted from the day this site launched.</p>
+      </div>
+      <div class="pulse-grid reveal">
+        <a class="pulse-card" href="https://hits.sh/klivak.github.io/claude-meter/">
+          <span class="pulse-label">Site loads</span>
+          <img class="hits-counter" src="https://hits.sh/klivak.github.io/claude-meter.svg?view=total&style=flat-square&label=total&color=55e6c1&labelColor=151b2b" alt="Approximate total site loads">
+          <span class="pulse-note">Open traffic history</span>
+        </a>
+        <a class="pulse-card" href="https://github.com/klivak/claude-meter/stargazers">
+          <span class="pulse-label">GitHub stars</span>
+          <strong class="pulse-value" id="stars-value">3</strong>
+          <span class="pulse-note">See the community</span>
+        </a>
+        <a class="pulse-card" href="https://github.com/klivak/claude-meter/releases/latest">
+          <span class="pulse-label">Latest release</span>
+          <strong class="pulse-value pulse-version" id="release-value">v5.1.0</strong>
+          <span class="pulse-note">View release notes</span>
+        </a>
+        <a class="pulse-card" href="https://github.com/klivak/claude-meter/issues">
+          <span class="pulse-label">Open issues</span>
+          <strong class="pulse-value" id="issues-value">0</strong>
+          <span class="pulse-note">Report or follow a bug</span>
+        </a>
+      </div>
+      <p class="analytics-note reveal">The site counter is privacy-friendly and does not identify unique visitors. GitHub stars, releases and issues come directly from the public GitHub API.</p>
+    </section>
+
+    <section class="section-shell section-block setup-section">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Ready in a minute</p>
+        <h2>Download. Run. Done.</h2>
+      </div>
+      <div class="steps-grid">
+        <article class="step-card reveal">
+          <span class="step-number">01</span>
+          <h3>Sign in once</h3>
+          <p>Install Claude Code and sign in so ClaudeMeter can use your existing local session.</p>
+        </article>
+        <article class="step-card reveal">
+          <span class="step-number">02</span>
+          <h3>Run ClaudeMeter</h3>
+          <p>Launch the portable Windows executable or macOS app bundle. Nothing else to install.</p>
+        </article>
+        <article class="step-card reveal">
+          <span class="step-number">03</span>
+          <h3>Check the tray</h3>
+          <p>Click the ClaudeMeter icon whenever you want a fast, provider-aware usage overview.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-shell section-block" id="faq">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Questions, answered</p>
+        <h2>Good to know.</h2>
+      </div>
+      <div class="faq-list reveal">
+        <details>
+          <summary>Does ClaudeMeter collect analytics?</summary>
+          <p>The native application collects no telemetry. This public project website uses only an anonymous Hits counter that counts page requests without identifying unique visitors.</p>
+        </details>
+        <details>
+          <summary>Do I need an API key?</summary>
+          <p>No. ClaudeMeter reads your existing Claude Code credentials and local Codex logs. It does not ask you to create another provider key.</p>
+        </details>
+        <details>
+          <summary>Why is the app so lightweight?</summary>
+          <p>It is written in Rust and uses native Windows and macOS interfaces instead of bundling Chromium, Node.js, Python or .NET.</p>
+        </details>
+        <details>
+          <summary>Which systems are supported?</summary>
+          <p>Windows 10/11 and Apple Silicon Macs running macOS 12 or newer are supported by the current releases.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="cta-section">
+      <div class="cta-glow"></div>
+      <img src="assets/icon_app.ico" alt="ClaudeMeter icon" width="88" height="88" loading="lazy">
+      <p class="eyebrow">Stay ahead of the limit</p>
+      <h2>Your AI usage, one click away.</h2>
+      <p>Free, open source and built to stay lightweight.</p>
+      <div class="hero-actions">
+        <a class="button button-primary button-large" href="https://github.com/klivak/claude-meter/releases/latest">Get ClaudeMeter</a>
+        <a class="button button-ghost button-large" href="https://github.com/klivak/claude-meter/stargazers">Star on GitHub</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer section-shell">
+    <a class="brand" href="#top">
+      <img src="assets/icon_app.ico" alt="" width="30" height="30" loading="lazy">
+      <span>ClaudeMeter</span>
+    </a>
+    <p>Built with Rust by <a href="https://github.com/klivak">klivak</a>. MIT licensed.</p>
+    <div class="footer-links">
+      <a href="https://github.com/klivak/claude-meter">Source</a>
+      <a href="https://github.com/klivak/claude-meter/releases">Releases</a>
+      <a href="https://github.com/klivak/claude-meter/issues">Issues</a>
+    </div>
+  </footer>
+</body>
+</html>
