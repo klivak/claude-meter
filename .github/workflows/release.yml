@@ -28,6 +28,14 @@ jobs:
         shell: bash
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
+      - name: Generate SHA-256 checksum
+        id: checksum
+        shell: pwsh
+        run: |
+          $checksum = (Get-FileHash target/release/claudemeter.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$checksum  claudemeter.exe" | Out-File target/release/claudemeter.exe.sha256 -Encoding ascii
+          "sha256=$checksum" >> $env:GITHUB_OUTPUT
+
       - name: VirusTotal Scan
         if: env.VT_API_KEY != ''
         uses: crazy-max/ghaction-virustotal@v4
@@ -42,17 +50,16 @@ jobs:
         shell: bash
         run: |
           VT_ANALYSIS="${{ steps.virustotal.outputs.analysis }}"
+          echo "release_body<<EOF" >> $GITHUB_OUTPUT
+          echo 'SHA-256 (`claudemeter.exe`): `${{ steps.checksum.outputs.sha256 }}`' >> $GITHUB_OUTPUT
           if [ -n "$VT_ANALYSIS" ]; then
             VT_URL=$(echo "$VT_ANALYSIS" | cut -d'=' -f2-)
-            echo "vt_section<<EOF" >> $GITHUB_OUTPUT
             echo "" >> $GITHUB_OUTPUT
             echo "---" >> $GITHUB_OUTPUT
             echo "" >> $GITHUB_OUTPUT
             echo "VirusTotal Scan: [View full report](${VT_URL})" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          else
-            echo "vt_section=" >> $GITHUB_OUTPUT
           fi
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -62,9 +69,10 @@ jobs:
           prerelease: false
           generate_release_notes: true
           append_body: true
-          body: ${{ steps.body.outputs.vt_section }}
+          body: ${{ steps.body.outputs.release_body }}
           files: |
             target/release/claudemeter.exe
+            target/release/claudemeter.exe.sha256
 
   release-macos:
     needs: release
