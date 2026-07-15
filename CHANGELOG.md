@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Codex naming** — renamed the visible ChatGPT section, menu action, tooltip, documentation, and empty-state copy to Codex while retaining legacy config keys for compatibility.
 - **Extensible theme registry** — centralized selectable theme metadata and moved progress gradients into each palette so future themes require fewer UI changes.
 - **README feature gallery** — refreshed the main and Settings screenshots, added a four-theme gallery, and documented all current dashboard, Codex, icon, notification, and theme behavior.
-- **README Project Pulse** — added live views, stars, downloads, forks, issues, and language-count badges, with a privacy-friendly traffic dashboard behind the views counter.
+- **README Project Pulse** — added live views, stars, latest release, forks, issues, and language-count badges, with a privacy-friendly traffic dashboard behind the views counter.
 
 ### Fixed
 - **Codex in compact mode** — compact dashboards now include enabled Codex rolling-window usage rows with their distinct teal styling.

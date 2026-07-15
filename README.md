@@ -30,14 +30,22 @@ See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening
 
 ### 📊 Project Pulse
 
-[![README views](https://hits.sh/github.com/klivak/claude-meter.svg?view=today-total&style=for-the-badge&label=views&color=ff5f57&labelColor=20232a&logo=github)](https://hits.sh/github.com/klivak/claude-meter/)
-[![GitHub stars](https://img.shields.io/github/stars/klivak/claude-meter?style=for-the-badge&logo=github&color=f5b942&labelColor=20232a)](https://github.com/klivak/claude-meter/stargazers)
-[![Total downloads](https://img.shields.io/github/downloads/klivak/claude-meter/total?style=for-the-badge&logo=github&color=2ea44f&labelColor=20232a)](https://github.com/klivak/claude-meter/releases)
-[![GitHub forks](https://img.shields.io/github/forks/klivak/claude-meter?style=for-the-badge&logo=github&color=5b8def&labelColor=20232a)](https://github.com/klivak/claude-meter/forks)
-[![Open issues](https://img.shields.io/github/issues/klivak/claude-meter?style=for-the-badge&logo=github&color=a970ff&labelColor=20232a)](https://github.com/klivak/claude-meter/issues)
-[![Languages](https://img.shields.io/badge/languages-40-00bfa5?style=for-the-badge&labelColor=20232a)](#-languages-40)
+<table>
+  <tr>
+    <td align="center"><a href="https://hits.sh/github.com/klivak/claude-meter/"><img alt="README views" src="https://hits.sh/github.com/klivak/claude-meter.svg?view=today-total&style=flat-square&label=README%20views&color=00bfa5&labelColor=20232a&logo=github"></a><br><sub>Approximate page loads</sub></td>
+    <td align="center"><a href="https://github.com/klivak/claude-meter/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/klivak/claude-meter?style=flat-square&logo=github&label=stars&color=f5b942&labelColor=20232a"></a><br><sub>Community stars</sub></td>
+    <td align="center"><a href="https://github.com/klivak/claude-meter/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/klivak/claude-meter?style=flat-square&logo=github&label=latest%20release&color=5b8def&labelColor=20232a"></a><br><sub>Current stable version</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/klivak/claude-meter/forks"><img alt="GitHub forks" src="https://img.shields.io/github/forks/klivak/claude-meter?style=flat-square&logo=github&label=forks&color=a970ff&labelColor=20232a"></a><br><sub>Repository forks</sub></td>
+    <td align="center"><a href="https://github.com/klivak/claude-meter/issues"><img alt="Open issues" src="https://img.shields.io/github/issues/klivak/claude-meter?style=flat-square&logo=github&label=open%20issues&color=ff8a65&labelColor=20232a"></a><br><sub>Reported issues</sub></td>
+    <td align="center"><a href="#-languages-40"><img alt="Supported languages" src="https://img.shields.io/badge/languages-40-00bfa5?style=flat-square&labelColor=20232a"></a><br><sub>Complete localizations</sub></td>
+  </tr>
+</table>
 
-<sub>The view counter is privacy-friendly and approximate: it counts badge requests rather than unique visitors, so caching, bots, and repeat visits may affect the total. Click it to open daily, weekly, and monthly analytics.</sub>
+**⭐ Finding ClaudeMeter useful? [Star the repository](https://github.com/klivak/claude-meter) — it helps more people discover it.**
+
+<sub>README views count badge requests since this counter was added, not unique visitors. Caching, bots, repeat visits, and service checks can affect the number.</sub>
 
 </div>
 
