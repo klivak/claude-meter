@@ -1191,6 +1191,7 @@ impl PopupRenderer {
             .max(0.0)
             .min(content_w);
         if fill_w > 0.5 {
+            let fill_radius = radius.min(fill_w / 2.0);
             let fill_rect = D2D1_ROUNDED_RECT {
                 rect: D2D_RECT_F {
                     left: pad,
@@ -1198,8 +1199,8 @@ impl PopupRenderer {
                     right: pad + fill_w,
                     bottom: y + bar_h,
                 },
-                radiusX: radius.min(fill_w / 2.0),
-                radiusY: radius,
+                radiusX: fill_radius,
+                radiusY: fill_radius,
             };
 
             // A single-hue override (e.g. Codex teal) draws a 2-stop gradient;

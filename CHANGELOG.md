@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.2.1] - 2026-07-16
+
+### Added
+- **Visitor map** — added a responsive MapMyVisitors widget to the project website's analytics section, including a link to detailed visitor statistics.
+
+### Fixed
+- **Small progress fills** — kept low-percentage Claude and Codex indicators inside the progress bar bounds.
+
 ## [5.2.0] - 2026-07-15
 
 ### Added
