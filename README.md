@@ -22,6 +22,9 @@ See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening
 [![RAM](https://img.shields.io/badge/RAM-under%2010MB-brightgreen)](#-why-rust)
 [![VirusTotal](https://img.shields.io/badge/VirusTotal-scanned-4CAF50?logo=virustotal&logoColor=white)](https://github.com/klivak/claudemeter/releases/latest)
 
+> 🌐 **[Open the ClaudeMeter project website →](https://klivak.github.io/claude-meter/)**<br>
+> Explore the dashboard, downloads, themes, Codex support, and live project metrics.
+
 [Website](https://klivak.github.io/claude-meter/) · [Download](#-quick-start) · [Features](#-features) · [Usage](#-how-to-use) · [FAQ](#-faq)
 
 <br>
