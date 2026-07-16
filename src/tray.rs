@@ -8,7 +8,7 @@ use windows::Win32::Graphics::Gdi::{
     DT_VCENTER, FF_DONTCARE, FW_BOLD, OUT_DEFAULT_PRECIS, PROOF_QUALITY, TRANSPARENT,
 };
 use windows::Win32::UI::Shell::{
-    Shell_NotifyIconW, NIF_ICON, NIF_INFO, NIF_MESSAGE, NIF_TIP, NIIF_USER, NIM_ADD, NIM_DELETE,
+    Shell_NotifyIconW, NIF_ICON, NIF_INFO, NIF_MESSAGE, NIF_TIP, NIIF_INFO, NIM_ADD, NIM_DELETE,
     NIM_MODIFY, NOTIFYICONDATAW,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
@@ -76,12 +76,10 @@ pub struct TrayIcon {
     icon_yellow: HICON,
     icon_red: HICON,
     icon_gray: HICON,
-    icon_app: HICON,
     dynamic_icon: Option<HICON>,
 }
 
 // Resource IDs for embedded tray icons (must match build.rs)
-const ICON_APP_ID: u16 = 100;
 const ICON_GREEN_ID: u16 = 101;
 const ICON_YELLOW_ID: u16 = 102;
 const ICON_RED_ID: u16 = 103;
@@ -616,7 +614,6 @@ impl TrayIcon {
         let icon_yellow = load_icon_from_resource(ICON_YELLOW_ID, 16).unwrap_or(fallback);
         let icon_red = load_icon_from_resource(ICON_RED_ID, 16).unwrap_or(fallback);
         let icon_gray = load_icon_from_resource(ICON_GRAY_ID, 16).unwrap_or(fallback);
-        let icon_app = load_icon_from_resource(ICON_APP_ID, 32).unwrap_or(fallback);
 
         let tray = Self {
             hwnd,
@@ -625,7 +622,6 @@ impl TrayIcon {
             icon_yellow,
             icon_red,
             icon_gray,
-            icon_app,
             dynamic_icon: None,
         };
 
@@ -751,8 +747,7 @@ impl TrayIcon {
     pub fn show_balloon(&self, title: &str, body: &str) {
         let mut nid = self.make_nid();
         nid.uFlags = NIF_INFO;
-        nid.dwInfoFlags = NIIF_USER;
-        nid.hBalloonIcon = self.icon_app;
+        nid.dwInfoFlags = NIIF_INFO;
 
         let title_wide: Vec<u16> = title.encode_utf16().chain(std::iter::once(0)).collect();
         let copy_len = title_wide.len().min(63);
@@ -763,7 +758,9 @@ impl TrayIcon {
         nid.szInfo[..copy_len].copy_from_slice(&body_wide[..copy_len]);
 
         unsafe {
-            let _ = Shell_NotifyIconW(NIM_MODIFY, &nid);
+            if !Shell_NotifyIconW(NIM_MODIFY, &nid).as_bool() {
+                log::warn!("Failed to show Windows balloon notification");
+            }
         }
     }
 
