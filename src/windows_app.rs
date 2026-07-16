@@ -1390,8 +1390,25 @@ unsafe extern "system" fn popup_wnd_proc(
                     let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
                     trigger_poll_force(state.main_hwnd);
                 } else if crate::popup::point_in_rect(pt, state.install_rect) {
-                    let url = state.config_mgr.config.claude_install_url.clone();
-                    let _ = open::that(&url);
+                    let error_kind = state
+                        .last_error
+                        .as_deref()
+                        .map(crate::errors::classify)
+                        .unwrap_or(crate::errors::ErrorKind::Unknown);
+                    match crate::errors::action_for(error_kind) {
+                        crate::errors::ErrorAction::CopyLoginCommand => {
+                            copy_to_clipboard("claude login");
+                        }
+                        crate::errors::ErrorAction::Retry => {
+                            state.last_updated = "...".to_string();
+                            let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
+                            trigger_poll_force(state.main_hwnd);
+                        }
+                        crate::errors::ErrorAction::InstallClaude => {
+                            let url = state.config_mgr.config.claude_install_url.clone();
+                            let _ = open::that(&url);
+                        }
+                    }
                 } else if crate::popup::point_in_rect(pt, state.chatgpt_link_rect)
                     || crate::popup::point_in_rect(pt, state.codex_plan_rect)
                 {

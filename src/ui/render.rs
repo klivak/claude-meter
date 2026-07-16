@@ -2025,56 +2025,44 @@ impl PopupRenderer {
 
         let err_str = last_error.as_deref().unwrap_or("");
         let error_kind = crate::errors::classify(err_str);
+        let error_action = crate::errors::action_for(error_kind);
 
         let error_detail: String;
-        let (title, desc, btn_label): (&str, &str, &str) = match error_kind {
-            crate::errors::ErrorKind::TokenExpired => (
-                i18n.t("token_expired"),
-                i18n.t("token_expired_desc"),
-                i18n.t("Open Claude.ai \u{2192}"),
-            ),
+        let (title, desc): (&str, &str) = match error_kind {
+            crate::errors::ErrorKind::TokenExpired => {
+                (i18n.t("token_expired"), i18n.t("token_expired_desc"))
+            }
             crate::errors::ErrorKind::Network => {
                 error_detail = crate::errors::detail(err_str).to_string();
-                (
-                    i18n.t("connection_error"),
-                    &error_detail,
-                    i18n.t("Open Claude.ai \u{2192}"),
-                )
+                (i18n.t("connection_error"), &error_detail)
             }
             crate::errors::ErrorKind::RateLimited => {
                 error_detail = match crate::errors::retry_after_seconds(err_str) {
                     Some(seconds) => format!("Retry after {}s", seconds),
                     None => crate::errors::detail(err_str).to_string(),
                 };
-                (
-                    i18n.t("rate_limited"),
-                    &error_detail,
-                    i18n.t("Open Claude.ai \u{2192}"),
-                )
+                (i18n.t("rate_limited"), &error_detail)
             }
-            crate::errors::ErrorKind::Server => (
-                i18n.t("server_error"),
-                i18n.t("server_error_desc"),
-                i18n.t("Open Claude.ai \u{2192}"),
-            ),
+            crate::errors::ErrorKind::Server => {
+                (i18n.t("server_error"), i18n.t("server_error_desc"))
+            }
             crate::errors::ErrorKind::Api | crate::errors::ErrorKind::WebAuth => {
                 error_detail = crate::errors::detail(err_str).to_string();
-                (
-                    i18n.t("connection_error"),
-                    &error_detail,
-                    i18n.t("Open Claude.ai \u{2192}"),
-                )
+                (i18n.t("connection_error"), &error_detail)
             }
             crate::errors::ErrorKind::CredentialsMissing => (
                 i18n.t("credentials_not_found"),
                 i18n.t("run_claude_login_desc"),
-                i18n.t("Open Claude.ai \u{2192}"),
             ),
             _ => (
                 i18n.t("Claude Code not detected"),
                 i18n.t("install_claude_desc"),
-                i18n.t("Install Claude Code \u{2192}"),
             ),
+        };
+        let btn_label = match error_action {
+            crate::errors::ErrorAction::CopyLoginCommand => "claude login",
+            crate::errors::ErrorAction::Retry => i18n.t("Refresh"),
+            crate::errors::ErrorAction::InstallClaude => i18n.t("Install Claude Code \u{2192}"),
         };
 
         // Warning title

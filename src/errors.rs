@@ -10,6 +10,13 @@ pub enum ErrorKind {
     Unknown,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ErrorAction {
+    CopyLoginCommand,
+    Retry,
+    InstallClaude,
+}
+
 pub fn classify(message: &str) -> ErrorKind {
     let tag = message
         .strip_prefix('[')
@@ -44,6 +51,18 @@ pub fn retry_after_seconds(message: &str) -> Option<u64> {
         .strip_prefix("Retry after ")?
         .strip_suffix('s')?;
     value.parse().ok()
+}
+
+pub fn action_for(kind: ErrorKind) -> ErrorAction {
+    match kind {
+        ErrorKind::CredentialsMissing | ErrorKind::TokenExpired => ErrorAction::CopyLoginCommand,
+        ErrorKind::RateLimited
+        | ErrorKind::Network
+        | ErrorKind::Server
+        | ErrorKind::Api
+        | ErrorKind::WebAuth => ErrorAction::Retry,
+        ErrorKind::Unknown => ErrorAction::InstallClaude,
+    }
 }
 
 #[cfg(test)]
@@ -87,5 +106,20 @@ mod tests {
     fn extracts_error_detail_without_a_tag() {
         assert_eq!(detail("[network_error] offline"), "offline");
         assert_eq!(detail("plain error"), "plain error");
+    }
+
+    #[test]
+    fn chooses_action_for_each_error_class() {
+        assert_eq!(
+            action_for(ErrorKind::TokenExpired),
+            ErrorAction::CopyLoginCommand
+        );
+        assert_eq!(
+            action_for(ErrorKind::CredentialsMissing),
+            ErrorAction::CopyLoginCommand
+        );
+        assert_eq!(action_for(ErrorKind::RateLimited), ErrorAction::Retry);
+        assert_eq!(action_for(ErrorKind::Network), ErrorAction::Retry);
+        assert_eq!(action_for(ErrorKind::Unknown), ErrorAction::InstallClaude);
     }
 }

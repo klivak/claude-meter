@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+
+## [5.3.1] - 2026-07-16
+
+### Added
+- **Actionable authentication errors** — error panels now offer a one-click `claude login` command copy action when credentials are missing or expired.
+- **Retry action** — transient network, API, server, and rate-limit errors can be retried directly from the error panel.
+
+### Tests
+- Added coverage for error action selection and auth/retry behavior.
+
 ## [5.3.0] - 2026-07-16
 
 ### Added

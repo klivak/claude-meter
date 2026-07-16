@@ -190,6 +190,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 - **Usage & status icon buttons** — each section header shows compact "open usage" and "service status" icon buttons; toggle them with the "Usage link icons" setting
 - **Notification toggles** — Settings exposes "Show startup notification" (silence the "Running in tray" balloon on launch) and "Show login expiry warning" (silence the `claude login` reminder)
 - **One-click updates** — clicking the "Update available" tray balloon downloads the verified Windows release, checks its SHA-256 checksum, and installs it safely after ClaudeMeter exits
+- **Actionable error recovery** — expired or missing Claude credentials offer a one-click `claude login` copy action, while transient errors can be retried directly from the dashboard
 
 ### 🎨 Themes
 
