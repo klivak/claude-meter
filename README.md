@@ -287,6 +287,8 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 - **Aggregated alerts** — when multiple thresholds are crossed simultaneously, a single batched notification is shown instead of separate alerts
 - **Informative alerts** — shows metric name, current %, exceeded threshold, and reset countdown
 - **Sound alerts** — system notification sound (configurable on/off)
+- **Notification settings** — enable/disable alerts, sound, and cycle alert presets such as 75% / 90% / 100% in Settings
+- **Test notification** — use Settings → "Test notification" to verify the Windows balloon and optional sound
 - **Startup notification** — confirmation that ClaudeMeter is running in the tray
 - **Branded notification icon** — Windows balloons use the embedded ClaudeMeter app icon instead of a generic placeholder
 - **Deduplication** — won't spam; resets when usage drops below threshold
@@ -357,7 +359,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 |-------|---------|-------|-------------|
 | `polling_interval_seconds` | `120` | 30–600 | How often to check usage (validated on load) |
 | `notifications.enabled` | `true` | — | Enable/disable toast notifications |
-| `notifications.thresholds` | `[50,75,90]` | 1–100 | Usage % levels that trigger alerts |
+| `notifications.thresholds` | `[50,75,90]` | 1–100 | Usage % levels that trigger alerts; cycle presets in Settings |
 | `notifications.sound` | `true` | — | Play system sound with notifications |
 | `theme` | `"auto"` | auto/dark/light/midnight/sunset | Color theme |
 | `language` | `"auto"` | auto/en/uk/.../lt | UI language (40 languages) |

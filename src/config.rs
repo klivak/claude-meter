@@ -10,6 +10,25 @@ pub struct NotificationConfig {
     pub sound: bool,
 }
 
+pub const NOTIFICATION_THRESHOLD_PRESETS: &[&[u8]] =
+    &[&[50, 75, 90], &[75, 90, 100], &[90, 100], &[100]];
+
+pub fn cycle_notification_thresholds(current: &[u8]) -> Vec<u8> {
+    let index = NOTIFICATION_THRESHOLD_PRESETS
+        .iter()
+        .position(|preset| *preset == current)
+        .unwrap_or(0);
+    NOTIFICATION_THRESHOLD_PRESETS[(index + 1) % NOTIFICATION_THRESHOLD_PRESETS.len()].to_vec()
+}
+
+pub fn format_notification_thresholds(thresholds: &[u8]) -> String {
+    thresholds
+        .iter()
+        .map(|threshold| format!("{threshold}%"))
+        .collect::<Vec<_>>()
+        .join(" / ")
+}
+
 impl Default for NotificationConfig {
     fn default() -> Self {
         Self {
@@ -358,6 +377,25 @@ mod tests {
         cfg.notifications.thresholds = vec![0, 200]; // all invalid
         cfg.validate();
         assert_eq!(cfg.notifications.thresholds, vec![50, 75, 90]);
+    }
+
+    #[test]
+    fn test_cycle_notification_threshold_presets() {
+        assert_eq!(
+            cycle_notification_thresholds(&[50, 75, 90]),
+            vec![75, 90, 100]
+        );
+        assert_eq!(cycle_notification_thresholds(&[75, 90, 100]), vec![90, 100]);
+        assert_eq!(cycle_notification_thresholds(&[90, 100]), vec![100]);
+        assert_eq!(cycle_notification_thresholds(&[100]), vec![50, 75, 90]);
+    }
+
+    #[test]
+    fn test_format_notification_thresholds() {
+        assert_eq!(
+            format_notification_thresholds(&[75, 90, 100]),
+            "75% / 90% / 100%"
+        );
     }
 
     #[test]

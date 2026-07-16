@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [5.3.3] - 2026-07-16
+
+### Added
+- **Notification settings** — Settings now provides a master enable/disable toggle, notification sound toggle, and selectable alert presets including `75% / 90% / 100%`.
+- **Test notification** — added a one-click test action to verify Windows balloon notifications and sound behavior.
+
+### Tests
+- Added coverage for notification threshold preset cycling and display formatting.
+
 ## [5.3.2] - 2026-07-16
 
 ### Fixed

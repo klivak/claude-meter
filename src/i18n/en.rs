@@ -124,5 +124,9 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Show extra usage", "Show extra usage");
     m.insert("Show startup notification", "Show startup notification");
     m.insert("Show login expiry warning", "Show login expiry warning");
+    m.insert("Alert thresholds", "Alert thresholds");
+    m.insert("Notification sound", "Notification sound");
+    m.insert("Test notification", "Test notification");
+    m.insert("Send", "Send");
     m
 }

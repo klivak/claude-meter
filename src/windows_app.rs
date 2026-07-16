@@ -92,7 +92,7 @@ pub(crate) struct AppState {
     codex_plan_rect: RECT,
     codex_status_rect: RECT,
     back_rect: RECT,
-    setting_rects: [RECT; 14],
+    setting_rects: [RECT; 18],
     notification_tracker: NotificationTracker,
     exe_dir: std::path::PathBuf,
     chart_data: Vec<f64>,
@@ -275,7 +275,7 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
         codex_plan_rect: RECT::default(),
         codex_status_rect: RECT::default(),
         back_rect: RECT::default(),
-        setting_rects: [RECT::default(); 14],
+        setting_rects: [RECT::default(); 18],
         notification_tracker: NotificationTracker::new(),
         exe_dir,
         chart_data: Vec::new(),
@@ -1361,6 +1361,38 @@ unsafe extern "system" fn popup_wnd_proc(
                         !state.config_mgr.config.show_usage_links;
                     state.config_mgr.save();
                     let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
+                } else if state.popup_in_settings
+                    && crate::popup::point_in_rect(pt, state.setting_rects[14])
+                {
+                    state.config_mgr.config.notifications.enabled =
+                        !state.config_mgr.config.notifications.enabled;
+                    state.config_mgr.save();
+                    let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
+                } else if state.popup_in_settings
+                    && crate::popup::point_in_rect(pt, state.setting_rects[15])
+                {
+                    state.config_mgr.config.notifications.thresholds =
+                        crate::config::cycle_notification_thresholds(
+                            &state.config_mgr.config.notifications.thresholds,
+                        );
+                    state.config_mgr.save();
+                    let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
+                } else if state.popup_in_settings
+                    && crate::popup::point_in_rect(pt, state.setting_rects[16])
+                {
+                    state.config_mgr.config.notifications.sound =
+                        !state.config_mgr.config.notifications.sound;
+                    state.config_mgr.save();
+                    let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
+                } else if state.popup_in_settings
+                    && crate::popup::point_in_rect(pt, state.setting_rects[17])
+                {
+                    if let Some(tray) = &state.tray {
+                        tray.show_balloon("ClaudeMeter", "Test notification: alerts are working.");
+                    }
+                    if state.config_mgr.config.notifications.sound {
+                        play_notification_sound(false);
+                    }
                 } else if crate::popup::point_in_rect(pt, state.settings_rect) {
                     // Slide to settings
                     state.popup_in_settings = true;
@@ -1576,8 +1608,8 @@ fn is_focus_assist_active() -> bool {
 
 fn settings_panel_height() -> i32 {
     let header_h = 40;
-    let row_h = 38;
-    let num_rows = 14;
+    let row_h = 34;
+    let num_rows = 18;
     let legend_h = 10 + 1 + 10 + 18 + (4 * 18) + 10; // gap + sep + gap + title + 4 rows + bottom padding
     let footer_h = 44;
     header_h + 8 + (num_rows * row_h) + legend_h + footer_h

@@ -3180,7 +3180,7 @@ pub unsafe fn draw_settings_panel(
     config: &crate::config::Config,
     back_rect: &mut RECT,
     close_rect: &mut RECT,
-    setting_rects: &mut [RECT; 14],
+    setting_rects: &mut [RECT; 18],
     hovered: &HoveredElement,
 ) {
     let Some(rt) = d2d.render_target.clone() else {
@@ -3189,7 +3189,7 @@ pub unsafe fn draw_settings_panel(
     let w = (rect.right - rect.left) as f32;
     let pad = 16.0f32;
     let header_h = 40.0f32;
-    let row_h = 38.0f32;
+    let row_h = 34.0f32;
 
     // Header background
     let surf_brush = rt
@@ -3401,6 +3401,28 @@ pub unsafe fn draw_settings_panel(
             i18n.t("Usage link icons").to_string(),
             None,
             Some(config.show_usage_links),
+        ),
+        (
+            i18n.t("Notifications").to_string(),
+            None,
+            Some(config.notifications.enabled),
+        ),
+        (
+            i18n.t("Alert thresholds").to_string(),
+            Some(crate::config::format_notification_thresholds(
+                &config.notifications.thresholds,
+            )),
+            None,
+        ),
+        (
+            i18n.t("Notification sound").to_string(),
+            None,
+            Some(config.notifications.sound),
+        ),
+        (
+            i18n.t("Test notification").to_string(),
+            Some(i18n.t("Send").to_string()),
+            None,
         ),
     ];
 
