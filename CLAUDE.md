@@ -111,19 +111,27 @@ Stored as JSON: `{"claudeAiOauth": {"accessToken": "<oauth-token>"}}`
 
 ```bash
 # 1. Update version in Cargo.toml, CHANGELOG.md, VERSION
-# 2. Update README.md if any user-facing features, settings, or languages changed
-# 3. Commit
+# 2. Update the website fallback version in site/index.html and site/metrics.json
+# 3. Update README.md if any user-facing features, settings, or languages changed
+# 4. Commit
 git add -A && git commit -m "release: v1.x.x"
 
-# 4. Tag and push — GitHub Actions builds and publishes automatically
+# 5. Tag and push — GitHub Actions builds, publishes, and deploys the website automatically
 git tag v1.x.x
 git push origin main --tags
 ```
 
+The website's `site/index.html` fallback release value must always match the new tag. The Pages
+workflow refreshes `site/metrics.json` from the latest GitHub Release, but the checked-in fallback
+must be updated in the same release commit so the site never displays an older version before the
+metrics request completes.
+
 **Pre-release checklist:**
 - [ ] README.md reflects all new features, settings, config fields, and language count
 - [ ] CHANGELOG.md has an entry for the new version
-- [ ] Version updated in Cargo.toml and VERSION
+- [ ] Version updated in Cargo.toml, Cargo.lock, and VERSION
+- [ ] Website fallback version updated in `site/index.html` and `site/metrics.json`
+- [ ] GitHub Pages deployment is triggered after the release push
 
 ## Common Pitfalls
 
