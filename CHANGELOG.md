@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [5.3.0] - 2026-07-16
+
+### Added
+- **One-click Windows updates** — downloads the release executable, verifies its SHA-256 checksum, and safely installs it after ClaudeMeter exits with rollback on failure.
+- **Version automation** — added PowerShell bump and consistency-check scripts, plus CI guards for release and website versions.
+- **Centralized error classification** — popup and tray now share typed error categories and retry-after parsing.
+
+### Fixed
+- **macOS update detection** — compares against the actual bundle version instead of a stale hardcoded release number.
+
 ## [5.2.1] - 2026-07-16
 
 ### Added

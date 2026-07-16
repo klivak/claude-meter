@@ -382,7 +382,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.notify("ClaudeMeter", "Could not check for updates.")
                 return
             }
-            if tag == "v4.0.1" {
+            let current = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
+            let remote = tag.trimmingCharacters(in: CharacterSet(charactersIn: "v"))
+            if !Self.isNewerVersion(remote, than: current) {
                 self.notify("ClaudeMeter", "You are running the latest version.")
             } else {
                 self.notify("ClaudeMeter Update", "\(tag) is available.")
@@ -391,6 +393,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }.resume()
+    }
+
+    private static func isNewerVersion(_ remote: String, than current: String) -> Bool {
+        let remoteParts = remote.split(separator: ".").compactMap { Int($0) }
+        let currentParts = current.split(separator: ".").compactMap { Int($0) }
+        for index in 0..<3 {
+            let remotePart = index < remoteParts.count ? remoteParts[index] : 0
+            let currentPart = index < currentParts.count ? currentParts[index] : 0
+            if remotePart != currentPart { return remotePart > currentPart }
+        }
+        return false
     }
 
     @objc private func openConfig() {

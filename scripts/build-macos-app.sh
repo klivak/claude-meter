@@ -7,6 +7,7 @@ APP_DIR="$TARGET_DIR/ClaudeMeter.app"
 CONTENTS="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS/MacOS"
 RESOURCES="$CONTENTS/Resources"
+VERSION="$(tr -d '\r\n' < "$ROOT/VERSION")"
 
 cargo build --release --target aarch64-apple-darwin
 
@@ -48,9 +49,9 @@ cat > "$CONTENTS/Info.plist" <<EOF
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>4.0.1</string>
+  <string>$VERSION</string>
   <key>CFBundleVersion</key>
-  <string>4.0.1</string>
+  <string>$VERSION</string>
   <key>LSMinimumSystemVersion</key>
   <string>12.0</string>
   <key>LSUIElement</key>

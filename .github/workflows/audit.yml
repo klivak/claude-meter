@@ -9,6 +9,15 @@ on:
     - cron: '0 6 * * 1'  # Every Monday at 6:00 UTC
 
 jobs:
+  version:
+    name: Version Consistency
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check release versions
+        shell: pwsh
+        run: ./scripts/check-version.ps1
+
   clippy:
     name: Clippy Analysis
     runs-on: windows-latest

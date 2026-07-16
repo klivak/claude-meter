@@ -1,6 +1,6 @@
 [package]
 name = "claudemeter"
-version = "5.2.1"
+version = "5.3.0"
 edition = "2021"
 authors = ["klivak"]
 description = "Ultra-lightweight Windows tray app for monitoring Claude AI subscription usage limits. Built in Rust for minimal memory footprint (under 10 MB RAM)."
@@ -21,6 +21,7 @@ tokio = { version = "1", features = ["rt", "macros", "time", "sync", "net", "io-
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sha2 = "0.10"
 chrono = { version = "0.4", features = ["serde"] }
 rusqlite = { version = "0.31", features = ["bundled"] }
 open = "5"

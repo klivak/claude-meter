@@ -55,7 +55,7 @@ cargo audit
 - `src/theme.rs` — Dark/Light/Auto theme detection from Windows registry
 - `src/i18n/` — Localization: en, uk, es, de, fr, pt, ja, ko, zh, it (HashMap-based, compiled in)
 - `src/widget.rs` — Mini floating always-on-top widget (Win32 API, GDI)
-- `src/updater.rs` — Auto-update checker (GitHub Releases API)
+- `src/updater.rs` — GitHub Release checker, SHA-256 verification, and safe one-click Windows updater
 - `src/providers/claude.rs` — Anthropic OAuth Usage API client
 - `src/ui/` — Rendering logic, colors, progress bars
 
@@ -110,13 +110,13 @@ Stored as JSON: `{"claudeAiOauth": {"accessToken": "<oauth-token>"}}`
 ## Release Process
 
 ```bash
-# 1. Update version in Cargo.toml, CHANGELOG.md, VERSION
-# 2. Update the website fallback version in site/index.html and site/metrics.json
-# 3. Update README.md if any user-facing features, settings, or languages changed
-# 4. Commit
+# 1. Run the version automation script
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bump-version.ps1 5.3.0
+# 2. Review CHANGELOG.md and update README.md for user-facing changes
+# 3. Commit
 git add -A && git commit -m "release: v1.x.x"
 
-# 5. Tag and push — GitHub Actions builds, publishes, and deploys the website automatically
+# 4. Tag and push — GitHub Actions builds, publishes, and deploys the website automatically
 git tag v1.x.x
 git push origin main --tags
 ```

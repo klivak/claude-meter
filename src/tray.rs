@@ -791,23 +791,14 @@ impl Drop for TrayIcon {
 
 /// Classify an error string into a short tooltip-friendly label.
 fn error_tooltip_label(err: &str) -> &'static str {
-    let tag = err
-        .strip_prefix('[')
-        .and_then(|s| s.split_once(']'))
-        .map(|(t, _)| t);
-    match tag {
-        Some("token_expired") => "\u{26a0} Token expired",
-        Some("network_error") => "\u{26a0} Connection error",
-        Some("rate_limited") => "\u{26a0} Rate limited",
-        Some("server_error") => "\u{26a0} Server error",
-        Some("api_error") => "\u{26a0} API error",
-        _ => {
-            if err.contains("credentials not found") || err.contains("accessToken") {
-                "\u{26a0} Not logged in"
-            } else {
-                "\u{26a0} Error"
-            }
-        }
+    match crate::errors::classify(err) {
+        crate::errors::ErrorKind::TokenExpired => "\u{26a0} Token expired",
+        crate::errors::ErrorKind::Network => "\u{26a0} Connection error",
+        crate::errors::ErrorKind::RateLimited => "\u{26a0} Rate limited",
+        crate::errors::ErrorKind::Server => "\u{26a0} Server error",
+        crate::errors::ErrorKind::Api | crate::errors::ErrorKind::WebAuth => "\u{26a0} API error",
+        crate::errors::ErrorKind::CredentialsMissing => "\u{26a0} Not logged in",
+        crate::errors::ErrorKind::Unknown => "\u{26a0} Error",
     }
 }
 

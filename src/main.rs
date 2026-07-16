@@ -5,6 +5,7 @@
 mod config;
 mod credentials;
 mod db;
+mod errors;
 mod providers;
 
 #[cfg(windows)]

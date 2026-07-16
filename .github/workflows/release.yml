@@ -20,6 +20,10 @@ jobs:
           targets: x86_64-pc-windows-msvc
       - uses: Swatinem/rust-cache@v2
 
+      - name: Check version consistency
+        shell: pwsh
+        run: ./scripts/check-version.ps1
+
       - name: Build release
         run: cargo build --release
 

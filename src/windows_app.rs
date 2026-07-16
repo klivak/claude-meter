@@ -63,6 +63,8 @@ const WM_UPDATE_AVAILABLE: u32 = 0x0400 + 21; // WM_USER + 21
 const WM_DB_RESULT: u32 = 0x0400 + 22; // WM_USER + 22
 const WM_CREDENTIAL_CHANGED: u32 = 0x0400 + 23; // WM_USER + 23
 const WM_NETWORK_CHANGED: u32 = 0x0400 + 24; // WM_USER + 24
+const WM_UPDATE_INSTALL_READY: u32 = 0x0400 + 25; // WM_USER + 25
+const WM_UPDATE_FAILED: u32 = 0x0400 + 26; // WM_USER + 26
 
 /// Shared application state accessible from the window proc.
 pub(crate) struct AppState {
@@ -140,7 +142,7 @@ pub(crate) struct AppState {
     // Wake retry progressive schedule index
     wake_retry_index: usize,
     // URL of latest pending update — opened when user clicks the update balloon
-    pending_update_url: Option<String>,
+    pending_update: Option<updater::UpdateInfo>,
 }
 
 // Safety: AppState is accessed only from the main thread via raw pointer.
@@ -306,7 +308,7 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
         slide_anim_active: false,
         cached_theme: initial_theme,
         wake_retry_index: 0,
-        pending_update_url: None,
+        pending_update: None,
     });
 
     // Create tray icon
@@ -353,9 +355,9 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
                 .enable_all()
                 .build()
                 .unwrap();
-            if let Some((tag, url)) = rt.block_on(updater::check_for_update()) {
+            if let Some(update) = rt.block_on(updater::check_for_update()) {
                 // Post update notification back to main thread
-                let data = Box::new((tag, url));
+                let data = Box::new(update);
                 let hwnd = HWND(hwnd_raw as *mut _);
                 let _ = PostMessageW(
                     hwnd,
@@ -519,8 +521,33 @@ unsafe extern "system" fn main_wnd_proc(
                 NIN_BALLOONUSERCLICK => {
                     // User clicked the balloon body — open update URL if one is pending.
                     if let Some(state) = APP_STATE.as_mut() {
-                        if let Some(url) = state.pending_update_url.take() {
-                            let _ = open::that(&url);
+                        if let Some(update) = state.pending_update.take() {
+                            let hwnd_raw = hwnd.0 as usize;
+                            std::thread::spawn(move || {
+                                let runtime = tokio::runtime::Builder::new_current_thread()
+                                    .enable_all()
+                                    .build();
+                                let Ok(runtime) = runtime else { return };
+                                if let Err(error) =
+                                    runtime.block_on(updater::download_and_install(&update))
+                                {
+                                    log::warn!("Update installation failed: {error}");
+                                    let message = Box::new(error);
+                                    let _ = PostMessageW(
+                                        HWND(hwnd_raw as *mut _),
+                                        WM_UPDATE_FAILED,
+                                        WPARAM(Box::into_raw(message) as usize),
+                                        LPARAM(0),
+                                    );
+                                    return;
+                                }
+                                let _ = PostMessageW(
+                                    HWND(hwnd_raw as *mut _),
+                                    WM_UPDATE_INSTALL_READY,
+                                    WPARAM(0),
+                                    LPARAM(0),
+                                );
+                            });
                         }
                     }
                 }
@@ -646,22 +673,38 @@ unsafe extern "system" fn main_wnd_proc(
         }
         WM_UPDATE_AVAILABLE => {
             // Auto-update notification from background thread
-            let data_ptr = wparam.0 as *mut (String, String);
+            let data_ptr = wparam.0 as *mut updater::UpdateInfo;
             if !data_ptr.is_null() {
-                let (tag, url) = *Box::from_raw(data_ptr);
+                let update = *Box::from_raw(data_ptr);
                 if let Some(state) = APP_STATE.as_mut() {
-                    state.pending_update_url = Some(url.clone());
+                    state.pending_update = Some(update.clone());
                     if let Some(tray) = &state.tray {
                         let title = state.i18n.t("Update available");
                         let body = format!(
                             "{} {}",
-                            tag,
+                            update.tag,
                             state.i18n.t("is available. Click to download.")
                         );
                         tray.show_balloon(title, &body);
                     }
                 }
-                log::info!("Update available: {} — {}", tag, url);
+                log::info!("Update available: {} — {}", update.tag, update.html_url);
+            }
+            LRESULT(0)
+        }
+        WM_UPDATE_INSTALL_READY => {
+            PostQuitMessage(0);
+            LRESULT(0)
+        }
+        WM_UPDATE_FAILED => {
+            let error_ptr = wparam.0 as *mut String;
+            if !error_ptr.is_null() {
+                let error = *Box::from_raw(error_ptr);
+                if let Some(state) = APP_STATE.as_ref() {
+                    if let Some(tray) = &state.tray {
+                        tray.show_balloon("ClaudeMeter", &format!("Update failed: {error}"));
+                    }
+                }
             }
             LRESULT(0)
         }

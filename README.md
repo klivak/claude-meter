@@ -189,7 +189,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 - **Show extra usage** — toggle in Settings to show the extra_usage metric in the dashboard (off by default)
 - **Usage & status icon buttons** — each section header shows compact "open usage" and "service status" icon buttons; toggle them with the "Usage link icons" setting
 - **Notification toggles** — Settings exposes "Show startup notification" (silence the "Running in tray" balloon on launch) and "Show login expiry warning" (silence the `claude login` reminder)
-- **Clickable update balloon** — clicking the "Update available" tray balloon opens the GitHub release page in your browser
+- **One-click updates** — clicking the "Update available" tray balloon downloads the verified Windows release, checks its SHA-256 checksum, and installs it safely after ClaudeMeter exits
 
 ### 🎨 Themes
 
@@ -361,7 +361,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 | `show_chatgpt_section` | `false` | — | Show the Codex usage panel (legacy config key retained for compatibility) |
 | `autostart` | `false` | — | Start with Windows or macOS LaunchAgent |
 | `show_widget` | `false` | — | Show floating mini-widget |
-| `check_updates` | `true` | — | Check for updates on startup |
+| `check_updates` | `true` | — | Check for updates on startup and offer verified one-click installation |
 | `tray_icon_style` | `"number"` | number/ring/bar/pie | Tray icon style: number (%), ring (circular), bar (vertical), pie (multi-metric) |
 | `accessibility_patterns` | `false` | — | Colorblind overlay patterns on progress bars |
 | `dashboard_layout` | `"standard"` | minimal/standard/detailed | Dashboard layout mode |

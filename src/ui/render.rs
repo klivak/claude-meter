@@ -2024,62 +2024,48 @@ impl PopupRenderer {
         let pad = self.sf(PADDING);
 
         let err_str = last_error.as_deref().unwrap_or("");
-        let error_tag = err_str
-            .strip_prefix('[')
-            .and_then(|s| s.split_once(']'))
-            .map(|(tag, _)| tag);
+        let error_kind = crate::errors::classify(err_str);
 
         let error_detail: String;
-        let (title, desc, btn_label): (&str, &str, &str) = match error_tag {
-            Some("token_expired") => (
+        let (title, desc, btn_label): (&str, &str, &str) = match error_kind {
+            crate::errors::ErrorKind::TokenExpired => (
                 i18n.t("token_expired"),
                 i18n.t("token_expired_desc"),
                 i18n.t("Open Claude.ai \u{2192}"),
             ),
-            Some("network_error") => {
-                error_detail = err_str
-                    .strip_prefix("[network_error] ")
-                    .unwrap_or(err_str)
-                    .to_string();
+            crate::errors::ErrorKind::Network => {
+                error_detail = crate::errors::detail(err_str).to_string();
                 (
                     i18n.t("connection_error"),
                     &error_detail,
                     i18n.t("Open Claude.ai \u{2192}"),
                 )
             }
-            Some("rate_limited") => {
-                error_detail = err_str
-                    .strip_prefix("[rate_limited] ")
-                    .unwrap_or(err_str)
-                    .to_string();
+            crate::errors::ErrorKind::RateLimited => {
+                error_detail = match crate::errors::retry_after_seconds(err_str) {
+                    Some(seconds) => format!("Retry after {}s", seconds),
+                    None => crate::errors::detail(err_str).to_string(),
+                };
                 (
                     i18n.t("rate_limited"),
                     &error_detail,
                     i18n.t("Open Claude.ai \u{2192}"),
                 )
             }
-            Some("server_error") => (
+            crate::errors::ErrorKind::Server => (
                 i18n.t("server_error"),
                 i18n.t("server_error_desc"),
                 i18n.t("Open Claude.ai \u{2192}"),
             ),
-            Some("api_error") => {
-                error_detail = err_str
-                    .strip_prefix("[api_error] ")
-                    .unwrap_or(err_str)
-                    .to_string();
+            crate::errors::ErrorKind::Api | crate::errors::ErrorKind::WebAuth => {
+                error_detail = crate::errors::detail(err_str).to_string();
                 (
                     i18n.t("connection_error"),
                     &error_detail,
                     i18n.t("Open Claude.ai \u{2192}"),
                 )
             }
-            _ if err_str.contains("credentials not found") => (
-                i18n.t("credentials_not_found"),
-                i18n.t("run_claude_login_desc"),
-                i18n.t("Open Claude.ai \u{2192}"),
-            ),
-            _ if err_str.contains("accessToken field not found") => (
+            crate::errors::ErrorKind::CredentialsMissing => (
                 i18n.t("credentials_not_found"),
                 i18n.t("run_claude_login_desc"),
                 i18n.t("Open Claude.ai \u{2192}"),
@@ -2988,12 +2974,9 @@ impl PopupRenderer {
         //   2. we never got a live poll this session (last_updated is still "(cached)").
         // Transient errors right after a successful refresh are NOT flagged — the
         // displayed data is only seconds old and still trustworthy.
-        let error_tag = last_error
-            .as_deref()
-            .and_then(|e| e.strip_prefix('['))
-            .and_then(|s| s.split_once(']'))
-            .map(|(tag, _)| tag);
-        let token_expired = error_tag == Some("token_expired");
+        let token_expired = last_error.as_deref().is_some_and(|error| {
+            crate::errors::classify(error) == crate::errors::ErrorKind::TokenExpired
+        });
         let stale = token_expired || (last_error.is_some() && last_updated == "(cached)");
 
         // Last updated / stale-warning text
