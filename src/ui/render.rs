@@ -1199,8 +1199,11 @@ impl PopupRenderer {
                     right: pad + fill_w,
                     bottom: y + bar_h,
                 },
+                // Clamp only the horizontal radius for narrow fills; keep the
+                // full vertical radius so a low-utilization fill still renders
+                // as a rounded pill instead of a squared-off rectangle.
                 radiusX: fill_radius,
-                radiusY: fill_radius,
+                radiusY: radius,
             };
 
             // A single-hue override (e.g. Codex teal) draws a 2-stop gradient;

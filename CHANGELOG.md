@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [5.3.4] - 2026-07-17
+
+### Fixed
+- **Progress bar rendering at low utilization** — low-percentage fills (e.g. a 2% five-hour session) now render as a rounded pill instead of a squared-off rectangle. The fill's vertical corner radius is no longer collapsed together with its horizontal radius for narrow fills.
+
 ## [5.3.3] - 2026-07-16
 
 ### Added
