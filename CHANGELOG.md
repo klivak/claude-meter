@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+
+## [5.4.0] - 2026-07-17
+
+### Added
+- **Codex usage notifications** — threshold alerts now fire for the Codex rolling 5-hour and weekly windows, not just Claude. Codex windows are tracked independently, so a Codex balloon fires when its usage crosses a configured threshold. Uses the same threshold presets, quiet-hours/focus-assist gating, sound, and critical-usage blink as Claude alerts.
+
 ## [5.3.4] - 2026-07-17
 
 ### Fixed

@@ -659,6 +659,9 @@ unsafe extern "system" fn main_wnd_proc(
                     state.rate_of_change = db_result.rate_of_change;
                     state.codex_status = db_result.codex_status;
 
+                    // Fire Codex threshold notifications on the fresh usage data.
+                    check_codex_notifications(state);
+
                     // Repaint popup if visible to show updated charts
                     if state.popup_visible {
                         let _ = windows::Win32::Graphics::Gdi::InvalidateRect(
@@ -2145,6 +2148,104 @@ struct DbResult {
     chart_data_30d: Vec<f64>,
     rate_of_change: std::collections::HashMap<String, f64>,
     codex_status: Option<crate::providers::codex::CodexStatus>,
+}
+
+/// Check the live Codex usage windows against the notification thresholds and
+/// emit an aggregated balloon for any newly-exceeded threshold.
+///
+/// Runs whenever a fresh `codex_status` arrives on the main thread (per poll).
+/// Codex windows are tracked under `codex_*` keys so they never collide with
+/// the Claude metric keys in the shared `NotificationTracker`. Respects the same
+/// enable/quiet-hours/focus-assist gating, sound, and critical-blink behavior as
+/// the Claude notification path.
+unsafe fn check_codex_notifications(state: &mut AppState) {
+    if !state.config_mgr.config.notifications.enabled {
+        return;
+    }
+    if is_in_quiet_hours(&state.config_mgr.config.quiet_hours) || is_focus_assist_active() {
+        return;
+    }
+    let Some(codex) = state.codex_status.clone() else {
+        return;
+    };
+
+    let thresholds = state.config_mgr.config.notifications.thresholds.clone();
+    let mut fired_alerts: Vec<(String, f64, u8, String)> = Vec::new();
+
+    // (tracker key, label key reused from the Claude formatter, window)
+    let codex_windows: [(&str, &str, Option<crate::providers::codex::CodexRateLimit>); 2] = [
+        ("codex_five_hour", "five_hour", codex.five_hour),
+        ("codex_weekly", "seven_day", codex.weekly),
+    ];
+    for (track_key, label_key, limit) in codex_windows {
+        let Some(rl) = limit else {
+            continue;
+        };
+        let fired = state
+            .notification_tracker
+            .check(track_key, rl.used_percent, &thresholds);
+        for threshold in fired {
+            let name = format!("Codex {}", providers::claude::format_metric_name(label_key));
+            let reset = rl.resets_at_rfc3339();
+            let reset_duration = reset
+                .as_deref()
+                .and_then(i18n::seconds_until)
+                .map(format_duration);
+            let reset_target = reset.as_deref().and_then(i18n::format_reset_target);
+            let reset_info = match (&reset_duration, &reset_target) {
+                (Some(dur), Some(tgt)) => {
+                    format!(" ({} {} {})", state.i18n.t("resets in"), dur, tgt)
+                }
+                (Some(dur), None) => format!(" ({} {})", state.i18n.t("resets in"), dur),
+                _ => String::new(),
+            };
+            fired_alerts.push((name, rl.used_percent, threshold, reset_info));
+        }
+    }
+
+    if fired_alerts.is_empty() {
+        return;
+    }
+
+    let max_threshold = fired_alerts.iter().map(|a| a.2).max().unwrap_or(0);
+    let is_critical = max_threshold >= 90;
+
+    let title = if is_critical {
+        format!("ClaudeMeter \u{2014} {}", state.i18n.t("Usage Critical"))
+    } else {
+        format!("ClaudeMeter \u{2014} {}", state.i18n.t("Usage Alert"))
+    };
+    let body = fired_alerts
+        .iter()
+        .map(|(name, util, thr, reset)| {
+            format!(
+                "{}: {:.0}% ({} {}%){}",
+                name,
+                util,
+                state.i18n.t("exceeded"),
+                thr,
+                reset
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    if let Some(tray) = &state.tray {
+        tray.show_balloon(&title, &body);
+    }
+    if state.config_mgr.config.notifications.sound {
+        play_notification_sound(is_critical);
+    }
+    if is_critical && !state.blink_active {
+        state.blink_active = true;
+        state.blink_visible = true;
+        windows::Win32::UI::WindowsAndMessaging::SetTimer(
+            state.main_hwnd,
+            TIMER_BLINK,
+            BLINK_INTERVAL_MS,
+            None,
+        );
+    }
 }
 
 async fn do_poll(web_fallback: Option<(String, String)>) -> PollResult {
