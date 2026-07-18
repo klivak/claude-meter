@@ -60,9 +60,9 @@ exists to reference/port later.
   34 locales in 5.0.0 (CODEX/Show extra usage/Export History (JSON)/Usage link
   icons/Open usage/Service status). Have native speakers sanity-check the
   non-Latin scripts (ar/fa/he/hi/th/bn/ja/ko/zh).
-- [ ] **Codex bar color from theme** — the Codex teal (`#14b8a6`) is hardcoded in
-  `render.rs`. Consider moving it into the `colors.rs` palette so it respects
-  custom/high-contrast themes.
+- [x] **Codex bar color from theme** — the Codex teal moved into the `colors.rs`
+  palette (`ThemeColors.codex`, per-theme) and drives the bars and plan badge.
+  (Shipped 5.4.1.)
 - [ ] **`show_usage_links` read via global `APP_STATE`** in `render.rs`
   (`draw_section_header`) is a bit hacky — thread the bool through cleanly.
 - [ ] **Runtime/visual QA** — the tray icon, dashboard popup, Codex panel, icon

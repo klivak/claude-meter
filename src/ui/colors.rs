@@ -53,6 +53,10 @@ pub struct ThemeColors {
     pub yellow: ColorRef,
     pub red: ColorRef,
     pub accent: ColorRef,
+    /// Distinct accent for the Codex provider's progress bars, so they read as a
+    /// different provider from Claude's green→amber→red bars. Teal/cyan family,
+    /// tuned per theme for contrast against that theme's surface.
+    pub codex: ColorRef,
     pub separator: ColorRef,
     pub hover: ColorRef,
     pub border: ColorRef,
@@ -132,6 +136,7 @@ impl ThemeColors {
             yellow: hex("df8e1d"),
             red: hex("d20f39"),
             accent: hex("89b4fa"),
+            codex: hex("14b8a6"),
             separator: hex("45475a"),
             hover: hex("3b3c50"),
             border: hex("45475a"),
@@ -153,6 +158,7 @@ impl ThemeColors {
             yellow: hex("df8e1d"),
             red: hex("d20f39"),
             accent: hex("1e66f5"),
+            codex: hex("0d9488"),
             separator: hex("bcc0cc"),
             hover: hex("ced3dd"),
             border: hex("9ca0b0"),
@@ -174,6 +180,8 @@ impl ThemeColors {
             yellow: hex("fbbf24"),
             red: hex("fb7185"),
             accent: hex("818cf8"),
+            // Cyan — distinct from midnight's teal-green `green` (#2dd4bf).
+            codex: hex("22d3ee"),
             separator: hex("293551"),
             hover: hex("1f2940"),
             border: hex("33415c"),
@@ -195,6 +203,8 @@ impl ThemeColors {
             yellow: hex("f2b84b"),
             red: hex("ff6b6b"),
             accent: hex("ff8a65"),
+            // Teal — cool contrast against the warm sunset palette.
+            codex: hex("2dd4bf"),
             separator: hex("5a3540"),
             hover: hex("462a35"),
             border: hex("70424f"),
@@ -350,6 +360,22 @@ mod tests {
             assert!((0.0..=1.0).contains(&c.g));
             assert!((0.0..=1.0).contains(&c.b));
             assert!((c.a - 1.0).abs() < 0.001);
+        }
+    }
+
+    #[test]
+    fn test_codex_accent_distinct_from_green() {
+        // The Codex bar hue must differ from the green usage color in every
+        // theme, otherwise low-usage Codex bars would be indistinguishable
+        // from Claude's low-usage bars.
+        for theme in [
+            ResolvedTheme::Dark,
+            ResolvedTheme::Light,
+            ResolvedTheme::Midnight,
+            ResolvedTheme::Sunset,
+        ] {
+            let c = ThemeColors::for_theme(theme);
+            assert_ne!(c.codex.0, c.green.0, "codex must differ from green");
         }
     }
 

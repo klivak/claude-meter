@@ -284,7 +284,8 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 ### 🔔 Smart Notifications
 
 - Windows toast notifications at configurable thresholds (50%, 75%, 90% by default)
-- **Claude and Codex coverage** — threshold alerts fire for both Claude usage limits and the Codex rolling 5-hour and weekly windows (when the Codex panel is enabled), each tracked independently
+- **Claude and Codex coverage** — threshold alerts fire for both Claude usage limits and the Codex rolling 5-hour and weekly windows (when the Codex panel is enabled), each tracked independently. Codex alerts refresh from local logs on every poll, so they fire even when the Claude API is offline
+- **Localized alerts** — the metric label in each alert is translated to the selected language, not just the alert wording
 - **Aggregated alerts** — when multiple thresholds are crossed simultaneously, a single batched notification is shown instead of separate alerts
 - **Informative alerts** — shows metric name, current %, exceeded threshold, and reset countdown
 - **Sound alerts** — system notification sound (configurable on/off)

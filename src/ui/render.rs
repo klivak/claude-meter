@@ -1892,7 +1892,7 @@ impl PopupRenderer {
         };
 
         if show_codex {
-            let codex_teal = crate::ui::colors::rgb(20, 184, 166);
+            let codex_teal = colors.codex;
             if let Some(status) = codex_status {
                 let bars: [(&str, &Option<crate::providers::codex::CodexRateLimit>); 2] = [
                     ("five_hour", &status.five_hour),
@@ -2393,13 +2393,9 @@ impl PopupRenderer {
                     right: pad + prefix_w + badge_w,
                     bottom: badge_y + badge_h,
                 };
-                // Teal pill for Codex (distinct from Claude's plan colors).
-                let badge_bg = D2D1_COLOR_F {
-                    r: 0.0,
-                    g: 0.59,
-                    b: 0.53,
-                    a: 1.0,
-                };
+                // Teal pill for Codex (distinct from Claude's plan colors),
+                // derived from the theme's Codex accent.
+                let badge_bg = crate::ui::colors::colorref_to_d2d(colors.codex);
                 let badge_brush = rt.CreateSolidColorBrush(&badge_bg, None).unwrap();
                 rt.FillRoundedRectangle(
                     &D2D1_ROUNDED_RECT {
@@ -2460,9 +2456,9 @@ impl PopupRenderer {
             for (key, rl) in bars {
                 if let Some(rl) = rl {
                     let reset = rl.resets_at_rfc3339();
-                    // Codex bars use a distinct teal hue (#14b8a6) so they read
-                    // as a different provider from Claude's green→amber bars.
-                    let codex_teal = crate::ui::colors::rgb(20, 184, 166);
+                    // Codex bars use a distinct teal/cyan hue (theme palette) so
+                    // they read as a different provider from Claude's bars.
+                    let codex_teal = colors.codex;
                     y = self.draw_metric(
                         rt,
                         d2d,

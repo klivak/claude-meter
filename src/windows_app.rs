@@ -65,6 +65,7 @@ const WM_CREDENTIAL_CHANGED: u32 = 0x0400 + 23; // WM_USER + 23
 const WM_NETWORK_CHANGED: u32 = 0x0400 + 24; // WM_USER + 24
 const WM_UPDATE_INSTALL_READY: u32 = 0x0400 + 25; // WM_USER + 25
 const WM_UPDATE_FAILED: u32 = 0x0400 + 26; // WM_USER + 26
+const WM_CODEX_RESULT: u32 = 0x0400 + 27; // WM_USER + 27
 
 /// Shared application state accessible from the window proc.
 pub(crate) struct AppState {
@@ -440,6 +441,8 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
 
     // Initial poll (async via tokio)
     trigger_poll(main_hwnd);
+    // Initial Codex refresh (independent of the Claude poll)
+    trigger_codex_refresh(main_hwnd);
 
     // Set up polling timer with random interval (90-180 seconds)
     let interval = crate::config::Config::random_polling_interval() as u32 * 1000;
@@ -565,6 +568,9 @@ unsafe extern "system" fn main_wnd_proc(
                 // Skip polling when user is idle (screen locked, AFK)
                 if !is_user_idle(IDLE_TIMEOUT_MS) {
                     trigger_poll(hwnd);
+                    // Codex is local-log based; refresh it independently so its
+                    // alerts fire regardless of the Claude API poll outcome.
+                    trigger_codex_refresh(hwnd);
                 }
             } else if wparam.0 == TIMER_BLINK {
                 // Blink tray icon when critical usage
@@ -657,12 +663,30 @@ unsafe extern "system" fn main_wnd_proc(
                     state.chart_data_7d = db_result.chart_data_7d;
                     state.chart_data_30d = db_result.chart_data_30d;
                     state.rate_of_change = db_result.rate_of_change;
-                    state.codex_status = db_result.codex_status;
-
-                    // Fire Codex threshold notifications on the fresh usage data.
-                    check_codex_notifications(state);
 
                     // Repaint popup if visible to show updated charts
+                    if state.popup_visible {
+                        let _ = windows::Win32::Graphics::Gdi::InvalidateRect(
+                            state.popup_hwnd,
+                            None,
+                            true,
+                        );
+                    }
+                }
+            }
+            LRESULT(0)
+        }
+        WM_CODEX_RESULT => {
+            // Fresh Codex usage from the independent background refresh thread.
+            // wparam = pointer to Box<Option<CodexStatus>>.
+            let result_ptr = wparam.0 as *mut Option<crate::providers::codex::CodexStatus>;
+            if !result_ptr.is_null() {
+                let status = *Box::from_raw(result_ptr);
+                if let Some(state) = APP_STATE.as_mut() {
+                    state.codex_status = status;
+                    // Fire Codex threshold notifications on the fresh data.
+                    check_codex_notifications(state);
+                    // Repaint popup if visible to show updated Codex bars.
                     if state.popup_visible {
                         let _ = windows::Win32::Graphics::Gdi::InvalidateRect(
                             state.popup_hwnd,
@@ -2147,7 +2171,6 @@ struct DbResult {
     chart_data_7d: Vec<f64>,
     chart_data_30d: Vec<f64>,
     rate_of_change: std::collections::HashMap<String, f64>,
-    codex_status: Option<crate::providers::codex::CodexStatus>,
 }
 
 /// Check the live Codex usage windows against the notification thresholds and
@@ -2185,7 +2208,12 @@ unsafe fn check_codex_notifications(state: &mut AppState) {
             .notification_tracker
             .check(track_key, rl.used_percent, &thresholds);
         for threshold in fired {
-            let name = format!("Codex {}", providers::claude::format_metric_name(label_key));
+            let name = format!(
+                "Codex {}",
+                state
+                    .i18n
+                    .t(&providers::claude::format_metric_name(label_key))
+            );
             let reset = rl.resets_at_rfc3339();
             let reset_duration = reset
                 .as_deref()
@@ -2246,6 +2274,29 @@ unsafe fn check_codex_notifications(state: &mut AppState) {
             None,
         );
     }
+}
+
+/// Refresh live Codex usage from local `~/.codex` logs on a background thread
+/// and post the result back to the main thread via `WM_CODEX_RESULT`.
+///
+/// Runs on every poll tick, independent of the Claude API poll, so Codex
+/// threshold alerts fire even when the Claude API is offline or unauthenticated.
+/// No-op when the Codex panel is disabled.
+unsafe fn trigger_codex_refresh(hwnd: HWND) {
+    let Some(state) = APP_STATE.as_ref() else {
+        return;
+    };
+    if !state.config_mgr.config.show_chatgpt_section {
+        return;
+    }
+    let hwnd_val = hwnd.0 as isize;
+    std::thread::spawn(move || {
+        let status = crate::providers::codex::default_sessions_dir()
+            .and_then(|dir| crate::providers::codex::latest_status(&dir, chrono::Utc::now()));
+        let ptr = Box::into_raw(Box::new(status)) as isize;
+        let hwnd = HWND(hwnd_val as *mut _);
+        let _ = PostMessageW(hwnd, WM_CODEX_RESULT, WPARAM(ptr as usize), LPARAM(0));
+    });
 }
 
 async fn do_poll(web_fallback: Option<(String, String)>) -> PollResult {
@@ -2403,7 +2454,6 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
                 .collect();
             let exe_dir = state.exe_dir.clone();
             let hwnd_val = hwnd.0 as isize;
-            let want_codex = state.config_mgr.config.show_chatgpt_section;
             std::thread::spawn(move || {
                 if let Ok(db) = Database::open(&exe_dir) {
                     for (key, utilization, resets_at) in &metrics {
@@ -2414,21 +2464,11 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
                     let chart_data_30d = db.query_30d_chart().unwrap_or_default();
                     let rate_of_change = db.query_rate_of_change(60).unwrap_or_default();
 
-                    // Live Codex usage from local logs (only when the panel is on).
-                    let codex_status = if want_codex {
-                        crate::providers::codex::default_sessions_dir().and_then(|dir| {
-                            crate::providers::codex::latest_status(&dir, chrono::Utc::now())
-                        })
-                    } else {
-                        None
-                    };
-
                     let result = Box::new(DbResult {
                         chart_data,
                         chart_data_7d,
                         chart_data_30d,
                         rate_of_change,
-                        codex_status,
                     });
                     let result_ptr = Box::into_raw(result) as isize;
                     let hwnd = HWND(hwnd_val as *mut _);
@@ -2466,7 +2506,12 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
                             .notification_tracker
                             .check(&key, metric.utilization, &thresholds);
                     for threshold in fired {
-                        let metric_name = providers::claude::format_metric_name(&key);
+                        // Localize the metric label (falls back to the English
+                        // name when a locale has no key for it).
+                        let metric_name = state
+                            .i18n
+                            .t(&providers::claude::format_metric_name(&key))
+                            .to_string();
                         let reset_duration = metric
                             .resets_at
                             .as_deref()

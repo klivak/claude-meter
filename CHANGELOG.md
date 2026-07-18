@@ -8,10 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [5.4.1] - 2026-07-18
 
+### Fixed
+- **Localized notification metric names** — usage alert balloons now translate the metric label (e.g. "5-hour session" → "5-годинна сесія") instead of mixing an English metric name with an otherwise-localized alert body. Applies to both Claude and Codex alerts.
 
-
-
+### Changed
+- **Independent Codex alerts** — Codex threshold notifications now refresh on their own from the local `~/.codex` logs on every poll tick, so they fire even when the Claude API is offline or unauthenticated (previously they only ran after a successful Claude poll).
+- **Codex bar color from theme palette** — the Codex teal/cyan accent moved from a hardcoded value in the renderer into each theme's palette (`ThemeColors.codex`), so Codex bars and the Codex plan badge respect the active theme.
 
 ## [5.4.0] - 2026-07-17
 
