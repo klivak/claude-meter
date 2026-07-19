@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.4.2] - 2026-07-19
+
+### Fixed
+- **Progress bars at very low utilization** — non-zero fills that are narrower than the bar height now render as a minimum circular marker instead of a distorted sliver. The marker stays within the track, while `0%` remains empty and normal values retain proportional width.
 
 ## [5.4.1] - 2026-07-18
 

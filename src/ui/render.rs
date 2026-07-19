@@ -37,6 +37,17 @@ pub const HEADER_HEIGHT: i32 = 40;
 pub const PADDING: i32 = 16;
 pub const METRIC_LABEL_H: i32 = 22;
 pub const PROGRESS_H: i32 = 14;
+
+fn rounded_progress_fill_width(content_width: f32, bar_height: f32, utilization: f64) -> f32 {
+    let proportional_width = content_width * utilization.clamp(0.0, 100.0) as f32 / 100.0;
+    if proportional_width <= 0.0 {
+        0.0
+    } else {
+        proportional_width
+            .max(bar_height.min(content_width))
+            .min(content_width)
+    }
+}
 pub const RESET_LABEL_H: i32 = 18;
 pub const SECTION_GAP: i32 = 14;
 pub const ITEM_GAP: i32 = 8;
@@ -1187,11 +1198,8 @@ impl PopupRenderer {
         );
 
         // Progress bar fill (rounded, gradient)
-        let fill_w = (content_w * utilization as f32 / 100.0)
-            .max(0.0)
-            .min(content_w);
+        let fill_w = rounded_progress_fill_width(content_w, bar_h, utilization);
         if fill_w > 0.5 {
-            let fill_radius = radius.min(fill_w / 2.0);
             let fill_rect = D2D1_ROUNDED_RECT {
                 rect: D2D_RECT_F {
                     left: pad,
@@ -1199,10 +1207,7 @@ impl PopupRenderer {
                     right: pad + fill_w,
                     bottom: y + bar_h,
                 },
-                // Clamp only the horizontal radius for narrow fills; keep the
-                // full vertical radius so a low-utilization fill still renders
-                // as a rounded pill instead of a squared-off rectangle.
-                radiusX: fill_radius,
+                radiusX: radius,
                 radiusY: radius,
             };
 
@@ -1466,7 +1471,7 @@ impl PopupRenderer {
             &bg_brush,
         );
 
-        let fill_w = (content_w * util as f32 / 100.0).max(0.0).min(content_w);
+        let fill_w = rounded_progress_fill_width(content_w, bar_h, util);
         if fill_w > 0.5 {
             let fill_rect = D2D1_ROUNDED_RECT {
                 rect: D2D_RECT_F {
@@ -1475,7 +1480,7 @@ impl PopupRenderer {
                     right: pad + fill_w,
                     bottom: y + bar_h,
                 },
-                radiusX: radius.min(fill_w / 2.0),
+                radiusX: radius,
                 radiusY: radius,
             };
             let stops = [
@@ -3853,6 +3858,21 @@ fn to_win32_rect(r: &D2D_RECT_F) -> RECT {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rounded_progress_fill_keeps_small_values_round() {
+        assert_eq!(rounded_progress_fill_width(340.0, 14.0, 0.0), 0.0);
+        assert_eq!(rounded_progress_fill_width(340.0, 14.0, 1.0), 14.0);
+        assert_eq!(rounded_progress_fill_width(340.0, 14.0, 25.0), 85.0);
+        assert_eq!(rounded_progress_fill_width(340.0, 14.0, 100.0), 340.0);
+    }
+
+    #[test]
+    fn rounded_progress_fill_stays_within_track() {
+        assert_eq!(rounded_progress_fill_width(10.0, 14.0, 1.0), 10.0);
+        assert_eq!(rounded_progress_fill_width(340.0, 14.0, -1.0), 0.0);
+        assert_eq!(rounded_progress_fill_width(340.0, 14.0, 101.0), 340.0);
+    }
 
     #[test]
     fn test_gear_outline_geometry() {
