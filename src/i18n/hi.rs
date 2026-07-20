@@ -66,6 +66,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Export History (CSV)", "\u{0907}\u{0924}\u{093f}\u{0939}\u{093e}\u{0938} \u{0928}\u{093f}\u{0930}\u{094d}\u{092f}\u{093e}\u{0924} \u{0915}\u{0930}\u{0947}\u{0902} (CSV)");
     m.insert("Export History (JSON)", "\u{0907}\u{0924}\u{093f}\u{0939}\u{093e}\u{0938} \u{0928}\u{093f}\u{0930}\u{094d}\u{092f}\u{093e}\u{0924} \u{0915}\u{0930}\u{0947}\u{0902} (JSON)");
     m.insert("Show extra usage", "अतिरिक्त उपयोग दिखाएं");
+    m.insert("Show model limits", "\u{92e}\u{949}\u{921}\u{932} \u{938}\u{940}\u{92e}\u{93e}\u{90f}\u{902} \u{926}\u{93f}\u{916}\u{93e}\u{90f}\u{902}");
     m.insert("Usage link icons", "उपयोग लिंक आइकन");
     m.insert("Open usage", "उपयोग खोलें");
     m.insert("Service status", "सेवा स्थिति");

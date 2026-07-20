@@ -66,6 +66,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     );
     m.insert("Export History (JSON)", "تصدير السجل (JSON)");
     m.insert("Show extra usage", "إظهار الاستخدام الإضافي");
+    m.insert("Show model limits", "\u{625}\u{638}\u{647}\u{627}\u{631} \u{62d}\u{62f}\u{648}\u{62f} \u{627}\u{644}\u{646}\u{645}\u{627}\u{630}\u{62c}");
     m.insert("Usage link icons", "أيقونات روابط الاستخدام");
     m.insert("Open usage", "فتح الاستخدام");
     m.insert("Service status", "حالة الخدمة");

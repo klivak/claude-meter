@@ -54,6 +54,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Export History (CSV)", "Экспорт истории (CSV)");
     m.insert("Export History (JSON)", "Экспорт истории (JSON)");
     m.insert("Show extra usage", "Показать дополнительное использование");
+    m.insert("Show model limits", "\u{41f}\u{43e}\u{43a}\u{430}\u{437}\u{44b}\u{432}\u{430}\u{442}\u{44c} \u{43b}\u{438}\u{43c}\u{438}\u{442}\u{44b} \u{43c}\u{43e}\u{434}\u{435}\u{43b}\u{435}\u{439}");
     m.insert("Usage link icons", "Значки ссылок использования");
     m.insert("Open usage", "Открыть использование");
     m.insert("Service status", "Статус сервиса");

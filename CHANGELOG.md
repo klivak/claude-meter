@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [5.5.0] - 2026-07-20
+
+### Added
+
+- **Per-model weekly quotas from the new `limits` API format** — Anthropic moved model-scoped quotas out of the top-level `seven_day_*` keys (now `null`) into a `limits` array, so newer models such as Fable were silently missing from the dashboard. Both formats are now parsed, with the legacy keys taking precedence when present.
+- **"Show model limits" setting** — toggle per-model weekly quotas (Opus, Sonnet, Fable, …) in the dashboard; on by default (`show_model_limits`).
+
+### Changed
+
+- Metric labels for models the app doesn't know about now localize their "(7-day)" suffix in all 40 languages instead of falling back to English.
+
 ## [5.4.2] - 2026-07-19
 
 ### Fixed

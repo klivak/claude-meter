@@ -110,6 +110,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     strings.insert("Detailed", "Išsamus");
     strings.insert("Hide Extra Usage", "Slėpti papildomą naudojimą");
     strings.insert("Show extra usage", "Rodyti papildomą naudojimą");
+    strings.insert("Show model limits", "Rodyti modelių limitus");
     strings.insert("Show startup notification", "Rodyti paleidimo pranešimą");
     strings.insert(
         "Show login expiry warning",

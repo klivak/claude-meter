@@ -122,6 +122,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Detailed", "Detailed");
     m.insert("Hide Extra Usage", "Hide Extra Usage");
     m.insert("Show extra usage", "Show extra usage");
+    m.insert("Show model limits", "Show model limits");
     m.insert("Show startup notification", "Show startup notification");
     m.insert("Show login expiry warning", "Show login expiry warning");
     m.insert("Alert thresholds", "Alert thresholds");

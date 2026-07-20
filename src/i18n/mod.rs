@@ -401,6 +401,27 @@ impl I18n {
             .unwrap_or(key)
     }
 
+    /// Localize a usage-metric API key (e.g. "seven_day_fable").
+    ///
+    /// Known metrics have their own translations. Model-scoped weekly quotas
+    /// arrive from the API as free-form display names, so there is no key to
+    /// translate — instead we reuse the existing "Opus (7-day)" translation as
+    /// a template and swap in the model name, which localizes the "(7-day)"
+    /// part in every locale without needing a new string per model.
+    pub fn metric_name(&self, key: &str) -> String {
+        let name = crate::providers::claude::format_metric_name(key);
+        if self.strings.contains_key(name.as_str()) || self.fallback.contains_key(name.as_str()) {
+            return self.t(&name).to_string();
+        }
+        if let Some(model) = key.strip_prefix("seven_day_") {
+            let template = self.t("Opus (7-day)");
+            if let Some(rest) = template.strip_prefix("Opus") {
+                return format!("{}{}", crate::providers::claude::title_case(model), rest);
+            }
+        }
+        name
+    }
+
     #[allow(dead_code)]
     pub fn locale(&self) -> Locale {
         self.locale
@@ -534,6 +555,24 @@ mod tests {
         let i18n = I18n::new(Locale::Uk);
         assert_eq!(i18n.t("Plan"), "План");
         assert_eq!(i18n.t("Pro"), "Pro"); // same in all languages
+    }
+
+    #[test]
+    fn test_metric_name_known_keys_translated() {
+        let uk = I18n::new(Locale::Uk);
+        assert_eq!(uk.metric_name("seven_day_opus"), uk.t("Opus (7-day)"));
+        assert_eq!(uk.metric_name("five_hour"), uk.t("5-hour session"));
+    }
+
+    #[test]
+    fn test_metric_name_unknown_model_uses_localized_template() {
+        // "Fable" has no translation key, but the "(7-day)" suffix should still
+        // follow the locale by borrowing the Opus template.
+        let da = I18n::new(Locale::Da);
+        assert_eq!(da.metric_name("seven_day_fable"), "Fable (7 dage)");
+
+        let en = I18n::new(Locale::En);
+        assert_eq!(en.metric_name("seven_day_fable"), "Fable (7-day)");
     }
 
     #[test]

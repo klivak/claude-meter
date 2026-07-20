@@ -93,7 +93,7 @@ pub(crate) struct AppState {
     codex_plan_rect: RECT,
     codex_status_rect: RECT,
     back_rect: RECT,
-    setting_rects: [RECT; 18],
+    setting_rects: [RECT; 19],
     notification_tracker: NotificationTracker,
     exe_dir: std::path::PathBuf,
     chart_data: Vec<f64>,
@@ -276,7 +276,7 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
         codex_plan_rect: RECT::default(),
         codex_status_rect: RECT::default(),
         back_rect: RECT::default(),
-        setting_rects: [RECT::default(); 18],
+        setting_rects: [RECT::default(); 19],
         notification_tracker: NotificationTracker::new(),
         exe_dir,
         chart_data: Vec::new(),
@@ -870,7 +870,9 @@ unsafe extern "system" fn popup_wnd_proc(
                                         &state.anim_current,
                                         &state.config_mgr.config.dashboard_layout,
                                         &state.rate_of_change,
-                                        !state.config_mgr.config.show_extra_usage,
+                                        crate::providers::claude::MetricFilter::from_config(
+                                            &state.config_mgr.config,
+                                        ),
                                         state.codex_status.as_ref(),
                                         state.config_mgr.config.show_usage_links,
                                         &mut state.settings_rect,
@@ -947,7 +949,9 @@ unsafe extern "system" fn popup_wnd_proc(
                                         &state.anim_current,
                                         &state.config_mgr.config.dashboard_layout,
                                         &state.rate_of_change,
-                                        !state.config_mgr.config.show_extra_usage,
+                                        crate::providers::claude::MetricFilter::from_config(
+                                            &state.config_mgr.config,
+                                        ),
                                         state.codex_status.as_ref(),
                                         state.config_mgr.config.show_usage_links,
                                         &mut state.settings_rect,
@@ -1011,7 +1015,9 @@ unsafe extern "system" fn popup_wnd_proc(
                                     &state.anim_current,
                                     &state.config_mgr.config.dashboard_layout,
                                     &state.rate_of_change,
-                                    !state.config_mgr.config.show_extra_usage,
+                                    crate::providers::claude::MetricFilter::from_config(
+                                        &state.config_mgr.config,
+                                    ),
                                     state.codex_status.as_ref(),
                                     state.config_mgr.config.show_usage_links,
                                     &mut state.settings_rect,
@@ -1232,7 +1238,9 @@ unsafe extern "system" fn popup_wnd_proc(
                         state.config_mgr.config.show_chatgpt_section,
                         state.config_mgr.config.compact_mode,
                         &state.config_mgr.config.dashboard_layout,
-                        !state.config_mgr.config.show_extra_usage,
+                        crate::providers::claude::MetricFilter::from_config(
+                            &state.config_mgr.config,
+                        ),
                         state
                             .codex_status
                             .as_ref()
@@ -1367,13 +1375,21 @@ unsafe extern "system" fn popup_wnd_proc(
                 } else if state.popup_in_settings
                     && crate::popup::point_in_rect(pt, state.setting_rects[11])
                 {
+                    // Show per-model limits: toggle
+                    state.config_mgr.config.show_model_limits =
+                        !state.config_mgr.config.show_model_limits;
+                    state.config_mgr.save();
+                    let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
+                } else if state.popup_in_settings
+                    && crate::popup::point_in_rect(pt, state.setting_rects[12])
+                {
                     // Show startup notification: toggle
                     state.config_mgr.config.show_startup_notification =
                         !state.config_mgr.config.show_startup_notification;
                     state.config_mgr.save();
                     let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
                 } else if state.popup_in_settings
-                    && crate::popup::point_in_rect(pt, state.setting_rects[12])
+                    && crate::popup::point_in_rect(pt, state.setting_rects[13])
                 {
                     // Token expiry warning: toggle
                     state.config_mgr.config.token_expiry_warning =
@@ -1381,7 +1397,7 @@ unsafe extern "system" fn popup_wnd_proc(
                     state.config_mgr.save();
                     let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
                 } else if state.popup_in_settings
-                    && crate::popup::point_in_rect(pt, state.setting_rects[13])
+                    && crate::popup::point_in_rect(pt, state.setting_rects[14])
                 {
                     // Usage link icons: toggle
                     state.config_mgr.config.show_usage_links =
@@ -1389,14 +1405,14 @@ unsafe extern "system" fn popup_wnd_proc(
                     state.config_mgr.save();
                     let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
                 } else if state.popup_in_settings
-                    && crate::popup::point_in_rect(pt, state.setting_rects[14])
+                    && crate::popup::point_in_rect(pt, state.setting_rects[15])
                 {
                     state.config_mgr.config.notifications.enabled =
                         !state.config_mgr.config.notifications.enabled;
                     state.config_mgr.save();
                     let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
                 } else if state.popup_in_settings
-                    && crate::popup::point_in_rect(pt, state.setting_rects[15])
+                    && crate::popup::point_in_rect(pt, state.setting_rects[16])
                 {
                     state.config_mgr.config.notifications.thresholds =
                         crate::config::cycle_notification_thresholds(
@@ -1405,14 +1421,14 @@ unsafe extern "system" fn popup_wnd_proc(
                     state.config_mgr.save();
                     let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
                 } else if state.popup_in_settings
-                    && crate::popup::point_in_rect(pt, state.setting_rects[16])
+                    && crate::popup::point_in_rect(pt, state.setting_rects[17])
                 {
                     state.config_mgr.config.notifications.sound =
                         !state.config_mgr.config.notifications.sound;
                     state.config_mgr.save();
                     let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
                 } else if state.popup_in_settings
-                    && crate::popup::point_in_rect(pt, state.setting_rects[17])
+                    && crate::popup::point_in_rect(pt, state.setting_rects[18])
                 {
                     if let Some(tray) = &state.tray {
                         tray.show_balloon("ClaudeMeter", "Test notification: alerts are working.");
@@ -1692,7 +1708,7 @@ unsafe fn show_popup(_main_hwnd: HWND) {
                 state.config_mgr.config.show_chatgpt_section,
                 state.config_mgr.config.compact_mode,
                 &state.config_mgr.config.dashboard_layout,
-                !state.config_mgr.config.show_extra_usage,
+                crate::providers::claude::MetricFilter::from_config(&state.config_mgr.config),
                 state
                     .codex_status
                     .as_ref()
@@ -2208,12 +2224,7 @@ unsafe fn check_codex_notifications(state: &mut AppState) {
             .notification_tracker
             .check(track_key, rl.used_percent, &thresholds);
         for threshold in fired {
-            let name = format!(
-                "Codex {}",
-                state
-                    .i18n
-                    .t(&providers::claude::format_metric_name(label_key))
-            );
+            let name = format!("Codex {}", state.i18n.metric_name(label_key));
             let reset = rl.resets_at_rfc3339();
             let reset_duration = reset
                 .as_deref()
@@ -2508,10 +2519,7 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
                     for threshold in fired {
                         // Localize the metric label (falls back to the English
                         // name when a locale has no key for it).
-                        let metric_name = state
-                            .i18n
-                            .t(&providers::claude::format_metric_name(&key))
-                            .to_string();
+                        let metric_name = state.i18n.metric_name(&key);
                         let reset_duration = metric
                             .resets_at
                             .as_deref()
@@ -2666,7 +2674,7 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
                 state.config_mgr.config.show_chatgpt_section,
                 state.config_mgr.config.compact_mode,
                 &state.config_mgr.config.dashboard_layout,
-                !state.config_mgr.config.show_extra_usage,
+                crate::providers::claude::MetricFilter::from_config(&state.config_mgr.config),
                 state
                     .codex_status
                     .as_ref()

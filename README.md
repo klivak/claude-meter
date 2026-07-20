@@ -190,6 +190,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 - **Acrylic backdrop** — Windows 11 translucent blur effect (falls back gracefully on Win10)
 - **Segoe UI Variable** — uses Windows 11's variable font with automatic fallback to Segoe UI
 - **Show extra usage** — toggle in Settings to show the extra_usage metric in the dashboard (off by default)
+- **Show model limits** — toggle in Settings to show per-model weekly quotas (Opus, Sonnet, Fable, …) in the dashboard (on by default)
 - **Usage & status icon buttons** — each section header shows compact "open usage" and "service status" icon buttons; toggle them with the "Usage link icons" setting
 - **Notification toggles** — Settings exposes "Show startup notification" (silence the "Running in tray" balloon on launch) and "Show login expiry warning" (silence the `claude login` reminder)
 - **One-click updates** — clicking the "Update available" tray balloon downloads the verified Windows release, checks its SHA-256 checksum, and installs it safely after ClaudeMeter exits
@@ -345,6 +346,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
   "tray_icon_style": "number",
   "dashboard_layout": "standard",
   "show_extra_usage": false,
+  "show_model_limits": true,
   "show_usage_links": true,
   "custom_colors": {},
   "quiet_hours": {
@@ -374,6 +376,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 | `accessibility_patterns` | `false` | — | Colorblind overlay patterns on progress bars |
 | `dashboard_layout` | `"standard"` | minimal/standard/detailed | Dashboard layout mode |
 | `show_extra_usage` | `false` | — | Show extra_usage metric in dashboard |
+| `show_model_limits` | `true` | — | Show per-model weekly quotas (Opus, Sonnet, Fable, …) |
 | `show_usage_links` | `true` | — | Show usage/status icon buttons in section headers |
 | `custom_colors` | `{}` | hex strings | Override theme colors (e.g. `{"green": "#00ff00"}`) |
 | `quiet_hours.enabled` | `false` | — | Suppress notifications during quiet hours |

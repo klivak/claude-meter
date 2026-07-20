@@ -69,6 +69,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Show extra usage",
         "Zobrazi\u{0165} \u{010f}al\u{0161}ie vyu\u{017e}itie",
     );
+    m.insert("Show model limits", "Zobrazi\u{165} limity modelov");
     m.insert("Usage link icons", "Ikony odkazov vyu\u{017e}itia");
     m.insert("Open usage", "Otvori\u{0165} vyu\u{017e}itie");
     m.insert("Service status", "Stav slu\u{017e}by");

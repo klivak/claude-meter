@@ -66,6 +66,10 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     );
     m.insert("Export History (JSON)", "기록 내보내기 (JSON)");
     m.insert("Show extra usage", "추가 사용량 표시");
+    m.insert(
+        "Show model limits",
+        "\u{baa8}\u{b378}\u{bcc4} \u{d55c}\u{b3c4} \u{d45c}\u{c2dc}",
+    );
     m.insert("Usage link icons", "사용량 링크 아이콘");
     m.insert("Open usage", "사용량 열기");
     m.insert("Service status", "서비스 상태");

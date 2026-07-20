@@ -98,6 +98,10 @@ pub struct Config {
     /// not fit the standard rolling-limit concept).
     #[serde(default)]
     pub show_extra_usage: bool,
+    /// Show per-model weekly quotas (Opus, Sonnet, Fable, …) in the dashboard.
+    /// On by default; turn off to keep only the session and overall weekly bars.
+    #[serde(default = "default_true")]
+    pub show_model_limits: bool,
     #[serde(default)]
     pub token_expiry_warning: bool,
     #[serde(default = "default_true")]
@@ -152,6 +156,7 @@ impl Default for Config {
             tray_icon_style: "number".to_string(),
             dashboard_layout: "standard".to_string(),
             show_extra_usage: false,
+            show_model_limits: true,
             token_expiry_warning: false,
             show_startup_notification: true,
             custom_colors: CustomColors::default(),

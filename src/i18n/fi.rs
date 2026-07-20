@@ -63,6 +63,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Export History (CSV)", "Vie historia (CSV)");
     m.insert("Export History (JSON)", "Vie historia (JSON)");
     m.insert("Show extra usage", "Näytä lisäkäyttö");
+    m.insert("Show model limits", "N\u{e4}yt\u{e4} mallikohtaiset rajat");
     m.insert("Usage link icons", "Käyttölinkkien kuvakkeet");
     m.insert("Open usage", "Avaa käyttö");
     m.insert("Service status", "Palvelun tila");

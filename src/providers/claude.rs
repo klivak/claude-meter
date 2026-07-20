@@ -95,6 +95,37 @@ impl UsageResponse {
     }
 }
 
+/// Which metrics the user has chosen to hide in the dashboard.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct MetricFilter {
+    pub hide_extra_usage: bool,
+    /// Hide per-model weekly quotas (Opus, Sonnet, Fable, …)
+    pub hide_model_limits: bool,
+}
+
+impl MetricFilter {
+    pub fn from_config(config: &crate::config::Config) -> Self {
+        Self {
+            hide_extra_usage: !config.show_extra_usage,
+            hide_model_limits: !config.show_model_limits,
+        }
+    }
+
+    /// True when `key` should be omitted from the display.
+    pub fn hides(&self, key: &str) -> bool {
+        if self.hide_extra_usage && key == "extra_usage" {
+            return true;
+        }
+        self.hide_model_limits && is_model_limit(key)
+    }
+}
+
+/// Per-model weekly quota, e.g. "seven_day_opus" or "seven_day_fable".
+/// The overall weekly total and the OAuth-apps quota are not model-scoped.
+fn is_model_limit(key: &str) -> bool {
+    key.starts_with("seven_day_") && key != "seven_day_oauth_apps"
+}
+
 /// Parse raw JSON Value into a UsageResponse, handling unknown fields gracefully.
 fn parse_response(value: serde_json::Value) -> Result<UsageResponse, String> {
     let obj = value
@@ -113,7 +144,7 @@ fn parse_response(value: serde_json::Value) -> Result<UsageResponse, String> {
     };
 
     for (key, val) in obj {
-        if val.is_null() {
+        if val.is_null() || key == "limits" {
             continue;
         }
         // Try to parse as UsageMetric
@@ -132,7 +163,87 @@ fn parse_response(value: serde_json::Value) -> Result<UsageResponse, String> {
         }
     }
 
+    merge_limits(&mut resp, obj.get("limits"));
+
     Ok(resp)
+}
+
+/// Merge the newer `limits` array into the response.
+///
+/// The API moved per-model quotas out of top-level `seven_day_*` keys (now null)
+/// into `limits`, where each entry is
+/// `{kind, percent, resets_at, scope: {model: {display_name}}}`.
+/// Old keys win when both are present, so existing responses are unaffected.
+fn merge_limits(resp: &mut UsageResponse, limits: Option<&serde_json::Value>) {
+    let Some(entries) = limits.and_then(|v| v.as_array()) else {
+        return;
+    };
+
+    for entry in entries {
+        let Some(utilization) = entry.get("percent").and_then(|p| p.as_f64()) else {
+            continue;
+        };
+        let metric = UsageMetric {
+            utilization,
+            resets_at: entry
+                .get("resets_at")
+                .and_then(|r| r.as_str())
+                .map(str::to_string),
+        };
+
+        match entry.get("kind").and_then(|k| k.as_str()) {
+            Some("session") => {
+                if resp.five_hour.is_none() {
+                    resp.five_hour = Some(metric);
+                }
+            }
+            Some("weekly_all") => {
+                if resp.seven_day.is_none() {
+                    resp.seven_day = Some(metric);
+                }
+            }
+            Some("weekly_scoped") => {
+                let model = entry
+                    .get("scope")
+                    .and_then(|s| s.get("model"))
+                    .and_then(|m| m.get("display_name"))
+                    .and_then(|n| n.as_str());
+                let Some(model) = model else { continue };
+                let key = format!("seven_day_{}", slugify_model(model));
+
+                // Don't shadow a known key that the old format already filled in.
+                let known = match key.as_str() {
+                    "seven_day_sonnet" => resp.seven_day_sonnet.is_some(),
+                    "seven_day_opus" => resp.seven_day_opus.is_some(),
+                    _ => false,
+                };
+                if known {
+                    continue;
+                }
+                match key.as_str() {
+                    "seven_day_sonnet" => resp.seven_day_sonnet = Some(metric),
+                    "seven_day_opus" => resp.seven_day_opus = Some(metric),
+                    _ => {
+                        resp.extra.entry(key).or_insert(metric);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// "Fable" → "fable", "Claude Opus 4.8" → "claude_opus_4_8"
+fn slugify_model(name: &str) -> String {
+    name.chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c.to_ascii_lowercase()
+            } else {
+                '_'
+            }
+        })
+        .collect()
 }
 
 pub struct ClaudeClient {
@@ -287,6 +398,20 @@ fn format_tier(tier: &str) -> Option<String> {
     }
 }
 
+/// "fable" → "Fable", "claude_opus" → "Claude Opus"
+pub fn title_case(s: &str) -> String {
+    s.split('_')
+        .map(|word| {
+            let mut c = word.chars();
+            match c.next() {
+                None => String::new(),
+                Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 /// Format an API field name into a human-readable display name.
 /// Examples: "five_hour" → "5-hour session", "seven_day_sonnet" → "Sonnet (7-day)"
 pub fn format_metric_name(key: &str) -> String {
@@ -298,18 +423,12 @@ pub fn format_metric_name(key: &str) -> String {
         "seven_day_oauth_apps" => "OAuth Apps (7-day)".to_string(),
         "extra_usage" => "Extra Usage".to_string(),
         other => {
+            // Model-scoped weekly quotas from the `limits` array: "seven_day_fable" → "Fable (7-day)"
+            if let Some(model) = other.strip_prefix("seven_day_") {
+                return format!("{} (7-day)", title_case(model));
+            }
             // Title-case with spaces for unknown fields
-            other
-                .split('_')
-                .map(|word| {
-                    let mut c = word.chars();
-                    match c.next() {
-                        None => String::new(),
-                        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join(" ")
+            title_case(other)
         }
     }
 }
@@ -373,6 +492,83 @@ mod tests {
         assert_eq!(format_metric_name("seven_day"), "Weekly (7-day)");
         assert_eq!(format_metric_name("extra_usage"), "Extra Usage");
         assert_eq!(format_metric_name("iguana_necktie"), "Iguana Necktie");
+    }
+
+    #[test]
+    fn test_parse_limits_array() {
+        let json = serde_json::json!({
+            "seven_day_opus": null,
+            "seven_day_sonnet": null,
+            "limits": [
+                {"kind": "session", "percent": 10, "resets_at": "2026-07-20T22:49:59+00:00"},
+                {"kind": "weekly_all", "percent": 13, "resets_at": null},
+                {"kind": "weekly_scoped", "percent": 5, "resets_at": null,
+                 "scope": {"model": {"id": null, "display_name": "Fable"}}}
+            ]
+        });
+        let resp = parse_response(json).unwrap();
+        assert_eq!(resp.five_hour.as_ref().unwrap().utilization, 10.0);
+        assert_eq!(
+            resp.five_hour.as_ref().unwrap().resets_at.as_deref(),
+            Some("2026-07-20T22:49:59+00:00")
+        );
+        assert_eq!(resp.seven_day.as_ref().unwrap().utilization, 13.0);
+        assert_eq!(resp.extra["seven_day_fable"].utilization, 5.0);
+        assert_eq!(resp.max_utilization(), Some(13.0));
+    }
+
+    #[test]
+    fn test_limits_do_not_override_legacy_keys() {
+        let json = serde_json::json!({
+            "five_hour": {"utilization": 62.0, "resets_at": null},
+            "seven_day_opus": {"utilization": 8.0, "resets_at": null},
+            "limits": [
+                {"kind": "session", "percent": 99, "resets_at": null},
+                {"kind": "weekly_scoped", "percent": 99, "resets_at": null,
+                 "scope": {"model": {"display_name": "Opus"}}}
+            ]
+        });
+        let resp = parse_response(json).unwrap();
+        assert_eq!(resp.five_hour.as_ref().unwrap().utilization, 62.0);
+        assert_eq!(resp.seven_day_opus.as_ref().unwrap().utilization, 8.0);
+        assert!(resp.extra.is_empty());
+    }
+
+    #[test]
+    fn test_limits_fill_legacy_model_keys_when_absent() {
+        let json = serde_json::json!({
+            "limits": [
+                {"kind": "weekly_scoped", "percent": 42, "resets_at": null,
+                 "scope": {"model": {"display_name": "Sonnet"}}}
+            ]
+        });
+        let resp = parse_response(json).unwrap();
+        assert_eq!(resp.seven_day_sonnet.as_ref().unwrap().utilization, 42.0);
+        assert!(resp.extra.is_empty());
+    }
+
+    #[test]
+    fn test_metric_filter() {
+        let show_all = MetricFilter::default();
+        assert!(!show_all.hides("seven_day_fable"));
+        assert!(!show_all.hides("extra_usage"));
+
+        let hide_models = MetricFilter {
+            hide_extra_usage: false,
+            hide_model_limits: true,
+        };
+        assert!(hide_models.hides("seven_day_fable"));
+        assert!(hide_models.hides("seven_day_opus"));
+        // Not model-scoped — must stay visible.
+        assert!(!hide_models.hides("seven_day"));
+        assert!(!hide_models.hides("seven_day_oauth_apps"));
+        assert!(!hide_models.hides("five_hour"));
+        assert!(!hide_models.hides("extra_usage"));
+    }
+
+    #[test]
+    fn test_format_scoped_metric_name() {
+        assert_eq!(format_metric_name("seven_day_fable"), "Fable (7-day)");
     }
 
     #[test]

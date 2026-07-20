@@ -7,7 +7,7 @@
 ///
 /// All coordinates are in DIPs (device-independent pixels, 1 DIP = 1/96 inch).
 use crate::i18n::{format_duration, format_reset_target, is_system_24h, seconds_until, I18n};
-use crate::providers::claude::{format_metric_name, UsageResponse};
+use crate::providers::claude::{MetricFilter, UsageResponse};
 use crate::ui::colors::{colorref_to_d2d, lighten_d2d, ColorRef, ThemeColors};
 use std::collections::HashMap;
 use windows::core::PCWSTR;
@@ -458,15 +458,14 @@ impl PopupRenderer {
         show_chatgpt: bool,
         compact: bool,
         dashboard_layout: &str,
-        hide_extra_usage: bool,
+        metric_filter: MetricFilter,
         codex_windows: i32,
     ) -> i32 {
         let extra_hidden = |u: &UsageResponse| -> usize {
-            if hide_extra_usage && u.extra.contains_key("extra_usage") {
-                1
-            } else {
-                0
-            }
+            u.all_metrics()
+                .iter()
+                .filter(|(k, _)| metric_filter.hides(k))
+                .count()
         };
 
         if compact {
@@ -571,7 +570,7 @@ impl PopupRenderer {
         anim_values: &[f64],
         dashboard_layout: &str,
         rate_of_change: &HashMap<String, f64>,
-        hide_extra_usage: bool,
+        metric_filter: MetricFilter,
         codex_status: Option<&crate::providers::codex::CodexStatus>,
         show_usage_links: bool,
         settings_rect: &mut RECT,
@@ -624,7 +623,7 @@ impl PopupRenderer {
                     usage,
                     colors,
                     i18n,
-                    hide_extra_usage,
+                    metric_filter,
                     show_chatgpt,
                     codex_status,
                 );
@@ -659,7 +658,7 @@ impl PopupRenderer {
                                 status_link_rect,
                                 plan_link_rect,
                                 claude_usage_rect,
-                                hide_extra_usage,
+                                metric_filter,
                             );
                         }
                         "detailed" => {
@@ -678,7 +677,7 @@ impl PopupRenderer {
                                 status_link_rect,
                                 plan_link_rect,
                                 claude_usage_rect,
-                                hide_extra_usage,
+                                metric_filter,
                             );
                         }
                         _ => {
@@ -696,7 +695,7 @@ impl PopupRenderer {
                                 status_link_rect,
                                 plan_link_rect,
                                 claude_usage_rect,
-                                hide_extra_usage,
+                                metric_filter,
                             );
                         }
                     },
@@ -1026,7 +1025,7 @@ impl PopupRenderer {
         status_link_rect: &mut RECT,
         plan_link_rect: &mut RECT,
         claude_usage_rect: &mut RECT,
-        hide_extra_usage: bool,
+        metric_filter: MetricFilter,
     ) -> f32 {
         // Section header
         y = self.draw_section_header(
@@ -1044,7 +1043,7 @@ impl PopupRenderer {
         );
 
         for (i, (key, metric)) in usage.all_metrics().iter().enumerate() {
-            if hide_extra_usage && key == "extra_usage" {
+            if metric_filter.hides(key) {
                 continue;
             }
             let util = if i < anim_values.len() {
@@ -1093,8 +1092,7 @@ impl PopupRenderer {
         let radius = bar_h / 2.0;
 
         // Label + percentage + rate arrow on same line
-        let metric_name_str = format_metric_name(key);
-        let display_name = i18n.t(&metric_name_str);
+        let display_name = i18n.metric_name(key);
         let pct_str = format!("{:.0}%", utilization);
         let pct_area_w = self.sf(62);
 
@@ -1109,7 +1107,7 @@ impl PopupRenderer {
         };
 
         // Label (left)
-        let label_text = wide(display_name);
+        let label_text = wide(&display_name);
         let label_format = d2d.get_text_format(12, false, 0, 1).clone();
         let label_brush = rt
             .CreateSolidColorBrush(&colorref_to_d2d(colors.text_primary) as *const _, None)
@@ -1353,7 +1351,7 @@ impl PopupRenderer {
         status_link_rect: &mut RECT,
         plan_link_rect: &mut RECT,
         claude_usage_rect: &mut RECT,
-        hide_extra_usage: bool,
+        metric_filter: MetricFilter,
     ) -> f32 {
         let pad = self.sf(PADDING);
         let content_w = w - pad * 2.0;
@@ -1375,13 +1373,10 @@ impl PopupRenderer {
 
         // Find highest utilization metric
         let all = usage.all_metrics();
-        let metrics: Vec<_> = if hide_extra_usage {
-            all.into_iter()
-                .filter(|(k, _)| k != "extra_usage")
-                .collect()
-        } else {
-            all
-        };
+        let metrics: Vec<_> = all
+            .into_iter()
+            .filter(|(k, _)| !metric_filter.hides(k))
+            .collect();
         let fallback_key = String::new();
         let fallback_metric = crate::providers::claude::UsageMetric {
             utilization: 0.0,
@@ -1405,9 +1400,8 @@ impl PopupRenderer {
         };
 
         // Metric name (centered, 14pt)
-        let metric_name_formatted = format_metric_name(best_key);
-        let name = i18n.t(&metric_name_formatted);
-        let name_text = wide(name);
+        let name = i18n.metric_name(best_key);
+        let name_text = wide(&name);
         let name_format = d2d.get_text_format(14, true, 2, 1).clone();
         let name_brush = rt
             .CreateSolidColorBrush(&colorref_to_d2d(colors.text_secondary) as *const _, None)
@@ -1570,7 +1564,7 @@ impl PopupRenderer {
         status_link_rect: &mut RECT,
         plan_link_rect: &mut RECT,
         claude_usage_rect: &mut RECT,
-        hide_extra_usage: bool,
+        metric_filter: MetricFilter,
     ) -> f32 {
         // Section header
         y = self.draw_section_header(
@@ -1590,7 +1584,7 @@ impl PopupRenderer {
         let pad = self.sf(PADDING);
 
         for (i, (key, metric)) in usage.all_metrics().iter().enumerate() {
-            if hide_extra_usage && key == "extra_usage" {
+            if metric_filter.hides(key) {
                 continue;
             }
             let util = if i < anim_values.len() {
@@ -1871,7 +1865,7 @@ impl PopupRenderer {
         usage: &Option<UsageResponse>,
         colors: &ThemeColors,
         i18n: &I18n,
-        hide_extra_usage: bool,
+        metric_filter: MetricFilter,
         show_codex: bool,
         codex_status: Option<&crate::providers::codex::CodexStatus>,
     ) -> f32 {
@@ -1882,9 +1876,9 @@ impl PopupRenderer {
             Some(u) => u
                 .all_metrics()
                 .iter()
-                .filter(|(k, _)| !hide_extra_usage || k != "extra_usage")
+                .filter(|(k, _)| !metric_filter.hides(k))
                 .map(|(k, m)| {
-                    let metric_name = format_metric_name(k);
+                    let metric_name = i18n.metric_name(k);
                     let label = if show_codex {
                         format!("{} · {}", i18n.t("CLAUDE"), metric_name)
                     } else {
@@ -1906,7 +1900,7 @@ impl PopupRenderer {
                 for (key, rate_limit) in bars {
                     if let Some(rate_limit) = rate_limit {
                         metrics.push((
-                            format!("{} · {}", i18n.t("CODEX"), format_metric_name(key)),
+                            format!("{} · {}", i18n.t("CODEX"), i18n.metric_name(key)),
                             rate_limit.used_percent,
                             Some(codex_teal),
                         ));
@@ -3184,7 +3178,7 @@ pub unsafe fn draw_settings_panel(
     config: &crate::config::Config,
     back_rect: &mut RECT,
     close_rect: &mut RECT,
-    setting_rects: &mut [RECT; 18],
+    setting_rects: &mut [RECT; 19],
     hovered: &HoveredElement,
 ) {
     let Some(rt) = d2d.render_target.clone() else {
@@ -3390,6 +3384,11 @@ pub unsafe fn draw_settings_panel(
             i18n.t("Show extra usage").to_string(),
             None,
             Some(config.show_extra_usage),
+        ),
+        (
+            i18n.t("Show model limits").to_string(),
+            None,
+            Some(config.show_model_limits),
         ),
         (
             i18n.t("Show startup notification").to_string(),
@@ -3912,9 +3911,39 @@ mod tests {
     fn compact_height_reserves_rows_for_codex() {
         let renderer = PopupRenderer { dpi_scale: 1.0 };
         let usage = None;
-        let base = renderer.calculate_height(&usage, false, true, "standard", true, 0);
-        let no_data = renderer.calculate_height(&usage, true, true, "standard", true, 0);
-        let two_windows = renderer.calculate_height(&usage, true, true, "standard", true, 2);
+        let base = renderer.calculate_height(
+            &usage,
+            false,
+            true,
+            "standard",
+            MetricFilter {
+                hide_extra_usage: true,
+                hide_model_limits: false,
+            },
+            0,
+        );
+        let no_data = renderer.calculate_height(
+            &usage,
+            true,
+            true,
+            "standard",
+            MetricFilter {
+                hide_extra_usage: true,
+                hide_model_limits: false,
+            },
+            0,
+        );
+        let two_windows = renderer.calculate_height(
+            &usage,
+            true,
+            true,
+            "standard",
+            MetricFilter {
+                hide_extra_usage: true,
+                hide_model_limits: false,
+            },
+            2,
+        );
         let row_height = 16 + 8 + ITEM_GAP;
 
         assert_eq!(no_data - base, row_height);

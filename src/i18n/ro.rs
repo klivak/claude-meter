@@ -57,6 +57,10 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Show extra usage",
         "Afi\u{015f}eaz\u{0103} utilizarea suplimentar\u{0103}",
     );
+    m.insert(
+        "Show model limits",
+        "Afi\u{219}eaz\u{103} limitele modelelor",
+    );
     m.insert("Usage link icons", "Pictograme linkuri de utilizare");
     m.insert("Open usage", "Deschide utilizarea");
     m.insert("Service status", "Starea serviciului");

@@ -104,6 +104,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     strings.insert("Detailed", "Detallat");
     strings.insert("Hide Extra Usage", "Amaga l'ús addicional");
     strings.insert("Show extra usage", "Mostra l'ús addicional");
+    strings.insert("Show model limits", "Mostra els límits per model");
     strings.insert("Show startup notification", "Mostra la notificació d'inici");
     strings.insert(
         "Show login expiry warning",

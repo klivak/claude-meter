@@ -69,6 +69,10 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "El\u{0151}zm\u{00e9}nyek export\u{00e1}l\u{00e1}sa (JSON)",
     );
     m.insert("Show extra usage", "Extra használat megjelenítése");
+    m.insert(
+        "Show model limits",
+        "Modellkorl\u{e1}tok megjelen\u{ed}t\u{e9}se",
+    );
     m.insert("Usage link icons", "Használati hivatkozás ikonok");
     m.insert("Open usage", "Használat megnyitása");
     m.insert("Service status", "Szolgáltatás állapota");

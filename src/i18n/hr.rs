@@ -110,6 +110,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     strings.insert("Detailed", "Detaljni");
     strings.insert("Hide Extra Usage", "Sakrij dodatnu potrošnju");
     strings.insert("Show extra usage", "Prikaži dodatnu potrošnju");
+    strings.insert("Show model limits", "Prikaži ograničenja modela");
     strings.insert(
         "Show startup notification",
         "Prikaži obavijest pri pokretanju",

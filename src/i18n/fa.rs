@@ -78,6 +78,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Export History (CSV)", "\u{062e}\u{0631}\u{0648}\u{062c}\u{06cc} \u{062a}\u{0627}\u{0631}\u{06cc}\u{062e}\u{0686}\u{0647} (CSV)");
     m.insert("Export History (JSON)", "\u{062e}\u{0631}\u{0648}\u{062c}\u{06cc} \u{062a}\u{0627}\u{0631}\u{06cc}\u{062e}\u{0686}\u{0647} (JSON)");
     m.insert("Show extra usage", "نمایش مصرف اضافی");
+    m.insert("Show model limits", "\u{646}\u{645}\u{627}\u{6cc}\u{634} \u{645}\u{62d}\u{62f}\u{648}\u{62f}\u{6cc}\u{62a} \u{645}\u{62f}\u{644}\u{200c}\u{647}\u{627}");
     m.insert("Usage link icons", "آیکون‌های پیوند مصرف");
     m.insert("Open usage", "باز کردن مصرف");
     m.insert("Service status", "وضعیت سرویس");

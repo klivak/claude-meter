@@ -63,6 +63,10 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     );
     m.insert("Export History (JSON)", "导出历史 (JSON)");
     m.insert("Show extra usage", "显示额外用量");
+    m.insert(
+        "Show model limits",
+        "\u{663e}\u{793a}\u{6a21}\u{578b}\u{989d}\u{5ea6}",
+    );
     m.insert("Usage link icons", "用量链接图标");
     m.insert("Open usage", "打开用量");
     m.insert("Service status", "服务状态");

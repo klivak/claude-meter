@@ -51,6 +51,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Export History (CSV)", "Eksport sejarah (CSV)");
     m.insert("Export History (JSON)", "Eksport sejarah (JSON)");
     m.insert("Show extra usage", "Tunjuk penggunaan tambahan");
+    m.insert("Show model limits", "Tunjuk had model");
     m.insert("Usage link icons", "Ikon pautan penggunaan");
     m.insert("Open usage", "Buka penggunaan");
     m.insert("Service status", "Status perkhidmatan");

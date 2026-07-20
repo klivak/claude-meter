@@ -63,6 +63,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Export History (CSV)", "\u{0418}\u{0437}\u{0432}\u{0435}\u{0437}\u{0438} \u{0438}\u{0441}\u{0442}\u{043e}\u{0440}\u{0438}\u{0458}\u{0443} (CSV)");
     m.insert("Export History (JSON)", "Извези историју (JSON)");
     m.insert("Show extra usage", "Прикажи додатну потрошњу");
+    m.insert("Show model limits", "\u{41f}\u{440}\u{438}\u{43a}\u{430}\u{436}\u{438} \u{43e}\u{433}\u{440}\u{430}\u{43d}\u{438}\u{447}\u{435}\u{45a}\u{430} \u{43c}\u{43e}\u{434}\u{435}\u{43b}\u{430}");
     m.insert("Usage link icons", "Иконе линкова коришћења");
     m.insert("Open usage", "Отвори коришћење");
     m.insert("Service status", "Статус услуге");

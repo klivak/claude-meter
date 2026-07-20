@@ -60,6 +60,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     );
     m.insert("Export History (JSON)", "Geçmişi Dışa Aktar (JSON)");
     m.insert("Show extra usage", "Ek kullanımı göster");
+    m.insert("Show model limits", "Model limitlerini g\u{f6}ster");
     m.insert("Usage link icons", "Kullanım bağlantı simgeleri");
     m.insert("Open usage", "Kullanımı aç");
     m.insert("Service status", "Hizmet durumu");

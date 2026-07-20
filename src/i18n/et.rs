@@ -110,6 +110,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     strings.insert("Detailed", "Üksikasjalik");
     strings.insert("Hide Extra Usage", "Peida lisakasutus");
     strings.insert("Show extra usage", "Kuva lisakasutus");
+    strings.insert("Show model limits", "Kuva mudelite piirid");
     strings.insert("Show startup notification", "Kuva käivitusteavitus");
     strings.insert(
         "Show login expiry warning",

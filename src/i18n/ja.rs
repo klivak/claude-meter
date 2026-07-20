@@ -72,6 +72,10 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     );
     m.insert("Export History (JSON)", "履歴をエクスポート (JSON)");
     m.insert("Show extra usage", "追加使用量を表示");
+    m.insert(
+        "Show model limits",
+        "\u{30e2}\u{30c7}\u{30eb}\u{5225}\u{4e0a}\u{9650}\u{3092}\u{8868}\u{793a}",
+    );
     m.insert("Usage link icons", "使用量リンクアイコン");
     m.insert("Open usage", "使用量を開く");
     m.insert("Service status", "サービス状態");

@@ -54,6 +54,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Export History (CSV)", "I-export ang Kasaysayan (CSV)");
     m.insert("Export History (JSON)", "I-export ang Kasaysayan (JSON)");
     m.insert("Show extra usage", "Ipakita ang dagdag na paggamit");
+    m.insert("Show model limits", "Ipakita ang mga limitasyon ng modelo");
     m.insert("Usage link icons", "Mga icon ng link ng paggamit");
     m.insert("Open usage", "Buksan ang paggamit");
     m.insert("Service status", "Katayuan ng serbisyo");

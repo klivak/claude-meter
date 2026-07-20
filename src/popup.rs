@@ -69,7 +69,7 @@ impl PopupWindow {
             config.show_chatgpt_section,
             config.compact_mode,
             &config.dashboard_layout,
-            !config.show_extra_usage,
+            crate::providers::claude::MetricFilter::from_config(config),
             0,
         )
     }

@@ -57,6 +57,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Export History (CSV)", "\u{0395}\u{03be}\u{03b1}\u{03b3}\u{03c9}\u{03b3}\u{03ae} \u{03b9}\u{03c3}\u{03c4}\u{03bf}\u{03c1}\u{03b9}\u{03ba}\u{03bf}\u{03cd} (CSV)");
     m.insert("Export History (JSON)", "Εξαγωγή ιστορικού (JSON)");
     m.insert("Show extra usage", "Εμφάνιση επιπλέον χρήσης");
+    m.insert("Show model limits", "\u{395}\u{3bc}\u{3c6}\u{3ac}\u{3bd}\u{3b9}\u{3c3}\u{3b7} \u{3bf}\u{3c1}\u{3af}\u{3c9}\u{3bd} \u{3bc}\u{3bf}\u{3bd}\u{3c4}\u{3ad}\u{3bb}\u{3c9}\u{3bd}");
     m.insert("Usage link icons", "Εικονίδια συνδέσμων χρήσης");
     m.insert("Open usage", "Άνοιγμα χρήσης");
     m.insert("Service status", "Κατάσταση υπηρεσίας");
