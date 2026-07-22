@@ -57,7 +57,20 @@ pub async fn check_for_update() -> Option<UpdateInfo> {
     }
 }
 
-/// Download and stage an update, then launch a helper that replaces the running executable.
+/// Original path of the running executable after a successful in-place swap.
+/// Set by [`download_and_install`]; consumed by [`relaunch_updated`] at shutdown.
+/// Captured *before* the swap because `current_exe()` follows the renamed file.
+static UPDATED_EXE_PATH: std::sync::Mutex<Option<std::path::PathBuf>> = std::sync::Mutex::new(None);
+
+/// Download an update, verify its checksum, and swap it into place natively.
+///
+/// Windows allows renaming a running executable, so no helper process is
+/// needed: the live exe moves aside to `.exe.backup` and the verified download
+/// takes its path. The app keeps running from the renamed file; the caller
+/// quits its message loop, releases the single-instance mutex, and calls
+/// [`relaunch_updated`]. (Deliberately no PowerShell here — a hidden
+/// script replacing its parent exe is a classic malware pattern and was
+/// tripping antivirus heuristics.)
 pub async fn download_and_install(update: &UpdateInfo) -> Result<(), String> {
     let client = reqwest::Client::builder()
         .use_rustls_tls()
@@ -100,38 +113,54 @@ pub async fn download_and_install(update: &UpdateInfo) -> Result<(), String> {
     }
 
     std::fs::write(&download_path, &bytes).map_err(|error| error.to_string())?;
-    let script_path =
-        std::env::temp_dir().join(format!("claudemeter-update-{}.ps1", std::process::id()));
-    let backup_path = current_exe.with_extension("exe.backup");
-    let script = format!(
-        "$ErrorActionPreference = 'Stop'\nStart-Sleep -Seconds 2\nCopy-Item -LiteralPath '{}' -Destination '{}' -Force\ntry {{\n  Move-Item -LiteralPath '{}' -Destination '{}' -Force\n  Start-Process -FilePath '{}'\n  Remove-Item -LiteralPath '{}' -Force\n}} catch {{\n  Move-Item -LiteralPath '{}' -Destination '{}' -Force\n  throw\n}}\nRemove-Item -LiteralPath $PSCommandPath -Force\n",
-        powershell_quote(&current_exe),
-        powershell_quote(&backup_path),
-        powershell_quote(&download_path),
-        powershell_quote(&current_exe),
-        powershell_quote(&current_exe),
-        powershell_quote(&backup_path),
-        powershell_quote(&backup_path),
-        powershell_quote(&current_exe),
-    );
-    std::fs::write(&script_path, script).map_err(|error| error.to_string())?;
-    std::process::Command::new("powershell.exe")
-        .args([
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-WindowStyle",
-            "Hidden",
-            "-File",
-        ])
-        .arg(&script_path)
-        .spawn()
-        .map_err(|error| error.to_string())?;
+    swap_executable(&current_exe, &download_path)?;
+    *UPDATED_EXE_PATH.lock().unwrap() = Some(current_exe);
     Ok(())
 }
 
-fn powershell_quote(path: &std::path::Path) -> String {
-    path.to_string_lossy().replace('\'', "''")
+/// Move the running exe aside and put the verified download in its place.
+/// Rolls the rename back if the second step fails, so the app keeps updating
+/// and relaunching from its original path.
+fn swap_executable(
+    current_exe: &std::path::Path,
+    download_path: &std::path::Path,
+) -> Result<(), String> {
+    let backup_path = current_exe.with_extension("exe.backup");
+    // A stale backup from a previous update would make the rename fail.
+    let _ = std::fs::remove_file(&backup_path);
+    std::fs::rename(current_exe, &backup_path)
+        .map_err(|error| format!("Could not move the running executable aside: {error}"))?;
+    if let Err(error) = std::fs::rename(download_path, current_exe) {
+        let _ = std::fs::rename(&backup_path, current_exe);
+        return Err(format!("Could not move the update into place: {error}"));
+    }
+    Ok(())
+}
+
+/// True when an update has been swapped in and a relaunch is pending.
+pub fn update_installed() -> bool {
+    UPDATED_EXE_PATH.lock().unwrap().is_some()
+}
+
+/// Start the freshly installed executable. Call only after the single-instance
+/// mutex has been released, right before process exit.
+pub fn relaunch_updated() {
+    let Some(exe) = UPDATED_EXE_PATH.lock().unwrap().take() else {
+        return;
+    };
+    if let Err(error) = std::process::Command::new(&exe).spawn() {
+        log::warn!("Failed to relaunch after update: {error}");
+    }
+}
+
+/// Best-effort removal of leftovers from a previous update. The `.exe.backup`
+/// of the old version stays locked until its process fully exits, so a failure
+/// here is fine — the next launch will get it.
+pub fn cleanup_stale_update_files() {
+    if let Ok(current_exe) = std::env::current_exe() {
+        let _ = std::fs::remove_file(current_exe.with_extension("exe.backup"));
+        let _ = std::fs::remove_file(current_exe.with_extension("exe.download"));
+    }
 }
 
 fn parse_checksum(content: &str) -> Result<String, String> {
@@ -198,8 +227,42 @@ mod tests {
     }
 
     #[test]
-    fn test_powershell_quote_escapes_apostrophes() {
-        let path = std::path::Path::new(r"C:\Users\O'Neil\ClaudeMeter.exe");
-        assert_eq!(powershell_quote(path), r"C:\Users\O''Neil\ClaudeMeter.exe");
+    fn test_swap_executable_replaces_and_backs_up() {
+        let dir = std::env::temp_dir().join(format!("claudemeter-swap-ok-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let exe = dir.join("app.exe");
+        let download = dir.join("app.exe.download");
+        std::fs::write(&exe, b"old").unwrap();
+        std::fs::write(&download, b"new").unwrap();
+
+        swap_executable(&exe, &download).unwrap();
+
+        assert_eq!(std::fs::read(&exe).unwrap(), b"new");
+        assert_eq!(
+            std::fs::read(dir.join("app.exe.backup")).unwrap(),
+            b"old",
+            "old exe must be preserved as backup"
+        );
+        assert!(!download.exists());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn test_swap_executable_rolls_back_when_download_missing() {
+        let dir = std::env::temp_dir().join(format!("claudemeter-swap-rb-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let exe = dir.join("app.exe");
+        let download = dir.join("app.exe.download"); // never created
+        std::fs::write(&exe, b"old").unwrap();
+
+        assert!(swap_executable(&exe, &download).is_err());
+
+        assert_eq!(
+            std::fs::read(&exe).unwrap(),
+            b"old",
+            "original exe must be restored on failure"
+        );
+        assert!(!dir.join("app.exe.backup").exists());
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }

@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [5.5.1] - 2026-07-23
+
+### Changed
+
+- **Native self-update without PowerShell** — the one-click updater now swaps the executable in-place via file renames (Windows allows renaming a running exe) and relaunches after the message loop exits. Previously it wrote a hidden `-ExecutionPolicy Bypass` PowerShell script to `%TEMP%` that replaced the exe — a behavioral pattern antivirus ML heuristics flag as trojan-like. Rollback on failure is preserved; stale `.exe.backup`/`.exe.download` files are cleaned on startup.
+- **Complete VERSIONINFO metadata** — the Windows binary now embeds CompanyName, OriginalFilename, InternalName, FileVersion, ProductVersion, and a source-repository comment. Sparse version metadata is another common false-positive signal for unsigned executables.
+
+
 ## [5.5.0] - 2026-07-20
 
 ### Added

@@ -16,12 +16,14 @@ use crate::ui::render::{draw_settings_panel, D2DResources, HoveredElement, Popup
 use crate::{autostart, credentials, i18n, providers, updater, widget};
 use chrono::{Local, Timelike};
 use windows::core::PCWSTR;
-use windows::Win32::Foundation::{GetLastError, HWND, LPARAM, LRESULT, POINT, RECT, WPARAM};
+use windows::Win32::Foundation::{
+    CloseHandle, GetLastError, HANDLE, HWND, LPARAM, LRESULT, POINT, RECT, WPARAM,
+};
 use windows::Win32::Graphics::Dwm::DwmSetWindowAttribute;
 use windows::Win32::Graphics::Gdi::ClientToScreen;
 use windows::Win32::Graphics::Gdi::{BeginPaint, EndPaint, PAINTSTRUCT};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::System::Threading::CreateMutexW;
+use windows::Win32::System::Threading::{CreateMutexW, ReleaseMutex};
 use windows::Win32::UI::Controls::WM_MOUSELEAVE;
 use windows::Win32::UI::Input::KeyboardAndMouse::{TrackMouseEvent, TME_LEAVE, TRACKMOUSEEVENT};
 use windows::Win32::UI::WindowsAndMessaging::LWA_ALPHA;
@@ -160,6 +162,9 @@ pub fn run() {
         log::info!("Another instance is already running.");
         return;
     }
+
+    // Remove leftovers (.exe.backup/.exe.download) from a previous update.
+    updater::cleanup_stale_update_files();
 
     let exe_dir = std::env::current_exe()
         .ok()
@@ -470,6 +475,13 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
             // Yield CPU when idle
             std::thread::sleep(std::time::Duration::from_millis(10));
         }
+    }
+
+    // If an update was swapped in during this session, hand over to it:
+    // release the single-instance mutex first so the new process can start.
+    if updater::update_installed() {
+        release_single_instance();
+        updater::relaunch_updated();
     }
 }
 
@@ -2704,21 +2716,36 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
     }
 }
 
+/// Single-instance mutex handle, kept so the updater can release it before
+/// relaunching the freshly installed executable.
+static mut INSTANCE_MUTEX: Option<HANDLE> = None;
+
 fn ensure_single_instance() -> bool {
     let name = wide("ClaudeMeter-SingleInstance");
     unsafe {
         let mutex = CreateMutexW(None, true, windows::core::PCWSTR(name.as_ptr()));
         match mutex {
-            Ok(_) => {
+            Ok(handle) => {
                 let last_err = GetLastError();
                 // ERROR_ALREADY_EXISTS = 183
                 if last_err.0 == 183 {
+                    let _ = CloseHandle(handle);
                     return false;
                 }
+                INSTANCE_MUTEX = Some(handle);
                 true
             }
             Err(_) => true, // Proceed anyway if we can't create mutex
         }
+    }
+}
+
+/// Release the single-instance mutex so a relaunched instance can start
+/// while this process is still shutting down.
+unsafe fn release_single_instance() {
+    if let Some(handle) = INSTANCE_MUTEX.take() {
+        let _ = ReleaseMutex(handle);
+        let _ = CloseHandle(handle);
     }
 }
 
