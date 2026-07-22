@@ -120,6 +120,8 @@ claude
 
 That's it! No configuration needed. ClaudeMeter auto-detects your plan and starts monitoring.
 
+> ⚠️ **Windows Defender flagged it?** That's a known machine-learning false positive on unsigned Rust binaries — see [Antivirus false positives](#-antivirus-false-positives--verifying-your-download) for why it happens and how to verify your download is genuine in 10 seconds.
+
 #### macOS
 
 1. **Download** [`ClaudeMeter-macos-arm64.app.zip`](https://github.com/klivak/claudemeter/releases/latest) from Releases
@@ -455,6 +457,69 @@ ClaudeMeter uses `accessToken` to fetch your usage data and `subscriptionType` t
 
 > **Troubleshooting:** If ClaudeMeter shows "Credentials not found", run `claude` in a terminal and log in. Then click Refresh in ClaudeMeter. On macOS, use **Refresh Now** from the menu bar item and check **Open Logs** if the status remains cached or stale.
 
+## 🛡 Antivirus False Positives & Verifying Your Download
+
+Occasionally Windows Defender (or another antivirus) may quarantine `claudemeter.exe` with a
+machine-learning verdict such as `Trojan:Win32/Bearfoos.B!ml`. **This is a false positive.** The
+`!ml` suffix means the verdict comes from a machine-learning heuristic, not from an actual malware
+signature match — and heuristic models change with definition updates, which is why a binary that
+ran fine for days can suddenly get flagged.
+
+### Why it happens
+
+ClaudeMeter is a small, **unsigned** native binary that legitimately does several things ML
+classifiers associate with malware:
+
+- Reads the Windows Credential Manager (to find your existing Claude Code OAuth token)
+- Makes HTTPS requests (to `api.anthropic.com` — nowhere else)
+- Writes a registry auto-start entry (only if you enable "Start with Windows")
+- Launches PowerShell (to show toast notifications)
+- Can download and replace its own `.exe` (the one-click updater, with SHA-256 verification)
+
+Each action is a documented feature with open source behind it, but the combination matches a
+"trojan-like" profile for heuristics. Code signing would largely fix this and is being evaluated;
+until then, verify your download as below.
+
+### Verify your download (10 seconds)
+
+Every release ships a `claudemeter.exe.sha256` checksum file **generated on GitHub's CI servers**
+from the same build — the binary never touches a developer machine. Compare hashes:
+
+**Windows (PowerShell):**
+
+```powershell
+# Hash of the file you downloaded
+Get-FileHash .\claudemeter.exe -Algorithm SHA256
+
+# Expected hash — from the same GitHub release page
+Get-Content .\claudemeter.exe.sha256
+```
+
+**macOS / Linux:**
+
+```bash
+shasum -a 256 -c claudemeter.exe.sha256
+```
+
+If the hashes match, your file is byte-for-byte the one built publicly by
+[GitHub Actions](https://github.com/klivak/claudemeter/actions) from the
+[open source code](https://github.com/klivak/claudemeter). If they **don't** match — delete the
+file and re-download from the official [Releases](https://github.com/klivak/claudemeter/releases/latest)
+page only.
+
+You can also paste the hash into [VirusTotal](https://www.virustotal.com/) to see the full
+multi-engine scan for that exact build.
+
+### If Defender quarantined it
+
+1. Open **Windows Security → Virus & threat protection → Protection history**
+2. Find the ClaudeMeter entry → **Actions → Restore** (or **Allow**)
+3. Optionally add the ClaudeMeter folder under **Manage settings → Exclusions** so future updates
+   aren't re-flagged
+4. (Helps everyone!) Report the false positive to Microsoft at
+   [microsoft.com/wdsi/filesubmission](https://www.microsoft.com/en-us/wdsi/filesubmission) —
+   verdicts are usually corrected within 1–3 days and the fix reaches all users via the cloud
+
 ## ❓ FAQ
 
 **Q: Does it work without Claude Code installed?**
@@ -465,6 +530,9 @@ A: Typically **3–8 MB**. Built in Rust with native Win32 API — no Electron, 
 
 **Q: Is it safe? Does it send my data anywhere?**
 A: ClaudeMeter is fully open source. It only communicates with `api.anthropic.com` to fetch YOUR usage data using YOUR existing OAuth token. Zero telemetry. Every release binary is automatically scanned by [VirusTotal](https://www.virustotal.com/) (60+ antivirus engines) — check the scan link in each [release](https://github.com/klivak/claudemeter/releases/latest).
+
+**Q: My antivirus says it's a trojan — is it?**
+A: No — it's a machine-learning false positive common for small unsigned Rust binaries. See [Antivirus false positives & verifying your download](#-antivirus-false-positives--verifying-your-download) for the explanation, a 10-second SHA-256 verification, and how to restore the file from quarantine.
 
 **Q: How does Codex tracking work?**
 A: ClaudeMeter reads Codex CLI session logs from `~/.codex`; OpenAI does not expose subscription usage through a public API.
