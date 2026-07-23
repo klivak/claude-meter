@@ -26,6 +26,12 @@ pub enum CredentialError {
 impl std::fmt::Display for CredentialError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            #[cfg(target_os = "macos")]
+            Self::NotFound => write!(
+                f,
+                "Claude Code credentials not found in Keychain or ~/.claude/.credentials.json"
+            ),
+            #[cfg(not(target_os = "macos"))]
             Self::NotFound => write!(
                 f,
                 "Claude Code credentials not found in ~/.claude/.credentials.json"
@@ -38,17 +44,19 @@ impl std::fmt::Display for CredentialError {
 
 /// Read the Claude OAuth access token.
 ///
-/// Checks two locations in order:
-/// 1. File-based: `~/.claude/.credentials.json` (Claude Code v2.x)
-/// 2. Windows Credential Manager: target "Claude Code-credentials" (legacy, Windows only)
+/// Checks locations in order:
+/// 1. File-based: `~/.claude/.credentials.json` (Claude Code v2.x on Linux; macOS fallback)
+/// 2. Platform credential store:
+///    - Windows Credential Manager, target "Claude Code-credentials"
+///    - macOS Keychain, generic password with service "Claude Code-credentials"
 pub fn read_claude_token() -> Result<CredentialInfo, CredentialError> {
-    // Try file-based credentials first (Claude Code v2.x stores here)
+    // Try file-based credentials first (cheap check, no user prompts)
     if let Ok(info) = read_token_from_file() {
         return Ok(info);
     }
 
-    // Fall back to Windows Credential Manager
-    read_token_from_credential_manager()
+    // Fall back to the platform credential store
+    read_token_from_credential_store()
 }
 
 /// Read token from ~/.claude/.credentials.json
@@ -68,7 +76,7 @@ fn read_token_from_file() -> Result<CredentialInfo, CredentialError> {
 
 /// Read token from Windows Credential Manager (legacy path)
 #[cfg(windows)]
-fn read_token_from_credential_manager() -> Result<CredentialInfo, CredentialError> {
+fn read_token_from_credential_store() -> Result<CredentialInfo, CredentialError> {
     const TARGET: &str = "Claude Code-credentials";
 
     let target_wide: Vec<u16> = TARGET.encode_utf16().chain(std::iter::once(0)).collect();
@@ -135,8 +143,51 @@ fn read_token_from_credential_manager() -> Result<CredentialInfo, CredentialErro
     }
 }
 
-#[cfg(not(windows))]
-fn read_token_from_credential_manager() -> Result<CredentialInfo, CredentialError> {
+/// Read token from the macOS Keychain.
+///
+/// Claude Code on macOS stores credentials as a generic password with service
+/// "Claude Code-credentials" (same JSON blob as the Windows Credential Manager),
+/// NOT in `~/.claude/.credentials.json`. Uses the `security` CLI to avoid a
+/// Security.framework dependency. The first read may show a Keychain access
+/// prompt — the user should click "Always Allow".
+#[cfg(target_os = "macos")]
+fn read_token_from_credential_store() -> Result<CredentialInfo, CredentialError> {
+    let output = std::process::Command::new("security")
+        .args([
+            "find-generic-password",
+            "-s",
+            "Claude Code-credentials",
+            "-w",
+        ])
+        .output()
+        .map_err(|_| CredentialError::NotFound)?;
+
+    if !output.status.success() {
+        return Err(CredentialError::NotFound);
+    }
+
+    let raw = String::from_utf8_lossy(&output.stdout);
+    let raw = raw.trim();
+    if raw.is_empty() {
+        return Err(CredentialError::NotFound);
+    }
+
+    // `security -w` prints hex instead of text when the stored value contains
+    // non-printable bytes (e.g. embedded newlines). Decode if it looks like hex.
+    if !raw.starts_with('{') && raw.len() % 2 == 0 && raw.bytes().all(|b| b.is_ascii_hexdigit()) {
+        let bytes: Vec<u8> = (0..raw.len())
+            .step_by(2)
+            .filter_map(|i| u8::from_str_radix(&raw[i..i + 2], 16).ok())
+            .collect();
+        let decoded = String::from_utf8_lossy(&bytes);
+        return extract_credential_info(decoded.trim());
+    }
+
+    extract_credential_info(raw)
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
+fn read_token_from_credential_store() -> Result<CredentialInfo, CredentialError> {
     Err(CredentialError::NotFound)
 }
 

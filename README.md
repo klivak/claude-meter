@@ -435,10 +435,11 @@ ClaudeMeter does **not** ask for your password or API key. It reuses the OAuth t
 
 | # | Location | Used by |
 |---|----------|---------|
-| 1 | `~/.claude/.credentials.json` | Claude Code v2.x+ on Windows and macOS |
+| 1 | `~/.claude/.credentials.json` | Claude Code v2.x+ on Windows and Linux |
 | 2 | Windows Credential Manager (`Claude Code-credentials`) | Claude Code v1.x on Windows (legacy) |
+| 3 | macOS Keychain (`Claude Code-credentials`) | Claude Code on macOS |
 
-When you run `claude` and log in via the browser, Claude Code saves an OAuth token to `~/.claude/.credentials.json`. ClaudeMeter reads this file to authenticate with the Anthropic Usage API — no extra setup needed.
+When you run `claude` and log in via the browser, Claude Code saves an OAuth token to `~/.claude/.credentials.json` (or the platform credential store on Windows/macOS). ClaudeMeter reads it to authenticate with the Anthropic Usage API — no extra setup needed. On macOS the first read may show a Keychain access prompt — click **Always Allow**.
 
 **What's stored in the file:**
 
@@ -523,7 +524,7 @@ multi-engine scan for that exact build.
 ## ❓ FAQ
 
 **Q: Does it work without Claude Code installed?**
-A: ClaudeMeter launches but shows a "Credentials not found" message with a link to claude.ai. You need Claude Code logged in so ClaudeMeter can read the OAuth token from `~/.claude/.credentials.json`.
+A: ClaudeMeter launches but shows a "Credentials not found" message with a link to claude.ai. You need Claude Code logged in so ClaudeMeter can read the OAuth token from `~/.claude/.credentials.json` (or the Windows Credential Manager / macOS Keychain).
 
 **Q: How much RAM does it really use?**
 A: Typically **3–8 MB**. Built in Rust with native Win32 API — no Electron, no browser engine.

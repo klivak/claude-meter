@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+
+## [5.6.0] - 2026-07-23
+
+### Fixed
+
+- **macOS: credentials not found** — Claude Code on macOS stores the OAuth token in the Keychain (generic password `Claude Code-credentials`), not in `~/.claude/.credentials.json`, so ClaudeMeter showed "Claude credentials unavailable" even when Claude Code was logged in. ClaudeMeter now falls back to the Keychain via `security find-generic-password`. On first read macOS may show a Keychain access prompt — click **Always Allow**.
+
 ## [5.5.1] - 2026-07-23
 
 ### Changed
