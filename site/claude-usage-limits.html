@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How to Check Claude Usage Limits (5-Hour &amp; Weekly) — ClaudeMeter</title>
+  <meta name="description" content="How Claude's 5-hour and weekly usage limits work, where to check how much you have left, and how to monitor Claude and Claude Code usage in real time from the Windows tray or macOS menu bar.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://klivak.github.io/claude-meter/claude-usage-limits.html">
+  <meta name="theme-color" content="#0d111b">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="ClaudeMeter">
+  <meta property="og:title" content="How to Check Claude Usage Limits (5-Hour &amp; Weekly)">
+  <meta property="og:description" content="Understand Claude's 5-hour and weekly limits and track them live from your tray or menu bar.">
+  <meta property="og:url" content="https://klivak.github.io/claude-meter/claude-usage-limits.html">
+  <meta property="og:image" content="https://klivak.github.io/claude-meter/screenshots/dashboard-dark-v5.1.png">
+  <meta property="article:published_time" content="2026-09-22">
+  <meta property="article:modified_time" content="2026-09-22">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="How to Check Claude Usage Limits (5-Hour &amp; Weekly)">
+  <meta name="twitter:description" content="Understand Claude's 5-hour and weekly limits and track them live from your tray or menu bar.">
+  <meta name="twitter:image" content="https://klivak.github.io/claude-meter/screenshots/dashboard-dark-v5.1.png">
+  <link rel="icon" href="assets/icon_app.ico">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Article",
+        "@id": "https://klivak.github.io/claude-meter/claude-usage-limits.html#article",
+        "headline": "How to Check Claude Usage Limits (5-Hour & Weekly)",
+        "description": "How Claude's 5-hour and weekly usage limits work, where to check how much you have left, and how to monitor them in real time.",
+        "image": "https://klivak.github.io/claude-meter/screenshots/dashboard-dark-v5.1.png",
+        "datePublished": "2026-09-22",
+        "dateModified": "2026-09-22",
+        "inLanguage": "en",
+        "mainEntityOfPage": "https://klivak.github.io/claude-meter/claude-usage-limits.html",
+        "author": { "@type": "Person", "name": "klivak", "url": "https://github.com/klivak" },
+        "publisher": { "@type": "Organization", "name": "ClaudeMeter", "logo": { "@type": "ImageObject", "url": "https://raw.githubusercontent.com/klivak/claude-meter/main/assets/icon_app.png" } },
+        "about": { "@id": "https://klivak.github.io/claude-meter/#software" }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://klivak.github.io/claude-meter/#software",
+        "name": "ClaudeMeter",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Windows 10, Windows 11, macOS 12+",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "license": "https://opensource.org/licenses/MIT",
+        "downloadUrl": "https://github.com/klivak/claude-meter/releases/latest",
+        "url": "https://klivak.github.io/claude-meter/"
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "ClaudeMeter", "item": "https://klivak.github.io/claude-meter/" },
+          { "@type": "ListItem", "position": 2, "name": "Claude usage limits", "item": "https://klivak.github.io/claude-meter/claude-usage-limits.html" }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "How long does the Claude usage limit last?", "acceptedAnswer": { "@type": "Answer", "text": "The session limit uses a rolling 5-hour window that starts with your first message. Weekly limits reset 7 days after their window starts. The exact reset time is shown in Claude's usage settings and in ClaudeMeter." } },
+          { "@type": "Question", "name": "Do Claude Code and claude.ai share the same limit?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. On Pro and Max plans, usage in claude.ai, the desktop app and Claude Code counts against the same subscription limits." } },
+          { "@type": "Question", "name": "Does ClaudeMeter need an API key?", "acceptedAnswer": { "@type": "Answer", "text": "No. ClaudeMeter reads the credentials Claude Code already stores on your computer and queries the same usage endpoint Claude uses. No extra key is created and nothing is sent to third parties." } },
+          { "@type": "Question", "name": "Is ClaudeMeter free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. ClaudeMeter is free and open source under the MIT license, for Windows 10/11 and macOS 12+." } }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="ClaudeMeter home">
+      <img src="assets/icon_app.ico" alt="" width="36" height="36">
+      <span>ClaudeMeter</span>
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="./#features">Features</a>
+      <a href="./#themes">Themes</a>
+      <a href="./#faq">FAQ</a>
+      <a href="claude-usage-limits.html" aria-current="page">Guide</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch color theme">
+        <span class="theme-icon" aria-hidden="true">◐</span>
+      </button>
+      <a class="button button-small button-primary" href="https://github.com/klivak/claude-meter/releases/latest">Download</a>
+    </div>
+  </header>
+
+  <main class="section-shell article">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      <a href="./">ClaudeMeter</a> <span aria-hidden="true">/</span> <span>Claude usage limits</span>
+    </nav>
+
+    <article>
+      <header class="article-header">
+        <p class="eyebrow">Guide</p>
+        <h1>How to check your Claude usage limits (5-hour &amp; weekly)</h1>
+        <p class="article-lede">Hitting “usage limit reached” in the middle of a task is frustrating. Here is how Claude's limits actually work, where to see how much you have left, and how to keep an eye on them without opening a browser.</p>
+        <p class="article-meta">By <a href="https://github.com/klivak">klivak</a> · <time datetime="2026-09-22">September 22, 2026</time> · 5 min read</p>
+      </header>
+
+      <nav class="article-toc" aria-label="Contents">
+        <strong>Contents</strong>
+        <ol>
+          <li><a href="#how-limits-work">How Claude usage limits work</a></li>
+          <li><a href="#check-in-claude">Checking usage inside Claude</a></li>
+          <li><a href="#check-in-claude-code">Checking usage in Claude Code</a></li>
+          <li><a href="#live-monitor">Monitoring limits in real time</a></li>
+          <li><a href="#tips">Tips to avoid hitting the limit</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ol>
+      </nav>
+
+      <section id="how-limits-work">
+        <h2>How Claude usage limits work</h2>
+        <p>Claude Pro and Max subscriptions do not count messages one by one. Instead, every conversation consumes a share of a usage budget, and longer chats, large attachments and heavier models use more of it. The budget is tracked across several windows at once:</p>
+        <ul>
+          <li><strong>Session (5-hour) limit</strong> — a rolling window that begins with your first message. When it is used up you have to wait until the window resets.</li>
+          <li><strong>Weekly limit</strong> — an overall cap that resets 7 days after its window starts.</li>
+          <li><strong>Model-specific weekly limits</strong> — separate caps for specific models (for example Opus or Sonnet), shown alongside the overall weekly limit.</li>
+        </ul>
+        <p>Each window reports a utilization percentage and a reset time. Whichever window reaches 100% first is the one that blocks you, so it is worth watching all of them, not just the 5-hour session.</p>
+      </section>
+
+      <section id="check-in-claude">
+        <h2>Checking usage inside Claude</h2>
+        <p>On claude.ai and in the desktop app, open <strong>Settings → Usage</strong>. You will see progress bars for the current session and the weekly limits, plus when each one resets. It is accurate, but you have to go and look — and it is easy to forget until the warning appears.</p>
+      </section>
+
+      <section id="check-in-claude-code">
+        <h2>Checking usage in Claude Code</h2>
+        <p>Claude Code shares the same subscription budget as the chat app. Inside a session, the <code>/usage</code> command shows your current plan limits. That works well when you are already in the terminal, but it is invisible while you are coding, reviewing or running several sessions in parallel.</p>
+      </section>
+
+      <section id="live-monitor">
+        <h2>Monitoring Claude limits in real time</h2>
+        <p><a href="./">ClaudeMeter</a> is a free, open-source monitor that puts your Claude limits in the Windows system tray or the macOS menu bar. It reuses the credentials Claude Code already stores on your machine and reads the same usage data Claude shows in settings, so no API key or login is needed.</p>
+        <figure>
+          <img src="screenshots/dashboard-dark-v5.1.png" alt="ClaudeMeter dashboard showing Claude 5-hour and weekly usage limits with reset times" width="900" loading="lazy">
+          <figcaption>The ClaudeMeter dashboard: every limit, its utilization and when it resets.</figcaption>
+        </figure>
+        <ul>
+          <li><strong>Always visible</strong> — the tray icon shows your current usage at a glance; hover for the details.</li>
+          <li><strong>Every window</strong> — 5-hour, weekly and per-model limits, including new ones as Anthropic adds them.</li>
+          <li><strong>Alerts</strong> — native notifications when you cross the thresholds you choose.</li>
+          <li><strong>Pace &amp; history</strong> — see whether you are on track to run out before the reset.</li>
+          <li><strong>Tiny footprint</strong> — native Rust, a single portable executable using under 10 MB of RAM, with no telemetry.</li>
+          <li><strong>Codex too</strong> — optional OpenAI Codex usage tracking side by side with Claude.</li>
+        </ul>
+        <h3>Set it up in a minute</h3>
+        <ol>
+          <li>Sign in to <a href="https://docs.anthropic.com/en/docs/claude-code/overview">Claude Code</a> once, so its credentials exist on your computer.</li>
+          <li>Download the latest ClaudeMeter release for Windows or macOS from <a href="https://github.com/klivak/claude-meter/releases/latest">GitHub Releases</a>.</li>
+          <li>Run it. The icon appears in the tray or menu bar and starts showing your limits right away.</li>
+        </ol>
+        <p><a class="button button-primary" href="https://github.com/klivak/claude-meter/releases/latest">Download ClaudeMeter</a></p>
+      </section>
+
+      <section id="tips">
+        <h2>Tips to avoid hitting the limit</h2>
+        <ul>
+          <li>Start a new conversation instead of continuing a very long one — the whole history is processed with every message.</li>
+          <li>Use a lighter model for simple tasks and save the heaviest model for work that needs it.</li>
+          <li>In Claude Code, use <code>/compact</code> or <code>/clear</code> when context grows large.</li>
+          <li>Plan heavy work around the reset time you see in your monitor rather than guessing.</li>
+        </ul>
+      </section>
+
+      <section id="faq">
+        <h2>FAQ</h2>
+        <div class="faq-list">
+          <details>
+            <summary>How long does the Claude usage limit last?</summary>
+            <p>The session limit uses a rolling 5-hour window that starts with your first message. Weekly limits reset 7 days after their window starts. The exact reset time is shown in Claude's usage settings and in ClaudeMeter.</p>
+          </details>
+          <details>
+            <summary>Do Claude Code and claude.ai share the same limit?</summary>
+            <p>Yes. On Pro and Max plans, usage in claude.ai, the desktop app and Claude Code counts against the same subscription limits.</p>
+          </details>
+          <details>
+            <summary>Does ClaudeMeter need an API key?</summary>
+            <p>No. ClaudeMeter reads the credentials Claude Code already stores on your computer and queries the same usage endpoint Claude uses. No extra key is created and nothing is sent to third parties.</p>
+          </details>
+          <details>
+            <summary>Is ClaudeMeter free?</summary>
+            <p>Yes. ClaudeMeter is free and open source under the MIT license, for Windows 10/11 and macOS 12+.</p>
+          </details>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer class="site-footer section-shell">
+    <a class="brand" href="./">
+      <img src="assets/icon_app.ico" alt="" width="30" height="30" loading="lazy">
+      <span>ClaudeMeter</span>
+    </a>
+    <p>Built with Rust by <a href="https://github.com/klivak">klivak</a>. MIT licensed. Not affiliated with Anthropic.</p>
+    <div class="footer-links">
+      <a href="https://github.com/klivak/claude-meter">Source</a>
+      <a href="https://github.com/klivak/claude-meter/releases">Releases</a>
+      <a href="https://github.com/klivak/claude-meter/issues">Issues</a>
+    </div>
+  </footer>
+</body>
+</html>

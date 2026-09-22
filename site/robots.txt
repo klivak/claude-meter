@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://klivak.github.io/claude-meter/sitemap.xml
