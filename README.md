@@ -210,6 +210,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 - **Segoe UI Variable** — uses Windows 11's variable font with automatic fallback to Segoe UI
 - **Show extra usage** — toggle in Settings to show the extra_usage metric in the dashboard (off by default)
 - **Show model limits** — toggle in Settings to show per-model weekly quotas (Opus, Sonnet, Fable, …) in the dashboard (on by default)
+- **Collapsible metrics** — click a metric's name in the dashboard to collapse it to a compact one-line row; the choice is remembered
 - **Usage & status icon buttons** — each section header shows compact "open usage" and "service status" icon buttons; toggle them with the "Usage link icons" setting
 - **Notification toggles** — Settings exposes "Show startup notification" (silence the "Running in tray" balloon on launch) and "Show login expiry warning" (silence the `claude login` reminder)
 - **Update notification** — clicking the "Update available" tray balloon opens the release page in your browser (ClaudeMeter does not download or replace its own `.exe` — see [Antivirus false positives](#-antivirus-false-positives--verifying-your-download))
@@ -367,6 +368,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
   "dashboard_layout": "standard",
   "show_extra_usage": false,
   "show_model_limits": true,
+  "collapsed_metrics": [],
   "show_usage_links": true,
   "custom_colors": {},
   "quiet_hours": {
@@ -397,6 +399,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 | `dashboard_layout` | `"standard"` | minimal/standard/detailed | Dashboard layout mode |
 | `show_extra_usage` | `false` | — | Show extra_usage metric in dashboard |
 | `show_model_limits` | `true` | — | Show per-model weekly quotas (Opus, Sonnet, Fable, …) |
+| `collapsed_metrics` | `[]` | — | Metric keys collapsed to a single row in the dashboard (toggled by clicking a metric's name) |
 | `show_usage_links` | `true` | — | Show usage/status icon buttons in section headers |
 | `custom_colors` | `{}` | hex strings | Override theme colors (e.g. `{"green": "#00ff00"}`) |
 | `quiet_hours.enabled` | `false` | — | Suppress notifications during quiet hours |
