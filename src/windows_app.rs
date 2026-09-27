@@ -1465,6 +1465,35 @@ unsafe extern "system" fn popup_wnd_proc(
                     if state.config_mgr.config.notifications.sound {
                         play_notification_sound(false);
                     }
+                } else if let Some(key) = (!state.popup_in_settings)
+                    .then(|| crate::ui::render::metric_toggle_at(pt))
+                    .flatten()
+                {
+                    // Metric label row: collapse/expand and remember the choice.
+                    let collapsed = &mut state.config_mgr.config.collapsed_metrics;
+                    if let Some(pos) = collapsed.iter().position(|k| *k == key) {
+                        collapsed.remove(pos);
+                    } else {
+                        collapsed.push(key);
+                    }
+                    state.config_mgr.save();
+                    let renderer = PopupRenderer::new(hwnd);
+                    let h = renderer.calculate_height(
+                        &state.usage,
+                        state.config_mgr.config.show_chatgpt_section,
+                        state.config_mgr.config.compact_mode,
+                        &state.config_mgr.config.dashboard_layout,
+                        crate::providers::claude::MetricFilter::from_config(
+                            &state.config_mgr.config,
+                        ),
+                        state
+                            .codex_status
+                            .as_ref()
+                            .map(|s| s.window_count())
+                            .unwrap_or(0),
+                    );
+                    resize_popup(hwnd, h);
+                    let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
                 } else if crate::popup::point_in_rect(pt, state.settings_rect) {
                     // Slide to settings
                     state.popup_in_settings = true;

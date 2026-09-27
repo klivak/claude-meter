@@ -102,6 +102,9 @@ pub struct Config {
     /// On by default; turn off to keep only the session and overall weekly bars.
     #[serde(default = "default_true")]
     pub show_model_limits: bool,
+    /// Metric keys the user collapsed to a single compact row in the dashboard.
+    #[serde(default)]
+    pub collapsed_metrics: Vec<String>,
     #[serde(default)]
     pub token_expiry_warning: bool,
     #[serde(default = "default_true")]
@@ -157,6 +160,7 @@ impl Default for Config {
             dashboard_layout: "standard".to_string(),
             show_extra_usage: false,
             show_model_limits: true,
+            collapsed_metrics: Vec::new(),
             token_expiry_warning: false,
             show_startup_notification: true,
             custom_colors: CustomColors::default(),

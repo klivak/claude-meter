@@ -58,13 +58,62 @@ fn rounded_progress_fill_width(content_width: f32, bar_height: f32, utilization:
     }
 }
 pub const RESET_LABEL_H: i32 = 18;
+/// Height of a collapsed metric row (label + percentage only) including its gap.
+pub const COLLAPSED_METRIC_H: i32 = METRIC_LABEL_H + 6;
+
+/// True when the user collapsed `key` to a single compact row in the dashboard.
+pub fn is_metric_collapsed(key: &str) -> bool {
+    unsafe {
+        crate::APP_STATE.as_ref().is_some_and(|s| {
+            s.config_mgr
+                .config
+                .collapsed_metrics
+                .iter()
+                .any(|k| k == key)
+        })
+    }
+}
+
+thread_local! {
+    /// Clickable label rows of the Claude metrics from the last paint, used to
+    /// toggle a metric between its full and collapsed form.
+    static METRIC_TOGGLE_RECTS: std::cell::RefCell<Vec<(String, RECT)>> =
+        const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Metric key whose label row contains `pt` (client coordinates), if any.
+pub fn metric_toggle_at(pt: windows::Win32::Foundation::POINT) -> Option<String> {
+    METRIC_TOGGLE_RECTS.with(|r| {
+        r.borrow()
+            .iter()
+            .find(|(_, rc)| {
+                pt.x >= rc.left && pt.x < rc.right && pt.y >= rc.top && pt.y < rc.bottom
+            })
+            .map(|(k, _)| k.clone())
+    })
+}
+
+/// Number of expanded and collapsed metrics among the visible ones.
+fn metric_counts(usage: &UsageResponse, metric_filter: MetricFilter) -> (i32, i32) {
+    let metrics = usage.all_metrics();
+    let visible: Vec<_> = metrics
+        .iter()
+        .filter(|(k, _)| !metric_filter.hides(k))
+        .collect();
+    let collapsed = visible
+        .iter()
+        .filter(|(k, _)| is_metric_collapsed(k))
+        .count();
+    ((visible.len() - collapsed) as i32, collapsed as i32)
+}
+
 /// Height of the weekly burn-rate line drawn under the weekly progress bar.
 pub const PACE_LABEL_H: i32 = 16;
 
 /// Height the weekly burn-rate line occupies in the section (0 when the weekly
 /// metric is absent, hidden, or has no reset time, so nothing is drawn).
 pub fn weekly_pace_line_height(usage: &UsageResponse, metric_filter: MetricFilter) -> i32 {
-    if metric_filter.hides("seven_day") {
+    if metric_filter.hides("seven_day") || is_metric_collapsed("seven_day") {
         return 0;
     }
     let has_weekly = usage
@@ -570,7 +619,8 @@ impl PopupRenderer {
                     }
                     "detailed" => {
                         h += 24;
-                        let metric_count = (u.all_metrics().len() - extra_hidden(u)) as i32;
+                        let (metric_count, collapsed) = metric_counts(u, metric_filter);
+                        h += collapsed * COLLAPSED_METRIC_H;
                         // Extra 28px per metric for sparkline
                         h += metric_count
                             * (METRIC_LABEL_H
@@ -585,7 +635,8 @@ impl PopupRenderer {
                     _ => {
                         // "standard"
                         h += 24;
-                        let metric_count = (u.all_metrics().len() - extra_hidden(u)) as i32;
+                        let (metric_count, collapsed) = metric_counts(u, metric_filter);
+                        h += collapsed * COLLAPSED_METRIC_H;
                         h += metric_count
                             * (METRIC_LABEL_H + 4 + PROGRESS_H + 4 + RESET_LABEL_H + SECTION_GAP);
                         h += weekly_pace_line_height(u, metric_filter);
@@ -655,6 +706,7 @@ impl PopupRenderer {
             return;
         };
         let w = (rect.right - rect.left) as f32;
+        METRIC_TOGGLE_RECTS.with(|r| r.borrow_mut().clear());
 
         unsafe {
             let mut y = 0.0f32;
@@ -1115,6 +1167,11 @@ impl PopupRenderer {
                 metric.utilization
             };
             let rate = rate_of_change.get(key).copied();
+            self.register_metric_toggle(w, y, key);
+            if is_metric_collapsed(key) {
+                y = self.draw_metric_collapsed(rt, d2d, w, y, key, util, colors, i18n);
+                continue;
+            }
             y = self.draw_metric(
                 rt,
                 d2d,
@@ -1184,6 +1241,78 @@ impl PopupRenderer {
             DWRITE_MEASURING_MODE_NATURAL,
         );
         y + self.sf(PACE_LABEL_H)
+    }
+
+    /// Record the label row of a Claude metric as a collapse/expand click target.
+    fn register_metric_toggle(&self, w: f32, y: f32, key: &str) {
+        let pad = self.sf(PADDING);
+        let rc = RECT {
+            left: pad as i32,
+            top: y as i32,
+            right: (w - pad) as i32,
+            bottom: (y + self.sf(METRIC_LABEL_H)) as i32,
+        };
+        METRIC_TOGGLE_RECTS.with(|r| r.borrow_mut().push((key.to_string(), rc)));
+    }
+
+    /// Collapsed metric: a single "▸ Name   42%" row without bar or reset line.
+    #[allow(clippy::too_many_arguments)]
+    unsafe fn draw_metric_collapsed(
+        &self,
+        rt: &ID2D1HwndRenderTarget,
+        d2d: &mut D2DResources,
+        w: f32,
+        y: f32,
+        key: &str,
+        utilization: f64,
+        colors: &ThemeColors,
+        i18n: &I18n,
+    ) -> f32 {
+        let pad = self.sf(PADDING);
+        let pct_area_w = self.sf(62);
+
+        let label_text = wide(&format!("\u{25B8} {}", i18n.metric_name(key)));
+        let label_format = d2d.get_text_format(11, false, 0, 1).clone();
+        let label_brush = rt
+            .CreateSolidColorBrush(&colorref_to_d2d(colors.text_secondary) as *const _, None)
+            .unwrap();
+        rt.DrawText(
+            &label_text[..label_text.len() - 1],
+            &label_format,
+            &D2D_RECT_F {
+                left: pad,
+                top: y,
+                right: w - pad - pct_area_w,
+                bottom: y + self.sf(METRIC_LABEL_H),
+            },
+            &label_brush,
+            D2D1_DRAW_TEXT_OPTIONS_NONE,
+            DWRITE_MEASURING_MODE_NATURAL,
+        );
+
+        let pct_text = wide(&format!("{:.0}%", utilization));
+        let pct_format = d2d.get_text_format(11, true, 1, 1).clone();
+        let pct_brush = rt
+            .CreateSolidColorBrush(
+                &colorref_to_d2d(colors.progress_color(utilization)) as *const _,
+                None,
+            )
+            .unwrap();
+        rt.DrawText(
+            &pct_text[..pct_text.len() - 1],
+            &pct_format,
+            &D2D_RECT_F {
+                left: w - pad - pct_area_w,
+                top: y,
+                right: w - pad,
+                bottom: y + self.sf(METRIC_LABEL_H),
+            },
+            &pct_brush,
+            D2D1_DRAW_TEXT_OPTIONS_NONE,
+            DWRITE_MEASURING_MODE_NATURAL,
+        );
+
+        y + self.sf(COLLAPSED_METRIC_H)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -1708,6 +1837,11 @@ impl PopupRenderer {
                 metric.utilization
             };
             let rate = rate_of_change.get(key).copied();
+            self.register_metric_toggle(w, y, key);
+            if is_metric_collapsed(key) {
+                y = self.draw_metric_collapsed(rt, d2d, w, y, key, util, colors, i18n);
+                continue;
+            }
             y = self.draw_metric(
                 rt,
                 d2d,
