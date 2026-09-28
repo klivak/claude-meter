@@ -27,6 +27,8 @@ See your 5-hour session, weekly limits, Sonnet & Opus quotas — without opening
 
 [Website](https://klivak.github.io/claude-meter/) · [Download](#-quick-start) · [Features](#-features) · [Usage](#-how-to-use) · [FAQ](#-faq)
 
+**Languages:** [English](README.md) · [Español](README.es.md) · [Português](README.pt-BR.md) · [Deutsch](README.de.md) · [Français](README.fr.md)
+
 <br>
 
 ### 🎬 See it in action — 56 seconds
