@@ -30,7 +30,7 @@ struct MacStatus {
     /// Per-limit breakdown (5-hour, weekly, Sonnet, Opus, ...). Empty until first fetch.
     #[serde(default)]
     metrics: Vec<MetricEntry>,
-    /// Downgrade comparison, e.g. "On Max 5x: weekly ~96%, session ~124%".
+    /// Downgrade comparison, e.g. "On Pro: weekly ~96%, session ~124%".
     #[serde(default)]
     tier_note: Option<String>,
     last_api_update: Option<String>,
@@ -289,7 +289,21 @@ async fn poll_once(exe_dir: &Path, client: &ClaudeClient, config: &Config) {
     usage.subscription_type = credential.subscription_type;
     usage.rate_limit_tier = credential.rate_limit_tier;
 
+    crate::providers::claude::set_user_overrides(config);
     save_history(exe_dir, &usage);
+    if config.session_estimate {
+        if let Ok(samples) = Database::open(exe_dir)
+            .and_then(|db| db.query_weekly_samples(config.session_estimate_hours))
+        {
+            // Already saved above, so the newest sample equals the current value.
+            usage.apply_session_estimate(
+                &samples,
+                chrono::Utc::now().timestamp(),
+                config.session_estimate_hours,
+                config.session_estimate_budget,
+            );
+        }
+    }
     publish_status(exe_dir, &usage, codex, config, &i18n);
 }
 
@@ -358,7 +372,7 @@ fn publish_status(
     let plan_override = config.plan_override.as_deref();
     let percent = usage.max_utilization().unwrap_or(0.0).round() as u32;
     let plan = plan_override
-        .map(|s| s.to_string())
+        .map(crate::providers::claude::normalize_plan_label)
         .unwrap_or_else(|| usage.detected_plan());
     let now = Local::now();
     let last_api_update = now.to_rfc3339();
@@ -372,7 +386,10 @@ fn publish_status(
         .into_iter()
         .filter(|(key, _)| !filter.hides(key))
         .map(|(key, m)| MetricEntry {
-            name: i18n.metric_name(&key),
+            name: match m.detail_text(i18n) {
+                Some(detail) => format!("{} ({detail})", i18n.metric_name(&key)),
+                None => i18n.metric_name(&key),
+            },
             percent: m.utilization.round() as u32,
             resets_at: m.resets_at.clone(),
             key,
@@ -385,7 +402,7 @@ fn publish_status(
     // 24h history for the menu-bar chart. save_history() already inserted this
     // poll's reading, so reopening the DB here picks up the freshest bucket.
     let chart = Database::open(exe_dir)
-        .and_then(|db| db.query_24h_chart())
+        .and_then(|db| db.query_24h_chart(usage.chart_metric_key()))
         .map(|slots| slots.iter().map(|v| v.round() as u32).collect())
         .unwrap_or_default();
 
@@ -408,7 +425,19 @@ fn publish_status(
         }
     }
 
-    let alerted = check_alerts(exe_dir, &metrics, config, i18n);
+    // Undocumented limits and inactive ones are listed, but never alert.
+    let silent: Vec<String> = usage
+        .all_metrics()
+        .into_iter()
+        .filter(|(key, m)| !crate::providers::claude::is_core_limit(key) || m.inactive)
+        .map(|(key, _)| key)
+        .collect();
+    let alertable: Vec<MetricEntry> = metrics
+        .iter()
+        .filter(|m| !silent.contains(&m.key))
+        .cloned()
+        .collect();
+    let alerted = check_alerts(exe_dir, &alertable, config, i18n);
 
     let status = MacStatus {
         state: "live".to_string(),
@@ -570,13 +599,13 @@ fn menu_labels(i18n: &I18n, config: &Config) -> HashMap<String, String> {
     labels
 }
 
-/// Plan tier as a multiple of the Pro base allowance. Used to estimate what
-/// usage would look like on a smaller plan. Recognized labels: Pro, Max 5x,
-/// Max 20x (bare "Max" assumed 5x, its entry tier).
+/// Weekly allowance as a multiple of Pro. Used to estimate what usage would
+/// look like on a smaller plan. Recognized labels: Pro, Max, Ultra, plus the
+/// old Max 5x and Max 20x.
 fn plan_multiplier(plan: &str) -> Option<f64> {
     let p = plan.to_lowercase();
-    if p.contains("20x") {
-        Some(20.0)
+    if p.contains("ultra") || p.contains("20x") {
+        Some(10.0)
     } else if p.contains("5x") || p.contains("max") {
         Some(5.0)
     } else if p.contains("pro") {
@@ -588,8 +617,8 @@ fn plan_multiplier(plan: &str) -> Option<f64> {
 
 /// The next cheaper tier and its multiplier, or None if already at the bottom.
 fn lower_tier(mult: f64) -> Option<(&'static str, f64)> {
-    if mult >= 20.0 {
-        Some(("Max 5x", 5.0))
+    if mult >= 10.0 {
+        Some(("Max", 5.0))
     } else if mult >= 5.0 {
         Some(("Pro", 1.0))
     } else {
@@ -597,16 +626,21 @@ fn lower_tier(mult: f64) -> Option<(&'static str, f64)> {
     }
 }
 
-/// "On Max 5x: weekly ~96%, session ~124% — would throttle": estimate the
-/// session and weekly usage if the same work ran on the next tier down.
-/// Assumes limits scale linearly with the tier multiplier.
+/// "On Max: weekly ~96% — would throttle": estimate the session and weekly
+/// usage if the same work ran on the next tier down. Assumes limits scale
+/// linearly with the tier multiplier. Ultra's session allowance has no published
+/// multiple, so its note covers the weekly limit only.
 fn build_tier_note(plan: &str, usage: &UsageResponse) -> Option<String> {
     let mult = plan_multiplier(plan)?;
     let (lower_name, lower_mult) = lower_tier(mult)?;
     let factor = mult / lower_mult;
 
     let week = usage.seven_day.as_ref().map(|m| m.utilization);
-    let five = usage.five_hour.as_ref().map(|m| m.utilization);
+    let five = usage
+        .five_hour
+        .as_ref()
+        .filter(|_| mult < 10.0)
+        .map(|m| m.utilization);
 
     let mut parts = Vec::new();
     if let Some(w) = week {

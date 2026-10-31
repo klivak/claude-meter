@@ -146,5 +146,25 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     strings.insert("time_ago", "pirms {}");
     strings.insert("latest_version", "Jums ir jaunākā versija.");
     strings.insert("update_check_failed", "Neizdevās pārbaudīt atjauninājumus.");
+    strings.insert("Additional limit", "Papildu limits");
+    strings.insert("Limit locked", "Limits ir bloķēts");
+    strings.insert("share_of_weekly", "Līdz {0}% no nedēļas limita");
+    strings.insert("api_credits_note", "${0}/mēn. API kredīti, ne Claude Code");
+    strings.insert("credits", "kredīti");
+    strings.insert("Ultra", "Ultra");
+    strings.insert("Cloud credit", "Mākoņa kredīts");
+    strings.insert("Limit reached", "Limits sasniegts");
+    strings.insert("estimate_label", "{0} st. (aplēse)");
+    strings.insert(
+        "estimate_note",
+        "{0}% no nedēļas, budžets {1}%, nav Anthropic limits",
+    );
+    strings.insert("Estimate window", "Aplēses logs");
+    strings.insert("Estimate budget", "Aplēses budžets");
+    strings.insert(
+        "estimate_hint",
+        "Nedēļa = 100%, vienāda daļa = 100% / 168 st. x logs",
+    );
+    strings.insert("Off", "Off");
     strings
 }

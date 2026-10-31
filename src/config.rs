@@ -3,6 +3,20 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
+/// User correction for one API metric, so a renamed or new limit can be handled
+/// from config.json without waiting for a release.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct MetricOverride {
+    /// Display name shown instead of the built-in one.
+    #[serde(default)]
+    pub label: Option<String>,
+    /// Whether it drives the icon and notifications.
+    #[serde(default)]
+    pub alerts: Option<bool>,
+    #[serde(default)]
+    pub hidden: Option<bool>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NotificationConfig {
     pub enabled: bool,
@@ -119,13 +133,81 @@ pub struct Config {
     /// Organization ID for claude.ai web API fallback (optional)
     #[serde(default)]
     pub web_api_org_id: Option<String>,
-    /// Manual plan label override, e.g. "Max 20x". The usage API does not
+    /// Manual plan label override, e.g. "Ultra". The usage API does not
     /// return the plan tier, so set this for a correct label and the
-    /// downgrade comparison. Recognized: "Pro", "Max 5x", "Max 20x".
+    /// downgrade comparison. Recognized: "Pro", "Max", "Ultra" (old "Max 5x" and "Max 20x" still work).
     #[serde(default)]
     pub plan_override: Option<String>,
     #[serde(default = "default_true")]
     pub show_usage_links: bool,
+    /// Corrections per API metric key, e.g. {"amber_ladder": {"label": "Promo", "alerts": false}}.
+    #[serde(default)]
+    pub metric_overrides: std::collections::HashMap<String, MetricOverride>,
+    /// Plan names by raw tier or subscription value, e.g. {"default_claude_new": "New"}.
+    #[serde(default)]
+    pub plan_aliases: std::collections::HashMap<String, String>,
+    /// Show a local usage estimate on accounts without a session limit.
+    #[serde(default = "default_true")]
+    pub session_estimate: bool,
+    /// Length of the estimate window in hours.
+    #[serde(default = "default_session_estimate_hours")]
+    pub session_estimate_hours: u32,
+    /// Weekly percent that fills the estimate bar. Empty means an even share of
+    /// the week: 100% / 168 hours * window.
+    #[serde(default)]
+    pub session_estimate_budget: Option<f64>,
+}
+
+fn default_session_estimate_hours() -> u32 {
+    24
+}
+
+/// Choices offered in settings for the estimate window, in hours.
+pub const SESSION_ESTIMATE_HOURS: &[u32] = &[5, 12, 24, 72];
+/// Choices offered in settings for a manual budget, in weekly percent.
+pub const SESSION_ESTIMATE_BUDGETS: &[f64] = &[5.0, 10.0, 20.0, 30.0, 50.0];
+
+pub const CODEX_USAGE_URL: &str = "https://chatgpt.com/settings/usage?tab=overview";
+const OLD_CODEX_USAGE_URL: &str = "https://chatgpt.com/codex/settings/usage";
+
+impl Config {
+    /// Move saved values that a newer release replaced. A custom URL is kept.
+    fn migrate(&mut self) {
+        if self.chatgpt_usage_url == OLD_CODEX_USAGE_URL {
+            self.chatgpt_usage_url = CODEX_USAGE_URL.to_string();
+        }
+    }
+
+    /// Next estimate window after the current one; the cycle passes through off.
+    #[cfg_attr(not(windows), allow(dead_code))] // consumed by the Windows app
+    pub fn cycle_session_estimate_window(&mut self) {
+        if !self.session_estimate {
+            self.session_estimate = true;
+            self.session_estimate_hours = SESSION_ESTIMATE_HOURS[0];
+            return;
+        }
+        match SESSION_ESTIMATE_HOURS
+            .iter()
+            .position(|h| *h == self.session_estimate_hours)
+        {
+            Some(i) if i + 1 < SESSION_ESTIMATE_HOURS.len() => {
+                self.session_estimate_hours = SESSION_ESTIMATE_HOURS[i + 1];
+            }
+            _ => self.session_estimate = false,
+        }
+    }
+
+    /// Next manual budget; after the largest it returns to the automatic share.
+    #[cfg_attr(not(windows), allow(dead_code))] // consumed by the Windows app
+    pub fn cycle_session_estimate_budget(&mut self) {
+        self.session_estimate_budget = match self.session_estimate_budget {
+            None => Some(SESSION_ESTIMATE_BUDGETS[0]),
+            Some(current) => SESSION_ESTIMATE_BUDGETS
+                .iter()
+                .copied()
+                .find(|b| *b > current),
+        };
+    }
 }
 
 fn default_dashboard_layout() -> String {
@@ -151,7 +233,7 @@ impl Default for Config {
             theme: "auto".to_string(),
             language: "auto".to_string(),
             show_chatgpt_section: false,
-            chatgpt_usage_url: "https://chatgpt.com/codex/settings/usage".to_string(),
+            chatgpt_usage_url: CODEX_USAGE_URL.to_string(),
             claude_install_url: "https://claude.ai/download".to_string(),
             show_widget: false,
             check_updates: true,
@@ -168,6 +250,11 @@ impl Default for Config {
             web_api_session_key: None,
             web_api_org_id: None,
             plan_override: None,
+            metric_overrides: Default::default(),
+            plan_aliases: Default::default(),
+            session_estimate: true,
+            session_estimate_hours: default_session_estimate_hours(),
+            session_estimate_budget: None,
             show_usage_links: true,
         }
     }
@@ -259,6 +346,7 @@ impl ConfigManager {
             match fs::read_to_string(&self.path) {
                 Ok(content) => match serde_json::from_str::<Config>(&content) {
                     Ok(mut cfg) => {
+                        cfg.migrate();
                         cfg.validate();
                         self.config = cfg;
                         self.last_modified = fs::metadata(&self.path)
@@ -446,5 +534,39 @@ mod tests {
         assert_eq!(cfg.tray_icon_style, "number");
         assert!(!cfg.show_widget);
         assert!(!cfg.token_expiry_warning);
+    }
+
+    #[test]
+    fn test_old_codex_usage_url_is_migrated() {
+        let mut config = Config {
+            chatgpt_usage_url: OLD_CODEX_USAGE_URL.to_string(),
+            ..Config::default()
+        };
+        config.migrate();
+        assert_eq!(config.chatgpt_usage_url, CODEX_USAGE_URL);
+
+        config.chatgpt_usage_url = "https://example.com/usage".to_string();
+        config.migrate();
+        assert_eq!(config.chatgpt_usage_url, "https://example.com/usage");
+    }
+
+    #[test]
+    fn test_session_estimate_setting_cycles() {
+        let mut config = Config::default();
+        assert_eq!(config.session_estimate_hours, 24);
+        config.cycle_session_estimate_window();
+        assert_eq!(config.session_estimate_hours, 72);
+        config.cycle_session_estimate_window();
+        assert!(!config.session_estimate);
+        config.cycle_session_estimate_window();
+        assert!(config.session_estimate);
+        assert_eq!(config.session_estimate_hours, 5);
+
+        assert_eq!(config.session_estimate_budget, None);
+        config.cycle_session_estimate_budget();
+        assert_eq!(config.session_estimate_budget, Some(5.0));
+        config.session_estimate_budget = Some(50.0);
+        config.cycle_session_estimate_budget();
+        assert_eq!(config.session_estimate_budget, None);
     }
 }

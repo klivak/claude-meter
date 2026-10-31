@@ -820,11 +820,10 @@ impl TrayIcon {
     ) {
         let max_util = usage.as_ref().and_then(|u| u.max_utilization());
 
-        // If active session (five_hour with resets_at), show its %; otherwise show "..."
+        // Active session or, on plans without one, the weekly limit; otherwise show "..."
         let session_util = usage
             .as_ref()
-            .and_then(|u| u.five_hour.as_ref())
-            .filter(|m| m.resets_at.is_some())
+            .and_then(|u| u.display_metric())
             .map(|m| m.utilization);
 
         // Icon color matches the displayed value: session % when active, max otherwise
@@ -849,7 +848,9 @@ impl TrayIcon {
                             .all_metrics()
                             .iter()
                             .enumerate()
-                            .filter(|(_, (_, m))| m.utilization > 0.0)
+                            .filter(|(_, (key, m))| {
+                                crate::providers::claude::is_core_limit(key) && m.utilization > 0.0
+                            })
                             .map(|(i, (_, m))| (m.utilization, PIE_PALETTE[i % PIE_PALETTE.len()]))
                             .collect();
                         if pie_metrics.is_empty() {
@@ -1071,13 +1072,7 @@ pub fn build_tooltip(
             }
         }
         Some(u) => {
-            // Compact plan name: "Max 5X" → "5x", "Max 20X" → "20x", "Max" → "Max", "Pro" → "Pro"
-            let plan = u.detected_plan();
-            let compact_plan = if let Some(rest) = plan.strip_prefix("Max ") {
-                rest.to_lowercase()
-            } else {
-                plan
-            };
+            let compact_plan = u.detected_plan();
             let stale = is_stale(last_error, last_updated);
             let header = if last_error.is_some() {
                 format!("Claude ({}) \u{26a0}", compact_plan)

@@ -156,5 +156,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "for {} siden");
     m.insert("latest_version", "Du kjører den nyeste versjonen.");
     m.insert("update_check_failed", "Kunne ikke se etter oppdateringer.");
+    m.insert("Additional limit", "Ekstra grense");
+    m.insert("Limit locked", "Grensen er låst");
+    m.insert("share_of_weekly", "Opptil {0} % av ukegrensen");
+    m.insert(
+        "api_credits_note",
+        "${0}/mnd API-kreditter, ikke for Claude Code",
+    );
+    m.insert("credits", "kreditter");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Skykreditt");
+    m.insert("Limit reached", "Grense nådd");
+    m.insert("estimate_label", "{0} t (anslag)");
+    m.insert(
+        "estimate_note",
+        "{0} % av uken, budsjett {1} %, ikke en Anthropic-grense",
+    );
+    m.insert("Estimate window", "Anslagsvindu");
+    m.insert("Estimate budget", "Anslagsbudsjett");
+    m.insert(
+        "estimate_hint",
+        "Uke = 100 %, lik andel = 100 % / 168 t x vindu",
+    );
+    m.insert("Off", "Off");
     m
 }

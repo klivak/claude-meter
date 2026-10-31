@@ -234,5 +234,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "update_check_failed",
         "Проверката за обновления не бе успешна.",
     );
+    m.insert("Additional limit", "Допълнителен лимит");
+    m.insert("Limit locked", "Лимитът е заключен");
+    m.insert("share_of_weekly", "До {0}% от седмичния лимит");
+    m.insert(
+        "api_credits_note",
+        "${0}/мес. API кредити, не за Claude Code",
+    );
+    m.insert("credits", "кредита");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Облачен кредит");
+    m.insert("Limit reached", "Лимитът е достигнат");
+    m.insert("estimate_label", "{0} ч. (оценка)");
+    m.insert(
+        "estimate_note",
+        "{0}% от седмицата, бюджет {1}%, не е лимит на Anthropic",
+    );
+    m.insert("Estimate window", "Прозорец на оценката");
+    m.insert("Estimate budget", "Бюджет на оценката");
+    m.insert(
+        "estimate_hint",
+        "Седмица = 100%, равен дял = 100% / 168 ч. x прозорец",
+    );
+    m.insert("Off", "Off");
     m
 }

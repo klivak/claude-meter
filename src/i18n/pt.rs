@@ -174,5 +174,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "update_check_failed",
         "Não foi possível procurar atualizações.",
     );
+    m.insert("Additional limit", "Limite adicional");
+    m.insert("Limit locked", "Limite bloqueado");
+    m.insert("share_of_weekly", "Até {0}% do limite semanal");
+    m.insert(
+        "api_credits_note",
+        "US${0}/mês em créditos de API, não para o Claude Code",
+    );
+    m.insert("credits", "créditos");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Crédito na nuvem");
+    m.insert("Limit reached", "Limite atingido");
+    m.insert("estimate_label", "{0} h (estimativa)");
+    m.insert(
+        "estimate_note",
+        "{0}% da semana, orçamento {1}%, não é limite da Anthropic",
+    );
+    m.insert("Estimate window", "Janela da estimativa");
+    m.insert("Estimate budget", "Orçamento da estimativa");
+    m.insert(
+        "estimate_hint",
+        "Semana = 100%, parte igual = 100% / 168 h x janela",
+    );
+    m.insert("Off", "Off");
     m
 }

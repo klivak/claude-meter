@@ -38,14 +38,14 @@ pub const POPUP_WIDTH: i32 = 380;
 /// The panel's drawn height and the window height computed in `windows_app`
 /// must agree — when they drifted apart the footer ended up painted on top of
 /// the tray-colour legend, so both sides derive from this one constant.
-pub const SETTINGS_ROW_COUNT: usize = 19;
+pub const SETTINGS_ROW_COUNT: usize = 21;
 /// Row pitch of the settings list, in unscaled pixels.
 pub const SETTINGS_ROW_H: i32 = 34;
 
 pub const HEADER_HEIGHT: i32 = 40;
 pub const PADDING: i32 = 16;
 pub const METRIC_LABEL_H: i32 = 22;
-pub const PROGRESS_H: i32 = 14;
+pub const PROGRESS_H: i32 = 10;
 
 fn rounded_progress_fill_width(content_width: f32, bar_height: f32, utilization: f64) -> f32 {
     let proportional_width = content_width * utilization.clamp(0.0, 100.0) as f32 / 100.0;
@@ -57,9 +57,11 @@ fn rounded_progress_fill_width(content_width: f32, bar_height: f32, utilization:
             .min(content_width)
     }
 }
-pub const RESET_LABEL_H: i32 = 18;
+pub const RESET_LABEL_H: i32 = 15;
 /// Height of a collapsed metric row (label + percentage only) including its gap.
-pub const COLLAPSED_METRIC_H: i32 = METRIC_LABEL_H + 6;
+pub const COLLAPSED_METRIC_H: i32 = METRIC_LABEL_H + COLLAPSED_BAR_H + 9;
+/// Level bar of a collapsed row: the only bar left there, so it stays readable.
+pub const COLLAPSED_BAR_H: i32 = 5;
 
 /// True when the user collapsed `key` to a single compact row in the dashboard.
 pub fn is_metric_collapsed(key: &str) -> bool {
@@ -81,6 +83,15 @@ thread_local! {
         const { std::cell::RefCell::new(Vec::new()) };
 }
 
+/// Index of the collapsible row under `pt`, for the hover highlight.
+pub fn metric_toggle_index_at(pt: windows::Win32::Foundation::POINT) -> Option<usize> {
+    METRIC_TOGGLE_RECTS.with(|r| {
+        r.borrow().iter().position(|(_, rc)| {
+            pt.x >= rc.left && pt.x < rc.right && pt.y >= rc.top && pt.y < rc.bottom
+        })
+    })
+}
+
 /// Metric key whose label row contains `pt` (client coordinates), if any.
 pub fn metric_toggle_at(pt: windows::Win32::Foundation::POINT) -> Option<String> {
     METRIC_TOGGLE_RECTS.with(|r| {
@@ -91,6 +102,53 @@ pub fn metric_toggle_at(pt: windows::Win32::Foundation::POINT) -> Option<String>
             })
             .map(|(k, _)| k.clone())
     })
+}
+
+/// Height of the reset line, which `draw_metric` skips without a valid reset time.
+fn reset_line_height(metric: &crate::providers::claude::UsageMetric) -> i32 {
+    if metric
+        .resets_at
+        .as_deref()
+        .and_then(seconds_until)
+        .is_some()
+    {
+        RESET_LABEL_H
+    } else {
+        0
+    }
+}
+
+/// Height of a Claude metric's clickable section. `sparkline_h` is the mini chart
+/// of the detailed layout, drawn only under the charted metric.
+fn metric_section_height(
+    usage: &UsageResponse,
+    key: &str,
+    metric: &crate::providers::claude::UsageMetric,
+    sparkline_h: i32,
+) -> i32 {
+    if is_metric_collapsed(key) {
+        return COLLAPSED_METRIC_H - 3;
+    }
+    let has_note = (key == "seven_day" && metric.resets_at.is_some()) || metric.has_detail();
+    METRIC_LABEL_H
+        + 4
+        + PROGRESS_H
+        + 4
+        + reset_line_height(metric)
+        + if has_note { PACE_LABEL_H } else { 0 }
+        + if key == usage.chart_metric_key() {
+            sparkline_h
+        } else {
+            0
+        }
+}
+
+/// Credits and undocumented limits don't block work, so they stay out of the
+/// green-to-red scale. The local estimate keeps it, because it is a pace signal.
+fn neutral_metric_color(key: &str, colors: &ThemeColors) -> Option<ColorRef> {
+    let neutral = !crate::providers::claude::is_core_limit(key)
+        && key != crate::providers::claude::SESSION_ESTIMATE_KEY;
+    neutral.then_some(colors.accent)
 }
 
 /// Number of expanded and collapsed metrics among the visible ones.
@@ -107,24 +165,22 @@ fn metric_counts(usage: &UsageResponse, metric_filter: MetricFilter) -> (i32, i3
     ((visible.len() - collapsed) as i32, collapsed as i32)
 }
 
-/// Height of the weekly burn-rate line drawn under the weekly progress bar.
-pub const PACE_LABEL_H: i32 = 16;
+/// Height of the note line (weekly burn rate, dollars, ...) drawn under a bar.
+pub const PACE_LABEL_H: i32 = 14;
 
-/// Height the weekly burn-rate line occupies in the section (0 when the weekly
-/// metric is absent, hidden, or has no reset time, so nothing is drawn).
+/// Height the note lines occupy in the section. A metric has one when it is the
+/// weekly metric with a reset time or carries detail, and is visible and expanded.
 pub fn weekly_pace_line_height(usage: &UsageResponse, metric_filter: MetricFilter) -> i32 {
-    if metric_filter.hides("seven_day") || is_metric_collapsed("seven_day") {
-        return 0;
-    }
-    let has_weekly = usage
+    let lines = usage
         .all_metrics()
         .iter()
-        .any(|(key, metric)| key == "seven_day" && metric.resets_at.is_some());
-    if has_weekly {
-        PACE_LABEL_H
-    } else {
-        0
-    }
+        .filter(|(key, metric)| {
+            !metric_filter.hides(key)
+                && !is_metric_collapsed(key)
+                && ((key == "seven_day" && metric.resets_at.is_some()) || metric.has_detail())
+        })
+        .count() as i32;
+    lines * PACE_LABEL_H
 }
 
 /// Text for the weekly burn-rate line, or `None` when this metric is not the
@@ -159,7 +215,7 @@ pub fn weekly_pace_text(
         None => Some(i18n.t("pace_too_early").to_string()),
     }
 }
-pub const SECTION_GAP: i32 = 14;
+pub const SECTION_GAP: i32 = 8;
 pub const ITEM_GAP: i32 = 8;
 pub const SEPARATOR_H: i32 = 1;
 pub const FOOTER_H: i32 = 38;
@@ -199,6 +255,7 @@ fn gear_outline_points(
 #[derive(Debug, Clone, PartialEq)]
 pub enum HoveredElement {
     None,
+    MetricRow(usize),
     SettingsButton,
     CloseButton,
     RefreshButton,
@@ -1167,7 +1224,8 @@ impl PopupRenderer {
                 metric.utilization
             };
             let rate = rate_of_change.get(key).copied();
-            self.register_metric_toggle(w, y, key);
+            let section_h = metric_section_height(usage, key, metric, 0);
+            self.register_metric_toggle(rt, w, y, key, section_h, hovered, colors);
             if is_metric_collapsed(key) {
                 y = self.draw_metric_collapsed(rt, d2d, w, y, key, util, colors, i18n);
                 continue;
@@ -1183,7 +1241,7 @@ impl PopupRenderer {
                 colors,
                 i18n,
                 rate,
-                None,
+                neutral_metric_color(key, colors),
             );
             y = self.draw_weekly_pace(rt, d2d, w, y, key, metric, colors, i18n);
             y += self.sf(SECTION_GAP);
@@ -1207,14 +1265,20 @@ impl PopupRenderer {
         colors: &ThemeColors,
         i18n: &I18n,
     ) -> f32 {
-        let Some(text) = weekly_pace_text(key, metric, i18n) else {
+        let Some(text) = weekly_pace_text(key, metric, i18n).or_else(|| metric.detail_text(i18n))
+        else {
             return y;
         };
-        let pace = crate::pace::weekly_pace(
-            metric.utilization,
-            metric.resets_at.as_deref().unwrap_or_default(),
-            chrono::Utc::now(),
-        );
+        // Only the projection carries a verdict; other notes are plain information.
+        let pace = if key == "seven_day" {
+            crate::pace::weekly_pace(
+                metric.utilization,
+                metric.resets_at.as_deref().unwrap_or_default(),
+                chrono::Utc::now(),
+            )
+        } else {
+            None
+        };
         let color = match pace {
             Some(p) if p.is_hot() => colors.red,
             Some(p) if p.is_over_budget() => colors.yellow,
@@ -1243,14 +1307,43 @@ impl PopupRenderer {
         y + self.sf(PACE_LABEL_H)
     }
 
-    /// Record the label row of a Claude metric as a collapse/expand click target.
-    fn register_metric_toggle(&self, w: f32, y: f32, key: &str) {
+    /// Record the label row of a Claude metric as a collapse/expand click target
+    /// and highlight it under the mouse, so it reads as clickable.
+    unsafe fn register_metric_toggle(
+        &self,
+        rt: &ID2D1HwndRenderTarget,
+        w: f32,
+        y: f32,
+        key: &str,
+        section_h: i32,
+        hovered: &HoveredElement,
+        colors: &ThemeColors,
+    ) {
         let pad = self.sf(PADDING);
+        let row = METRIC_TOGGLE_RECTS.with(|r| r.borrow().len());
+        if *hovered == HoveredElement::MetricRow(row) {
+            let brush = rt
+                .CreateSolidColorBrush(&colorref_to_d2d(colors.hover) as *const _, None)
+                .unwrap();
+            rt.FillRoundedRectangle(
+                &D2D1_ROUNDED_RECT {
+                    rect: D2D_RECT_F {
+                        left: pad - self.sf(4),
+                        top: y - self.sf(1),
+                        right: w - pad + self.sf(4),
+                        bottom: y + self.sf(section_h) + self.sf(1),
+                    },
+                    radiusX: self.sf(4),
+                    radiusY: self.sf(4),
+                },
+                &brush,
+            );
+        }
         let rc = RECT {
             left: pad as i32,
             top: y as i32,
             right: (w - pad) as i32,
-            bottom: (y + self.sf(METRIC_LABEL_H)) as i32,
+            bottom: (y + self.sf(section_h)) as i32,
         };
         METRIC_TOGGLE_RECTS.with(|r| r.borrow_mut().push((key.to_string(), rc)));
     }
@@ -1294,7 +1387,10 @@ impl PopupRenderer {
         let pct_format = d2d.get_text_format(11, true, 1, 1).clone();
         let pct_brush = rt
             .CreateSolidColorBrush(
-                &colorref_to_d2d(colors.progress_color(utilization)) as *const _,
+                &colorref_to_d2d(
+                    neutral_metric_color(key, colors)
+                        .unwrap_or_else(|| colors.progress_color(utilization)),
+                ) as *const _,
                 None,
             )
             .unwrap();
@@ -1311,6 +1407,29 @@ impl PopupRenderer {
             D2D1_DRAW_TEXT_OPTIONS_NONE,
             DWRITE_MEASURING_MODE_NATURAL,
         );
+
+        // Thin strip keeps the level readable while collapsed.
+        let strip_top = y + self.sf(METRIC_LABEL_H) + self.sf(1);
+        let strip_h = self.sf(COLLAPSED_BAR_H);
+        let strip_w = w - pad * 2.0;
+        let bg_brush = rt
+            .CreateSolidColorBrush(&colorref_to_d2d(colors.progress_bg) as *const _, None)
+            .unwrap();
+        let strip = |right: f32| D2D1_ROUNDED_RECT {
+            rect: D2D_RECT_F {
+                left: pad,
+                top: strip_top,
+                right,
+                bottom: strip_top + strip_h,
+            },
+            radiusX: strip_h / 2.0,
+            radiusY: strip_h / 2.0,
+        };
+        rt.FillRoundedRectangle(&strip(pad + strip_w), &bg_brush);
+        let fill_w = rounded_progress_fill_width(strip_w, strip_h, utilization);
+        if fill_w > 0.0 {
+            rt.FillRoundedRectangle(&strip(pad + fill_w), &pct_brush);
+        }
 
         y + self.sf(COLLAPSED_METRIC_H)
     }
@@ -1350,8 +1469,12 @@ impl PopupRenderer {
             None => ("", colorref_to_d2d(colors.text_secondary)),
         };
 
-        // Label (left)
-        let label_text = wide(&display_name);
+        // Label (left). Claude rows collapse on click, so they carry a chevron.
+        let label_text = if override_color != Some(colors.codex) {
+            wide(&format!("\u{25BE} {display_name}"))
+        } else {
+            wide(&display_name)
+        };
         let label_format = d2d.get_text_format(12, false, 0, 1).clone();
         let label_brush = rt
             .CreateSolidColorBrush(&colorref_to_d2d(colors.text_primary) as *const _, None)
@@ -1622,18 +1745,20 @@ impl PopupRenderer {
             .filter(|(k, _)| !metric_filter.hides(k))
             .collect();
         let fallback_key = String::new();
-        let fallback_metric = crate::providers::claude::UsageMetric {
-            utilization: 0.0,
-            resets_at: None,
-        };
+        let fallback_metric = crate::providers::claude::UsageMetric::default();
         let fallback_pair = (fallback_key, &fallback_metric);
         let (best_idx, (best_key, best_metric)) = metrics
             .iter()
             .enumerate()
-            .max_by(|(_, (_, a)), (_, (_, b))| {
-                a.utilization
-                    .partial_cmp(&b.utilization)
-                    .unwrap_or(std::cmp::Ordering::Equal)
+            .max_by(|(_, (a_key, a)), (_, (b_key, b))| {
+                // Real limits win over undocumented ones, whatever their value.
+                crate::providers::claude::is_core_limit(a_key)
+                    .cmp(&crate::providers::claude::is_core_limit(b_key))
+                    .then(
+                        a.utilization
+                            .partial_cmp(&b.utilization)
+                            .unwrap_or(std::cmp::Ordering::Equal),
+                    )
             })
             .unwrap_or((0, &fallback_pair));
 
@@ -1837,7 +1962,13 @@ impl PopupRenderer {
                 metric.utilization
             };
             let rate = rate_of_change.get(key).copied();
-            self.register_metric_toggle(w, y, key);
+            let section_h = metric_section_height(
+                usage,
+                key,
+                metric,
+                if chart_data.is_empty() { 0 } else { 24 },
+            );
+            self.register_metric_toggle(rt, w, y, key, section_h, hovered, colors);
             if is_metric_collapsed(key) {
                 y = self.draw_metric_collapsed(rt, d2d, w, y, key, util, colors, i18n);
                 continue;
@@ -1853,12 +1984,12 @@ impl PopupRenderer {
                 colors,
                 i18n,
                 rate,
-                None,
+                neutral_metric_color(key, colors),
             );
             y = self.draw_weekly_pace(rt, d2d, w, y, key, metric, colors, i18n);
 
-            // Mini sparkline for five_hour metric (we have chart_data for it)
-            if key == "five_hour" && !chart_data.is_empty() {
+            // Mini sparkline for the charted metric (we have chart_data for it)
+            if key == usage.chart_metric_key() && !chart_data.is_empty() {
                 let spark_w = w - pad * 2.0;
                 let spark_h = self.sf(20);
                 let max_val = chart_data.iter().cloned().fold(1.0_f64, f64::max);
@@ -1998,25 +2129,18 @@ impl PopupRenderer {
 
         // Badge background color based on plan
         let detected_lower = detected.to_lowercase();
-        let badge_bg = if detected_lower.contains("20x") {
+        let badge_bg = if detected_lower.starts_with("ultra") {
             D2D1_COLOR_F {
                 r: 0.85,
                 g: 0.65,
                 b: 0.13,
                 a: if is_plan_hovered { 0.85 } else { 1.0 },
             }
-        } else if detected_lower.contains("5x") {
+        } else if detected_lower.starts_with("max") {
             D2D1_COLOR_F {
                 r: 0.58,
                 g: 0.34,
                 b: 0.80,
-                a: if is_plan_hovered { 0.85 } else { 1.0 },
-            }
-        } else if detected_lower.starts_with("max") {
-            D2D1_COLOR_F {
-                r: 0.24,
-                g: 0.47,
-                b: 0.85,
                 a: if is_plan_hovered { 0.85 } else { 1.0 },
             }
         } else if detected_lower.starts_with("pro") {
@@ -2054,7 +2178,7 @@ impl PopupRenderer {
         let text_rect = D2D_RECT_F {
             left: badge_rect.left + badge_pad,
             top: badge_rect.top,
-            right: badge_rect.right - badge_pad,
+            right: badge_rect.right,
             bottom: badge_rect.bottom,
         };
         // Center text vertically in badge (v_align=1 is PARAGRAPH_ALIGNMENT_CENTER)
@@ -2090,7 +2214,10 @@ impl PopupRenderer {
             *claude_usage_rect = self.draw_icon_button(rt, usage_left, y, false, colors);
             *status_link_rect = self.draw_icon_button(rt, status_left, y, true, colors);
             // Hover tooltip label, right-aligned just left of the icons.
+            let api_credits_note = crate::providers::claude::api_credits_usd(&detected)
+                .map(|usd| i18n.t("api_credits_note").replace("{0}", &usd.to_string()));
             let tip = match hovered {
+                HoveredElement::PlanLink => api_credits_note.as_deref(),
                 HoveredElement::ClaudeUsageIcon => Some(i18n.t("Open usage")),
                 HoveredElement::StatusLink => Some(i18n.t("Service status")),
                 _ => None,
@@ -2583,6 +2710,21 @@ impl PopupRenderer {
                     }
                 })
                 .unwrap_or_default();
+            // Purchased credits share the pill, so the section keeps its height.
+            let plan = match status.credits.as_ref().and_then(|c| c.display_balance()) {
+                _ if status.limit_reached => format!(
+                    "{}{}",
+                    if plan.is_empty() {
+                        String::new()
+                    } else {
+                        format!("{plan} \u{00B7} ")
+                    },
+                    i18n.t("Limit reached")
+                ),
+                Some(balance) if plan.is_empty() => format!("{balance} {}", i18n.t("credits")),
+                Some(balance) => format!("{plan} \u{00B7} {balance} {}", i18n.t("credits")),
+                None => plan,
+            };
 
             // "◉ CODEX · Plan " prefix + colored plan pill.
             let prefix = format!("\u{25CE} {} \u{00B7} {} ", i18n.t("CODEX"), i18n.t("Plan"));
@@ -3683,6 +3825,30 @@ pub unsafe fn draw_settings_panel(
             Some(i18n.t("Send").to_string()),
             None,
         ),
+        (
+            i18n.t("Estimate window").to_string(),
+            Some(if config.session_estimate {
+                format!("{}h", config.session_estimate_hours)
+            } else {
+                i18n.t("Off").to_string()
+            }),
+            None,
+        ),
+        (
+            i18n.t("Estimate budget").to_string(),
+            Some({
+                let budget = crate::providers::claude::session_estimate_budget(
+                    config.session_estimate_hours,
+                    config.session_estimate_budget,
+                );
+                if config.session_estimate_budget.is_some() {
+                    format!("{budget:.0}%")
+                } else {
+                    format!("{} {budget:.1}%", i18n.t("Auto"))
+                }
+            }),
+            None,
+        ),
     ];
 
     for (i, (label, text_val, bool_val)) in rows.iter().enumerate() {
@@ -3717,7 +3883,12 @@ pub unsafe fn draw_settings_panel(
         };
 
         // Label (left)
-        let show_codex_hint = i == 3 && config.show_chatgpt_section;
+        let hint_key = match i {
+            3 if config.show_chatgpt_section => Some("Reopen the tray popup to refresh"),
+            20 => Some("estimate_hint"),
+            _ => None,
+        };
+        let show_codex_hint = hint_key.is_some();
         let label_text = wide(label);
         let label_format = d2d.get_text_format(12, false, 0, 1).clone();
         let label_brush = rt
@@ -3738,7 +3909,7 @@ pub unsafe fn draw_settings_panel(
         );
 
         if show_codex_hint {
-            let hint_text = wide(i18n.t("Reopen the tray popup to refresh"));
+            let hint_text = wide(i18n.t(hint_key.unwrap_or_default()));
             let hint_format = d2d.get_text_format(8, false, 0, 1).clone();
             let hint_brush = rt
                 .CreateSolidColorBrush(&colorref_to_d2d(colors.text_secondary) as *const _, None)
@@ -4204,5 +4375,29 @@ mod tests {
 
         assert_eq!(no_data - base, row_height);
         assert_eq!(two_windows - base, row_height * 2);
+    }
+
+    #[test]
+    fn section_height_skips_a_missing_reset_line() {
+        let usage: UsageResponse = crate::providers::claude::test_usage(serde_json::json!({
+            "tangelo": {"utilization": 1.0},
+            "amber_ladder": {"utilization": 1.0, "resets_at": "2099-01-01T00:00:00+00:00"}
+        }));
+        let without = metric_section_height(&usage, "tangelo", &usage.extra["tangelo"], 0);
+        let with = metric_section_height(&usage, "amber_ladder", &usage.extra["amber_ladder"], 0);
+        assert_eq!(with - without, RESET_LABEL_H);
+    }
+
+    #[test]
+    fn note_lines_reserve_height_for_details() {
+        let usage: UsageResponse = crate::providers::claude::test_usage(serde_json::json!({
+            "seven_day": {"utilization": 1.0, "resets_at": "2026-11-06T19:00:00+00:00"},
+            "iguana_necktie": {"utilization": 99.0, "limit_dollars": 250, "used_dollars": 249},
+            "tangelo": {"utilization": 1.0}
+        }));
+        assert_eq!(
+            weekly_pace_line_height(&usage, MetricFilter::default()),
+            2 * PACE_LABEL_H
+        );
     }
 }

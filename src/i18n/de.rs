@@ -162,5 +162,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "vor {}");
     m.insert("latest_version", "Du verwendest die neueste Version.");
     m.insert("update_check_failed", "Suche nach Updates fehlgeschlagen.");
+    m.insert("Additional limit", "Zusätzliches Limit");
+    m.insert("Limit locked", "Limit gesperrt");
+    m.insert("share_of_weekly", "Bis zu {0}% des Wochenlimits");
+    m.insert(
+        "api_credits_note",
+        "${0}/Monat API-Guthaben, nicht für Claude Code",
+    );
+    m.insert("credits", "Credits");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Cloud-Guthaben");
+    m.insert("Limit reached", "Limit erreicht");
+    m.insert("estimate_label", "{0} Std. (Schätzung)");
+    m.insert(
+        "estimate_note",
+        "{0}% der Woche, Budget {1}%, kein Anthropic-Limit",
+    );
+    m.insert("Estimate window", "Schätzungsfenster");
+    m.insert("Estimate budget", "Schätzungsbudget");
+    m.insert(
+        "estimate_hint",
+        "Woche = 100%, gleicher Anteil = 100% / 168 Std. x Fenster",
+    );
+    m.insert("Off", "Off");
     m
 }

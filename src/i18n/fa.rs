@@ -249,5 +249,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "{} پیش");
     m.insert("latest_version", "شما آخرین نسخه را دارید.");
     m.insert("update_check_failed", "بررسی به‌روزرسانی ناموفق بود.");
+    m.insert("Additional limit", "محدودیت اضافی");
+    m.insert("Limit locked", "محدودیت قفل شده");
+    m.insert("share_of_weekly", "تا {0}٪ از محدودیت هفتگی");
+    m.insert(
+        "api_credits_note",
+        "${0} در ماه اعتبار API، نه برای Claude Code",
+    );
+    m.insert("credits", "اعتبار");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "اعتبار ابری");
+    m.insert("Limit reached", "به محدودیت رسید");
+    m.insert("estimate_label", "{0} ساعت (تخمین)");
+    m.insert(
+        "estimate_note",
+        "{0}٪ از هفته، بودجه {1}٪، محدودیت Anthropic نیست",
+    );
+    m.insert("Estimate window", "بازه تخمین");
+    m.insert("Estimate budget", "بودجه تخمین");
+    m.insert(
+        "estimate_hint",
+        "هفته = 100٪، سهم برابر = 100٪ / 168 ساعت x بازه",
+    );
+    m.insert("Off", "Off");
     m
 }

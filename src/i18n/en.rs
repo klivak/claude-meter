@@ -148,5 +148,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Notification sound", "Notification sound");
     m.insert("Test notification", "Test notification");
     m.insert("Send", "Send");
+    m.insert("Additional limit", "Additional limit");
+    m.insert("Limit locked", "Limit locked");
+    m.insert("share_of_weekly", "Up to {0}% of the weekly limit");
+    m.insert(
+        "api_credits_note",
+        "${0}/mo API credits, not for Claude Code",
+    );
+    m.insert("credits", "credits");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Cloud credit");
+    m.insert("Limit reached", "Limit reached");
+    m.insert("estimate_label", "{0}h (estimate)");
+    m.insert(
+        "estimate_note",
+        "{0}% of weekly, budget {1}%, not an Anthropic limit",
+    );
+    m.insert("Estimate window", "Estimate window");
+    m.insert("Estimate budget", "Estimate budget");
+    m.insert(
+        "estimate_hint",
+        "Week = 100%, even share = 100% / 168h x window",
+    );
+    m.insert("Off", "Off");
     m
 }

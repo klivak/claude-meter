@@ -174,5 +174,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "acum {}");
     m.insert("latest_version", "Folosești cea mai recentă versiune.");
     m.insert("update_check_failed", "Verificarea actualizărilor a eșuat.");
+    m.insert("Additional limit", "Limită suplimentară");
+    m.insert("Limit locked", "Limită blocată");
+    m.insert("share_of_weekly", "Până la {0}% din limita săptămânală");
+    m.insert(
+        "api_credits_note",
+        "${0}/lună credite API, nu pentru Claude Code",
+    );
+    m.insert("credits", "credite");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Credit cloud");
+    m.insert("Limit reached", "Limită atinsă");
+    m.insert("estimate_label", "{0} ore (estimare)");
+    m.insert(
+        "estimate_note",
+        "{0}% din săptămână, buget {1}%, nu e limită Anthropic",
+    );
+    m.insert("Estimate window", "Fereastra estimării");
+    m.insert("Estimate budget", "Bugetul estimării");
+    m.insert(
+        "estimate_hint",
+        "Săptămână = 100%, parte egală = 100% / 168 ore x fereastră",
+    );
+    m.insert("Off", "Off");
     m
 }

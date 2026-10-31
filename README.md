@@ -153,7 +153,7 @@ On macOS, use the menu bar item → **Enable Autostart**. The app uses a LaunchA
 
 | Metric | Description |
 |--------|-------------|
-| 5-hour session | Rolling session utilization with countdown timer |
+| 5-hour session | Rolling session utilization with countdown timer, on plans that have one (verified Ultra accounts don't: the weekly limit takes over the tray icon, widget and charts) |
 | 7-day weekly | Weekly usage cap with reset timer |
 | 7-day Sonnet | Sonnet-specific limit (shown if applicable) |
 | 7-day Opus | Opus-specific limit (Max plans only) |
@@ -573,11 +573,20 @@ A: ClaudeMeter reads Codex CLI session logs from `~/.codex`; OpenAI does not exp
 **Q: How do I check my Claude usage limits?**
 A: Just run ClaudeMeter — it reads your Claude Code OAuth token and shows all your limits (5-hour session, weekly cap, Sonnet/Opus quotas) in a system tray popup. No manual checking needed.
 
-**Q: Does it work with Claude Pro, Max 5x, and Max 20x plans?**
-A: Yes. ClaudeMeter auto-detects your plan tier and displays the correct limits for Pro, Max, Max 5x, and Max 20x subscriptions.
+**Q: Does it work with Claude Pro, Max, and Ultra plans?**
+A: Yes. ClaudeMeter auto-detects your plan and shows the limits your account actually reports. Max 5x is now called Max and Max 20x is now called Ultra; both old and new names are recognized.
+
+**Q: Does ClaudeMeter show my monthly API credits?**
+A: Max ($100) and Ultra ($200) include monthly API credits. Hover the plan badge to see the amount. Anthropic doesn't expose the balance to the usage API, so check it on the Claude Console billing page. These credits don't cover Claude Code and don't change your usage limits.
+
+**Q: What if Anthropic renames a limit or a plan again?**
+A: New limits appear automatically as "Additional limit" and don't raise alarms. To rename, hide or promote one, or to name a new plan, edit `config.json`: `"metric_overrides": {"amber_ladder": {"label": "Promo", "alerts": false, "hidden": false}}` and `"plan_aliases": {"default_claude_new": "New"}`. The changes apply on the next poll.
+
+**Q: What is the (estimate) bar on Ultra?**
+A: It is ClaudeMeter's own calculation, not an Anthropic limit: the weekly percent you spent in the chosen window, compared with a budget. Choose the window (5, 12, 24 or 72 hours, or off) and the budget in settings. The automatic budget is an even share of the week, where the week is 100%: 24 hours is 100/7 = 14.3%, 5 hours is 3%. It never blocks you and never alerts.
 
 **Q: What is the Claude 5-hour session limit?**
-A: Claude enforces a rolling 5-hour usage window. ClaudeMeter shows your current utilization percentage and a countdown to when it resets.
+A: Claude enforces a rolling 5-hour usage window on most plans. ClaudeMeter shows your current utilization percentage and a countdown to when it resets. Verified Ultra accounts have no 5-hour limit, only weekly ones; newer Ultra accounts keep a temporary limit until they are verified, and ClaudeMeter shows it for as long as the API reports it.
 
 **Q: Can I run ClaudeMeter from a USB drive?**
 A: On Windows, yes. It's a single portable `.exe` with zero dependencies. On macOS, use the `.app` bundle for the menu bar UI or the raw `claudemeter-macos-arm64` binary for CLI/agent use.

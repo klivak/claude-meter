@@ -246,5 +246,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "πριν από {}");
     m.insert("latest_version", "Χρησιμοποιείτε την πιο πρόσφατη έκδοση.");
     m.insert("update_check_failed", "Ο έλεγχος ενημερώσεων απέτυχε.");
+    m.insert("Additional limit", "Πρόσθετο όριο");
+    m.insert("Limit locked", "Το όριο κλειδώθηκε");
+    m.insert("share_of_weekly", "Έως {0}% του εβδομαδιαίου ορίου");
+    m.insert(
+        "api_credits_note",
+        "${0}/μήνα πιστώσεις API, όχι για το Claude Code",
+    );
+    m.insert("credits", "πιστώσεις");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Πίστωση cloud");
+    m.insert("Limit reached", "Το όριο εξαντλήθηκε");
+    m.insert("estimate_label", "{0} ώρ. (εκτίμηση)");
+    m.insert(
+        "estimate_note",
+        "{0}% της εβδομάδας, προϋπολογισμός {1}%, όχι όριο Anthropic",
+    );
+    m.insert("Estimate window", "Παράθυρο εκτίμησης");
+    m.insert("Estimate budget", "Προϋπολογισμός εκτίμησης");
+    m.insert(
+        "estimate_hint",
+        "Εβδομάδα = 100%, ίσο μερίδιο = 100% / 168 ώρ. x παράθυρο",
+    );
+    m.insert("Off", "Off");
     m
 }

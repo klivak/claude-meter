@@ -183,5 +183,19 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "{} 前");
     m.insert("latest_version", "你正在使用最新版本。");
     m.insert("update_check_failed", "无法检查更新。");
+    m.insert("Additional limit", "附加限额");
+    m.insert("Limit locked", "限额已锁定");
+    m.insert("share_of_weekly", "最多为每周限额的 {0}%");
+    m.insert("api_credits_note", "每月 ${0} API 额度,不含 Claude Code");
+    m.insert("credits", "额度");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "云端额度");
+    m.insert("Limit reached", "已达上限");
+    m.insert("estimate_label", "{0} 小时(估算)");
+    m.insert("estimate_note", "每周的 {0}%,预算 {1}%,并非 Anthropic 限额");
+    m.insert("Estimate window", "估算时段");
+    m.insert("Estimate budget", "估算预算");
+    m.insert("estimate_hint", "一周 = 100%,均分 = 100% / 168 小时 x 时段");
+    m.insert("Off", "Off");
     m
 }

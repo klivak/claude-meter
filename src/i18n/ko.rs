@@ -204,5 +204,25 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "{} 전");
     m.insert("latest_version", "최신 버전을 사용 중입니다.");
     m.insert("update_check_failed", "업데이트를 확인할 수 없습니다.");
+    m.insert("Additional limit", "추가 한도");
+    m.insert("Limit locked", "한도 잠김");
+    m.insert("share_of_weekly", "주간 한도의 최대 {0}%");
+    m.insert("api_credits_note", "월 ${0} API 크레딧, Claude Code 제외");
+    m.insert("credits", "크레딧");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "클라우드 크레딧");
+    m.insert("Limit reached", "한도 도달");
+    m.insert("estimate_label", "{0}시간(추정)");
+    m.insert(
+        "estimate_note",
+        "주간의 {0}%, 예산 {1}%, Anthropic 한도 아님",
+    );
+    m.insert("Estimate window", "추정 기간");
+    m.insert("Estimate budget", "추정 예산");
+    m.insert(
+        "estimate_hint",
+        "주 = 100%, 균등 몫 = 100% / 168시간 x 기간",
+    );
+    m.insert("Off", "Off");
     m
 }

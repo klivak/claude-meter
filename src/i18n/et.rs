@@ -146,5 +146,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     strings.insert("time_ago", "{} tagasi");
     strings.insert("latest_version", "Kasutad uusimat versiooni.");
     strings.insert("update_check_failed", "Uuenduste kontroll ebaõnnestus.");
+    strings.insert("Additional limit", "Lisalimiit");
+    strings.insert("Limit locked", "Limiit on lukus");
+    strings.insert("share_of_weekly", "Kuni {0}% nädalalimiidist");
+    strings.insert(
+        "api_credits_note",
+        "${0}/kuus API-krediiti, mitte Claude Code'i jaoks",
+    );
+    strings.insert("credits", "krediiti");
+    strings.insert("Ultra", "Ultra");
+    strings.insert("Cloud credit", "Pilvekrediit");
+    strings.insert("Limit reached", "Limiit täis");
+    strings.insert("estimate_label", "{0} t (hinnang)");
+    strings.insert(
+        "estimate_note",
+        "{0}% nädalast, eelarve {1}%, pole Anthropicu limiit",
+    );
+    strings.insert("Estimate window", "Hinnangu aken");
+    strings.insert("Estimate budget", "Hinnangu eelarve");
+    strings.insert(
+        "estimate_hint",
+        "Nädal = 100%, võrdne osa = 100% / 168 t x aken",
+    );
+    strings.insert("Off", "Off");
     strings
 }

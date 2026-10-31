@@ -152,5 +152,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "{} тому");
     m.insert("latest_version", "У вас найновіша версія.");
     m.insert("update_check_failed", "Не вдалося перевірити оновлення.");
+    m.insert("Additional limit", "Додатковий ліміт");
+    m.insert("Limit locked", "Ліміт заблоковано");
+    m.insert("share_of_weekly", "До {0}% тижневого ліміту");
+    m.insert(
+        "api_credits_note",
+        "${0}/міс API-кредитів, не для Claude Code",
+    );
+    m.insert("credits", "кредитів");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Хмарний кредит");
+    m.insert("Limit reached", "Ліміт вичерпано");
+    m.insert("estimate_label", "{0} год (оцінка)");
+    m.insert(
+        "estimate_note",
+        "{0}% тижня, бюджет {1}%, не ліміт Anthropic",
+    );
+    m.insert("Estimate window", "Вікно оцінки");
+    m.insert("Estimate budget", "Бюджет оцінки");
+    m.insert(
+        "estimate_hint",
+        "Тиждень = 100%, рівна частка = 100% / 168 год x вікно",
+    );
+    m.insert("Off", "Вимк.");
     m
 }

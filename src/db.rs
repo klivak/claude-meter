@@ -70,17 +70,17 @@ impl Database {
         Ok(())
     }
 
-    /// Query last 24 hours of `five_hour` metric, bucketed into 30-minute intervals.
+    /// Query last 24 hours of `metric`, bucketed into 30-minute intervals.
     /// Always returns exactly 48 elements (oldest first: index 0 = 24h ago, index 47 = now).
     /// Missing slots are filled with 0.0.
-    pub fn query_24h_chart(&self) -> SqlResult<Vec<f64>> {
+    pub fn query_24h_chart(&self, metric: &str) -> SqlResult<Vec<f64>> {
         let mut stmt = self.conn.prepare(
             "SELECT
                 CAST((julianday('now') - julianday(timestamp)) * 48 AS INTEGER) AS bucket,
                 AVG(utilization) AS avg_util
              FROM usage_history
              WHERE provider = 'claude'
-               AND metric = 'five_hour'
+               AND metric = ?1
                AND resets_at IS NOT NULL
                AND timestamp > datetime('now', '-24 hours')
              GROUP BY bucket",
@@ -88,7 +88,9 @@ impl Database {
 
         let mut slots = vec![0.0f64; 48];
 
-        let rows = stmt.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?)))?;
+        let rows = stmt.query_map([metric], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?))
+        })?;
 
         for row in rows.flatten() {
             let (bucket, util) = row;
@@ -101,18 +103,18 @@ impl Database {
         Ok(slots)
     }
 
-    /// Query last 7 days of `five_hour` metric, bucketed into 4-hour intervals.
+    /// Query last 7 days of `metric`, bucketed into 4-hour intervals.
     /// Always returns exactly 42 elements (oldest first: index 0 = 7d ago, index 41 = now).
     /// Missing slots are filled with 0.0.
     #[cfg_attr(not(windows), allow(dead_code))] // consumed by the Windows app
-    pub fn query_7d_chart(&self) -> SqlResult<Vec<f64>> {
+    pub fn query_7d_chart(&self, metric: &str) -> SqlResult<Vec<f64>> {
         let mut stmt = self.conn.prepare(
             "SELECT
                 CAST((julianday('now') - julianday(timestamp)) * 6 AS INTEGER) AS bucket,
                 AVG(utilization) AS avg_util
              FROM usage_history
              WHERE provider = 'claude'
-               AND metric = 'five_hour'
+               AND metric = ?1
                AND resets_at IS NOT NULL
                AND timestamp > datetime('now', '-7 days')
              GROUP BY bucket",
@@ -120,7 +122,9 @@ impl Database {
 
         let mut slots = vec![0.0f64; 42];
 
-        let rows = stmt.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?)))?;
+        let rows = stmt.query_map([metric], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?))
+        })?;
 
         for row in rows.flatten() {
             let (bucket, util) = row;
@@ -131,18 +135,18 @@ impl Database {
         Ok(slots)
     }
 
-    /// Query last 30 days of `five_hour` metric, bucketed into 1-day intervals.
+    /// Query last 30 days of `metric`, bucketed into 1-day intervals.
     /// Always returns exactly 30 elements (oldest first: index 0 = 30d ago, index 29 = now).
     /// Missing slots are filled with 0.0.
     #[cfg_attr(not(windows), allow(dead_code))] // consumed by the Windows app
-    pub fn query_30d_chart(&self) -> SqlResult<Vec<f64>> {
+    pub fn query_30d_chart(&self, metric: &str) -> SqlResult<Vec<f64>> {
         let mut stmt = self.conn.prepare(
             "SELECT
                 CAST(julianday('now') - julianday(timestamp) AS INTEGER) AS bucket,
                 AVG(utilization) AS avg_util
              FROM usage_history
              WHERE provider = 'claude'
-               AND metric = 'five_hour'
+               AND metric = ?1
                AND resets_at IS NOT NULL
                AND timestamp > datetime('now', '-30 days')
              GROUP BY bucket",
@@ -150,7 +154,9 @@ impl Database {
 
         let mut slots = vec![0.0f64; 30];
 
-        let rows = stmt.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?)))?;
+        let rows = stmt.query_map([metric], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, f64>(1)?))
+        })?;
 
         for row in rows.flatten() {
             let (bucket, util) = row;
@@ -159,6 +165,23 @@ impl Database {
         }
 
         Ok(slots)
+    }
+
+    /// Weekly usage samples of the last `hours` as (epoch seconds, percent), oldest
+    /// first, for the local estimate.
+    pub fn query_weekly_samples(&self, hours: u32) -> SqlResult<Vec<(i64, f64)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT CAST(strftime('%s', timestamp) AS INTEGER), utilization
+             FROM usage_history
+             WHERE provider = 'claude'
+               AND metric = 'seven_day'
+               AND timestamp > datetime('now', ?1)
+             ORDER BY id",
+        )?;
+        let rows = stmt.query_map([format!("-{hours} hours")], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?;
+        Ok(rows.flatten().collect())
     }
 
     /// Query the most recent utilization value for each metric.
@@ -357,22 +380,52 @@ mod tests {
     #[test]
     fn test_query_24h_chart_returns_48_slots() {
         let db = Database::open_in_memory().unwrap();
-        let slots = db.query_24h_chart().unwrap();
+        let slots = db.query_24h_chart("five_hour").unwrap();
         assert_eq!(slots.len(), 48);
     }
 
     #[test]
     fn test_query_7d_chart_returns_42_slots() {
         let db = Database::open_in_memory().unwrap();
-        let slots = db.query_7d_chart().unwrap();
+        let slots = db.query_7d_chart("five_hour").unwrap();
         assert_eq!(slots.len(), 42);
     }
 
     #[test]
     fn test_query_30d_chart_returns_30_slots() {
         let db = Database::open_in_memory().unwrap();
-        let slots = db.query_30d_chart().unwrap();
+        let slots = db.query_30d_chart("five_hour").unwrap();
         assert_eq!(slots.len(), 30);
+    }
+
+    #[test]
+    fn test_weekly_samples_are_recent_and_ordered() {
+        let db = Database::open_in_memory().unwrap();
+        db.insert_at("2020-01-01 00:00:00", "claude", "seven_day", 99.0, None)
+            .unwrap();
+        db.insert("claude", "seven_day", 1.0, None).unwrap();
+        db.insert("claude", "seven_day", 2.0, None).unwrap();
+        db.insert("claude", "five_hour", 50.0, None).unwrap();
+        let values: Vec<f64> = db
+            .query_weekly_samples(5)
+            .unwrap()
+            .iter()
+            .map(|s| s.1)
+            .collect();
+        assert_eq!(values, vec![1.0, 2.0]);
+    }
+
+    #[test]
+    fn test_chart_follows_requested_metric() {
+        let db = Database::open_in_memory().unwrap();
+        db.insert("claude", "seven_day", 33.0, Some("2026-11-06T19:00:00Z"))
+            .unwrap();
+        assert_eq!(db.query_24h_chart("seven_day").unwrap()[47], 33.0);
+        assert!(db
+            .query_24h_chart("five_hour")
+            .unwrap()
+            .iter()
+            .all(|v| *v == 0.0));
     }
 
     #[test]
@@ -386,7 +439,7 @@ mod tests {
             Some("2025-11-04T05:00:00+00:00"),
         )
         .unwrap();
-        let slots = db.query_24h_chart().unwrap();
+        let slots = db.query_24h_chart("five_hour").unwrap();
         // The newest slot (index 47) should have data
         assert!(slots[47] > 0.0);
     }

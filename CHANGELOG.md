@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+
+## [6.0.0] - 2026-10-31
+
+### Added
+- **Local usage estimate** — accounts without a session limit get an estimated bar. Settings choose the window (5, 12, 24 or 72 hours, or off) and the budget. The automatic budget is an even share of the week, where the week is 100%: 24 hours is 100/7 = 14.3%. The bar is clearly labelled, never alerts and disappears when the API reports a real session.
+- **Fixes from config.json** — `metric_overrides` renames, hides or promotes any API limit, and `plan_aliases` names new plans, so a future rename doesn't have to wait for a release. New `limits` kinds stay visible automatically.
+- **Claude Code cloud credit** — the promotional `iguana_necktie` limit now has a proper name, and an expired promotion is not restored from history.
+- **Clearer collapsible rows** — every row has a chevron and a hover highlight, and collapsed rows keep a thin level strip.
+- **Compressed Codex logs** — the newest `.jsonl.zst` is used when no plain log has live data. Codex's plan badge also shows when a limit has been reached.
+- **Ultra and renamed Max plans** — Max 20x now shows as Ultra and Max 5x as Max, including accounts whose credentials still carry the old tier names and old `plan_override` values.
+- **Plans without a 5-hour limit** — when the API reports no session window, the tray icon, widget, charts and macOS menu bar follow the weekly limit. Unverified Ultra accounts keep their temporary session limit, because the choice follows the returned data and not the plan.
+- **Dollar amounts and notes under limits** — dollar-based limits show used and total, Fable shows its share of the weekly limit, and locked limits show the reason.
+- **API credits note** — hovering the plan badge shows the monthly API credits of Max and Ultra. The balance isn't available from the usage API, and these credits don't cover Claude Code.
+- **Usage credits from the new `spend` block**, and dollar amounts for `extra_usage`.
+- **Codex credits** — a purchased balance appears in the Codex plan badge.
+
+### Changed
+- **Undocumented limits no longer raise alarms** — unknown API keys are listed as "Additional limit" but don't affect the icon color, the headline percentage or notifications. The same goes for usage credits and limits the API marks inactive.
+
+### Fixed
+- **Codex usage link** now opens OpenAI's new usage page, including in existing configs that still hold the old address.
+- **Stale Codex data** — logs are now chosen by modification time, not by file name, so a resumed older session is read, and an expired recent log no longer hides live data.
+- **Codex memory spikes** — only the last 1 MB of each log is read instead of the whole file, which can reach tens of MB.
+- **Codex model-specific buckets** no longer overwrite the plan-wide windows.
+- **A surprising type in an optional API field** no longer hides the whole limit.
+
 ## [5.10.0] - 2026-09-27
 
 ### Added

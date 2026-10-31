@@ -143,5 +143,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     strings.insert("time_ago", "prieš {}");
     strings.insert("latest_version", "Naudojate naujausią versiją.");
     strings.insert("update_check_failed", "Nepavyko patikrinti atnaujinimų.");
+    strings.insert("Additional limit", "Papildomas limitas");
+    strings.insert("Limit locked", "Limitas užrakintas");
+    strings.insert("share_of_weekly", "Iki {0} % savaitės limito");
+    strings.insert(
+        "api_credits_note",
+        "${0}/mėn. API kreditų, ne „Claude Code“",
+    );
+    strings.insert("credits", "kreditų");
+    strings.insert("Ultra", "Ultra");
+    strings.insert("Cloud credit", "Debesų kreditas");
+    strings.insert("Limit reached", "Limitas pasiektas");
+    strings.insert("estimate_label", "{0} val. (įvertis)");
+    strings.insert(
+        "estimate_note",
+        "{0} % savaitės, biudžetas {1} %, ne „Anthropic“ limitas",
+    );
+    strings.insert("Estimate window", "Įverčio langas");
+    strings.insert("Estimate budget", "Įverčio biudžetas");
+    strings.insert(
+        "estimate_hint",
+        "Savaitė = 100 %, lygi dalis = 100 % / 168 val. x langas",
+    );
+    strings.insert("Off", "Off");
     strings
 }

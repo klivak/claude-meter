@@ -159,5 +159,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "před {}");
     m.insert("latest_version", "Máte nejnovější verzi.");
     m.insert("update_check_failed", "Kontrola aktualizací se nezdařila.");
+    m.insert("Additional limit", "Další limit");
+    m.insert("Limit locked", "Limit uzamčen");
+    m.insert("share_of_weekly", "Až {0} % týdenního limitu");
+    m.insert(
+        "api_credits_note",
+        "${0}/měs. kredity API, ne pro Claude Code",
+    );
+    m.insert("credits", "kreditů");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Cloudový kredit");
+    m.insert("Limit reached", "Limit dosažen");
+    m.insert("estimate_label", "{0} h (odhad)");
+    m.insert(
+        "estimate_note",
+        "{0} % týdne, rozpočet {1} %, není limit Anthropic",
+    );
+    m.insert("Estimate window", "Okno odhadu");
+    m.insert("Estimate budget", "Rozpočet odhadu");
+    m.insert(
+        "estimate_hint",
+        "Týden = 100 %, rovný podíl = 100 % / 168 h x okno",
+    );
+    m.insert("Off", "Off");
     m
 }

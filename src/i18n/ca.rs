@@ -140,5 +140,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "update_check_failed",
         "No s'han pogut comprovar les actualitzacions.",
     );
+    strings.insert("Additional limit", "Límit addicional");
+    strings.insert("Limit locked", "Límit bloquejat");
+    strings.insert("share_of_weekly", "Fins al {0}% del límit setmanal");
+    strings.insert(
+        "api_credits_note",
+        "${0}/mes en crèdits d'API, no per a Claude Code",
+    );
+    strings.insert("credits", "crèdits");
+    strings.insert("Ultra", "Ultra");
+    strings.insert("Cloud credit", "Crèdit al núvol");
+    strings.insert("Limit reached", "Límit assolit");
+    strings.insert("estimate_label", "{0} h (estimació)");
+    strings.insert(
+        "estimate_note",
+        "{0}% de la setmana, pressupost {1}%, no és límit d'Anthropic",
+    );
+    strings.insert("Estimate window", "Finestra d'estimació");
+    strings.insert("Estimate budget", "Pressupost d'estimació");
+    strings.insert(
+        "estimate_hint",
+        "Setmana = 100%, part igual = 100% / 168 h x finestra",
+    );
+    strings.insert("Off", "Off");
     strings
 }

@@ -463,6 +463,12 @@ impl I18n {
     /// a template and swap in the model name, which localizes the "(7-day)"
     /// part in every locale without needing a new string per model.
     pub fn metric_name(&self, key: &str) -> String {
+        if key == crate::providers::claude::SESSION_ESTIMATE_KEY {
+            return self.t("estimate_label").replace(
+                "{0}",
+                &crate::providers::claude::session_estimate_hours().to_string(),
+            );
+        }
         let name = crate::providers::claude::format_metric_name(key);
         if self.strings.contains_key(name.as_str()) || self.fallback.contains_key(name.as_str()) {
             return self.t(&name).to_string();

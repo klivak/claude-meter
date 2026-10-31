@@ -231,5 +231,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "{} पहले");
     m.insert("latest_version", "आप नवीनतम संस्करण चला रहे हैं।");
     m.insert("update_check_failed", "अपडेट जाँच नहीं हो सकी।");
+    m.insert("Additional limit", "अतिरिक्त सीमा");
+    m.insert("Limit locked", "सीमा लॉक है");
+    m.insert("share_of_weekly", "साप्ताहिक सीमा का अधिकतम {0}%");
+    m.insert(
+        "api_credits_note",
+        "${0}/माह API क्रेडिट, Claude Code के लिए नहीं",
+    );
+    m.insert("credits", "क्रेडिट");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "क्लाउड क्रेडिट");
+    m.insert("Limit reached", "सीमा पूरी");
+    m.insert("estimate_label", "{0} घंटे (अनुमान)");
+    m.insert(
+        "estimate_note",
+        "सप्ताह का {0}%, बजट {1}%, Anthropic की सीमा नहीं",
+    );
+    m.insert("Estimate window", "अनुमान अवधि");
+    m.insert("Estimate budget", "अनुमान बजट");
+    m.insert(
+        "estimate_hint",
+        "सप्ताह = 100%, बराबर हिस्सा = 100% / 168 घंटे x अवधि",
+    );
+    m.insert("Off", "Off");
     m
 }

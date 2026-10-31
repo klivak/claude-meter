@@ -207,5 +207,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "{} trước");
     m.insert("latest_version", "Bạn đang dùng phiên bản mới nhất.");
     m.insert("update_check_failed", "Không thể kiểm tra cập nhật.");
+    m.insert("Additional limit", "Giới hạn bổ sung");
+    m.insert("Limit locked", "Giới hạn đã bị khóa");
+    m.insert("share_of_weekly", "Tối đa {0}% giới hạn hàng tuần");
+    m.insert(
+        "api_credits_note",
+        "${0}/tháng tín dụng API, không dùng cho Claude Code",
+    );
+    m.insert("credits", "tín dụng");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Tín dụng đám mây");
+    m.insert("Limit reached", "Đã đạt giới hạn");
+    m.insert("estimate_label", "{0} giờ (ước tính)");
+    m.insert(
+        "estimate_note",
+        "{0}% tuần, ngân sách {1}%, không phải giới hạn Anthropic",
+    );
+    m.insert("Estimate window", "Khoảng ước tính");
+    m.insert("Estimate budget", "Ngân sách ước tính");
+    m.insert(
+        "estimate_hint",
+        "Tuần = 100%, phần đều = 100% / 168 giờ x khoảng",
+    );
+    m.insert("Off", "Off");
     m
 }

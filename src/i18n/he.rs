@@ -255,5 +255,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "לפני {}");
     m.insert("latest_version", "אתה משתמש בגרסה העדכנית ביותר.");
     m.insert("update_check_failed", "לא ניתן היה לבדוק עדכונים.");
+    m.insert("Additional limit", "מגבלה נוספת");
+    m.insert("Limit locked", "המגבלה נעולה");
+    m.insert("share_of_weekly", "עד {0}% מהמגבלה השבועית");
+    m.insert(
+        "api_credits_note",
+        "${0} לחודש בקרדיטים ל-API, לא עבור Claude Code",
+    );
+    m.insert("credits", "קרדיטים");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "קרדיט ענן");
+    m.insert("Limit reached", "הגעת למגבלה");
+    m.insert("estimate_label", "{0} שע' (הערכה)");
+    m.insert(
+        "estimate_note",
+        "{0}% מהשבוע, תקציב {1}%, לא מגבלה של Anthropic",
+    );
+    m.insert("Estimate window", "חלון הערכה");
+    m.insert("Estimate budget", "תקציב הערכה");
+    m.insert(
+        "estimate_hint",
+        "שבוע = 100%, חלק שווה = 100% / 168 שע' x חלון",
+    );
+    m.insert("Off", "Off");
     m
 }

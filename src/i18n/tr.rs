@@ -168,5 +168,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "{} önce");
     m.insert("latest_version", "En son sürümü kullanıyorsunuz.");
     m.insert("update_check_failed", "Güncellemeler denetlenemedi.");
+    m.insert("Additional limit", "Ek limit");
+    m.insert("Limit locked", "Limit kilitli");
+    m.insert("share_of_weekly", "Haftalık limitin en fazla %{0} kadarı");
+    m.insert(
+        "api_credits_note",
+        "Aylık ${0} API kredisi, Claude Code için değil",
+    );
+    m.insert("credits", "kredi");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Bulut kredisi");
+    m.insert("Limit reached", "Limite ulaşıldı");
+    m.insert("estimate_label", "{0} sa (tahmin)");
+    m.insert(
+        "estimate_note",
+        "Haftanın %{0} kadarı, bütçe %{1}, Anthropic limiti değil",
+    );
+    m.insert("Estimate window", "Tahmin aralığı");
+    m.insert("Estimate budget", "Tahmin bütçesi");
+    m.insert(
+        "estimate_hint",
+        "Hafta = %100, eşit pay = %100 / 168 sa x aralık",
+    );
+    m.insert("Off", "Off");
     m
 }

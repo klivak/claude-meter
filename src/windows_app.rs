@@ -409,10 +409,16 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
                         subscription_type: None,
                         rate_limit_tier: None,
                     };
+                    providers::claude::set_user_overrides(&state.config_mgr.config);
+                    let now = chrono::Utc::now();
                     for (key, util, resets) in &latest {
+                        if providers::claude::is_expired_cache(key, resets.as_deref(), now) {
+                            continue;
+                        }
                         let metric = UsageMetric {
                             utilization: *util,
                             resets_at: resets.clone(),
+                            ..Default::default()
                         };
                         match key.as_str() {
                             "five_hour" => resp.five_hour = Some(metric),
@@ -434,13 +440,17 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
                     state.last_updated = "(cached)".to_string();
                 }
             }
-            if let Ok(slots) = db.query_24h_chart() {
+            let chart_metric = state
+                .usage
+                .as_ref()
+                .map_or("five_hour", |u| u.chart_metric_key());
+            if let Ok(slots) = db.query_24h_chart(chart_metric) {
                 state.chart_data = slots;
             }
-            if let Ok(slots) = db.query_7d_chart() {
+            if let Ok(slots) = db.query_7d_chart(chart_metric) {
                 state.chart_data_7d = slots;
             }
-            if let Ok(slots) = db.query_30d_chart() {
+            if let Ok(slots) = db.query_30d_chart(chart_metric) {
                 state.chart_data_30d = slots;
             }
         }
@@ -1202,6 +1212,8 @@ unsafe extern "system" fn popup_wnd_proc(
                     HoveredElement::StatusLink
                 } else if crate::popup::point_in_rect(pt, state.plan_link_rect) {
                     HoveredElement::PlanLink
+                } else if let Some(row) = crate::ui::render::metric_toggle_index_at(pt) {
+                    HoveredElement::MetricRow(row)
                 } else if crate::popup::point_in_rect(pt, state.chart_toggle_rect) {
                     HoveredElement::ChartToggle
                 } else if crate::popup::point_in_rect(pt, state.chart_rect)
@@ -1455,6 +1467,21 @@ unsafe extern "system" fn popup_wnd_proc(
                     state.config_mgr.config.notifications.sound =
                         !state.config_mgr.config.notifications.sound;
                     state.config_mgr.save();
+                    let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
+                } else if state.popup_in_settings
+                    && crate::popup::point_in_rect(pt, state.setting_rects[19])
+                {
+                    state.config_mgr.config.cycle_session_estimate_window();
+                    state.config_mgr.save();
+                    providers::claude::set_user_overrides(&state.config_mgr.config);
+                    trigger_poll_force(state.main_hwnd);
+                    let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
+                } else if state.popup_in_settings
+                    && crate::popup::point_in_rect(pt, state.setting_rects[20])
+                {
+                    state.config_mgr.config.cycle_session_estimate_budget();
+                    state.config_mgr.save();
+                    trigger_poll_force(state.main_hwnd);
                     let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
                 } else if state.popup_in_settings
                     && crate::popup::point_in_rect(pt, state.setting_rects[18])
@@ -2479,7 +2506,7 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
         state.last_poll_time = Some(std::time::Instant::now());
 
         let PollResult {
-            usage,
+            mut usage,
             error,
             token_expires_in_ms,
         } = result;
@@ -2510,6 +2537,23 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
             }
         }
 
+        providers::claude::set_user_overrides(&state.config_mgr.config);
+        if let Some(u) = usage.as_mut() {
+            if state.config_mgr.config.session_estimate {
+                let hours = state.config_mgr.config.session_estimate_hours;
+                if let Ok(samples) =
+                    Database::open(&state.exe_dir).and_then(|db| db.query_weekly_samples(hours))
+                {
+                    u.apply_session_estimate(
+                        &samples,
+                        chrono::Utc::now().timestamp(),
+                        hours,
+                        state.config_mgr.config.session_estimate_budget,
+                    );
+                }
+            }
+        }
+
         if let Some(u) = &usage {
             state.consecutive_failures = 0;
             // Stop wake retry schedule on successful poll
@@ -2520,9 +2564,13 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
             let metrics: Vec<(String, f64, Option<String>)> = u
                 .all_metrics()
                 .iter()
-                .filter(|(key, metric)| !(key == "five_hour" && metric.resets_at.is_none()))
+                .filter(|(key, metric)| {
+                    key != providers::claude::SESSION_ESTIMATE_KEY
+                        && !(key == "five_hour" && metric.resets_at.is_none())
+                })
                 .map(|(key, metric)| (key.clone(), metric.utilization, metric.resets_at.clone()))
                 .collect();
+            let chart_metric = u.chart_metric_key();
             let exe_dir = state.exe_dir.clone();
             let hwnd_val = hwnd.0 as isize;
             std::thread::spawn(move || {
@@ -2530,9 +2578,9 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
                     for (key, utilization, resets_at) in &metrics {
                         let _ = db.insert("claude", key, *utilization, resets_at.as_deref());
                     }
-                    let chart_data = db.query_24h_chart().unwrap_or_default();
-                    let chart_data_7d = db.query_7d_chart().unwrap_or_default();
-                    let chart_data_30d = db.query_30d_chart().unwrap_or_default();
+                    let chart_data = db.query_24h_chart(chart_metric).unwrap_or_default();
+                    let chart_data_7d = db.query_7d_chart(chart_metric).unwrap_or_default();
+                    let chart_data_30d = db.query_30d_chart(chart_metric).unwrap_or_default();
                     let rate_of_change = db.query_rate_of_change(60).unwrap_or_default();
 
                     let result = Box::new(DbResult {
@@ -2572,6 +2620,9 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
                 let mut fired_alerts: Vec<(String, f64, u8, String)> = Vec::new();
 
                 for (key, metric) in u.all_metrics() {
+                    if !providers::claude::is_core_limit(&key) || metric.inactive {
+                        continue;
+                    }
                     let fired =
                         state
                             .notification_tracker

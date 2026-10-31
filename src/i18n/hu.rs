@@ -204,5 +204,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "update_check_failed",
         "A frissítés-ellenőrzés nem sikerült.",
     );
+    m.insert("Additional limit", "További korlát");
+    m.insert("Limit locked", "Korlát zárolva");
+    m.insert("share_of_weekly", "A heti korlát legfeljebb {0}%-a");
+    m.insert(
+        "api_credits_note",
+        "${0}/hó API-kredit, a Claude Code-hoz nem",
+    );
+    m.insert("credits", "kredit");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Felhőkredit");
+    m.insert("Limit reached", "Korlát elérve");
+    m.insert("estimate_label", "{0} óra (becslés)");
+    m.insert(
+        "estimate_note",
+        "a hét {0}%-a, keret {1}%, nem Anthropic-korlát",
+    );
+    m.insert("Estimate window", "Becslési időszak");
+    m.insert("Estimate budget", "Becslési keret");
+    m.insert(
+        "estimate_hint",
+        "Hét = 100%, egyenlő rész = 100% / 168 óra x időszak",
+    );
+    m.insert("Off", "Off");
     m
 }

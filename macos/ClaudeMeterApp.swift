@@ -345,15 +345,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let left = timeLeftShort(session.resetsAt) {
             text += " · \(left)"
         }
-        if let weekly = weeklyMetric() {
+        if let weekly = weeklyMetric(), weekly.key != session.key {
             text += " | \(weekly.percent)%"
         }
         return text
     }
 
-    /// The 5-hour session metric drives the menu bar; fall back to the first.
+    /// The 5-hour session metric drives the menu bar; plans without one show weekly.
     private func sessionMetric() -> Metric? {
         currentStatus.metrics.first(where: { $0.key == "five_hour" })
+            ?? weeklyMetric()
             ?? currentStatus.metrics.first
     }
 

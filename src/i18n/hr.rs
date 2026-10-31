@@ -146,5 +146,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     strings.insert("time_ago", "prije {}");
     strings.insert("latest_version", "Koristite najnoviju verziju.");
     strings.insert("update_check_failed", "Provjera ažuriranja nije uspjela.");
+    strings.insert("Additional limit", "Dodatno ograničenje");
+    strings.insert("Limit locked", "Ograničenje zaključano");
+    strings.insert("share_of_weekly", "Do {0} % tjednog ograničenja");
+    strings.insert(
+        "api_credits_note",
+        "${0}/mj. API kredita, ne za Claude Code",
+    );
+    strings.insert("credits", "kredita");
+    strings.insert("Ultra", "Ultra");
+    strings.insert("Cloud credit", "Kredit u oblaku");
+    strings.insert("Limit reached", "Ograničenje dosegnuto");
+    strings.insert("estimate_label", "{0} h (procjena)");
+    strings.insert(
+        "estimate_note",
+        "{0} % tjedna, budžet {1} %, nije ograničenje Anthropica",
+    );
+    strings.insert("Estimate window", "Prozor procjene");
+    strings.insert("Estimate budget", "Budžet procjene");
+    strings.insert(
+        "estimate_hint",
+        "Tjedan = 100 %, jednak udio = 100 % / 168 h x prozor",
+    );
+    strings.insert("Off", "Off");
     strings
 }

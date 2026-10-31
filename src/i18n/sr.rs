@@ -222,5 +222,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "пре {}");
     m.insert("latest_version", "Користите најновију верзију.");
     m.insert("update_check_failed", "Провера ажурирања није успела.");
+    m.insert("Additional limit", "Додатно ограничење");
+    m.insert("Limit locked", "Ограничење је закључано");
+    m.insert("share_of_weekly", "До {0}% недељног ограничења");
+    m.insert(
+        "api_credits_note",
+        "${0}/мес. API кредита, не за Claude Code",
+    );
+    m.insert("credits", "кредита");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Клауд кредит");
+    m.insert("Limit reached", "Ограничење достигнуто");
+    m.insert("estimate_label", "{0} с (процена)");
+    m.insert(
+        "estimate_note",
+        "{0}% недеље, буџет {1}%, није ограничење Anthropic-а",
+    );
+    m.insert("Estimate window", "Прозор процене");
+    m.insert("Estimate budget", "Буџет процене");
+    m.insert(
+        "estimate_hint",
+        "Недеља = 100%, једнак удео = 100% / 168 с x прозор",
+    );
+    m.insert("Off", "Off");
     m
 }

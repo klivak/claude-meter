@@ -216,5 +216,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "{} 前");
     m.insert("latest_version", "最新バージョンを使用しています。");
     m.insert("update_check_failed", "更新を確認できませんでした。");
+    m.insert("Additional limit", "追加の制限");
+    m.insert("Limit locked", "制限がロックされています");
+    m.insert("share_of_weekly", "週間制限の最大{0}%");
+    m.insert(
+        "api_credits_note",
+        "月${0}のAPIクレジット(Claude Codeは対象外)",
+    );
+    m.insert("credits", "クレジット");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "クラウドクレジット");
+    m.insert("Limit reached", "上限に到達");
+    m.insert("estimate_label", "{0}時間(推定)");
+    m.insert(
+        "estimate_note",
+        "週の{0}%、予算{1}%(Anthropicの制限ではありません)",
+    );
+    m.insert("Estimate window", "推定期間");
+    m.insert("Estimate budget", "推定予算");
+    m.insert(
+        "estimate_hint",
+        "週 = 100%、均等配分 = 100% / 168時間 x 期間",
+    );
+    m.insert("Off", "Off");
     m
 }

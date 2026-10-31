@@ -147,5 +147,25 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "{} ที่แล้ว");
     m.insert("latest_version", "คุณใช้เวอร์ชันล่าสุดอยู่แล้ว");
     m.insert("update_check_failed", "ตรวจสอบการอัปเดตไม่สำเร็จ");
+    m.insert("Additional limit", "ขีดจำกัดเพิ่มเติม");
+    m.insert("Limit locked", "ขีดจำกัดถูกล็อก");
+    m.insert("share_of_weekly", "สูงสุด {0}% ของขีดจำกัดรายสัปดาห์");
+    m.insert("api_credits_note", "เครดิต API ${0}/เดือน ไม่รวม Claude Code");
+    m.insert("credits", "เครดิต");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "เครดิตคลาวด์");
+    m.insert("Limit reached", "ถึงขีดจำกัดแล้ว");
+    m.insert("estimate_label", "{0} ชม. (ประมาณการ)");
+    m.insert(
+        "estimate_note",
+        "{0}% ของสัปดาห์ งบ {1}% ไม่ใช่ขีดจำกัดของ Anthropic",
+    );
+    m.insert("Estimate window", "ช่วงประมาณการ");
+    m.insert("Estimate budget", "งบประมาณการ");
+    m.insert(
+        "estimate_hint",
+        "สัปดาห์ = 100% ส่วนเท่ากัน = 100% / 168 ชม. x ช่วง",
+    );
+    m.insert("Off", "Off");
     m
 }

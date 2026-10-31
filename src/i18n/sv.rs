@@ -168,5 +168,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "update_check_failed",
         "Kunde inte söka efter uppdateringar.",
     );
+    m.insert("Additional limit", "Extra gräns");
+    m.insert("Limit locked", "Gränsen är låst");
+    m.insert("share_of_weekly", "Upp till {0} % av veckogränsen");
+    m.insert(
+        "api_credits_note",
+        "${0}/mån API-krediter, inte för Claude Code",
+    );
+    m.insert("credits", "krediter");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Molnkredit");
+    m.insert("Limit reached", "Gränsen nådd");
+    m.insert("estimate_label", "{0} h (uppskattning)");
+    m.insert(
+        "estimate_note",
+        "{0} % av veckan, budget {1} %, inte en Anthropic-gräns",
+    );
+    m.insert("Estimate window", "Uppskattningsfönster");
+    m.insert("Estimate budget", "Uppskattningsbudget");
+    m.insert(
+        "estimate_hint",
+        "Vecka = 100 %, lika andel = 100 % / 168 h x fönster",
+    );
+    m.insert("Off", "Off");
     m
 }

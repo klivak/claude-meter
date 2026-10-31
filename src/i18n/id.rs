@@ -159,5 +159,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "{} lalu");
     m.insert("latest_version", "Anda menggunakan versi terbaru.");
     m.insert("update_check_failed", "Gagal memeriksa pembaruan.");
+    m.insert("Additional limit", "Batas tambahan");
+    m.insert("Limit locked", "Batas dikunci");
+    m.insert("share_of_weekly", "Hingga {0}% dari batas mingguan");
+    m.insert(
+        "api_credits_note",
+        "Kredit API ${0}/bln, bukan untuk Claude Code",
+    );
+    m.insert("credits", "kredit");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Kredit cloud");
+    m.insert("Limit reached", "Batas tercapai");
+    m.insert("estimate_label", "{0} jam (perkiraan)");
+    m.insert(
+        "estimate_note",
+        "{0}% mingguan, anggaran {1}%, bukan batas Anthropic",
+    );
+    m.insert("Estimate window", "Jendela perkiraan");
+    m.insert("Estimate budget", "Anggaran perkiraan");
+    m.insert(
+        "estimate_hint",
+        "Minggu = 100%, bagian rata = 100% / 168 jam x jendela",
+    );
+    m.insert("Off", "Off");
     m
 }

@@ -177,5 +177,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "{} sitten");
     m.insert("latest_version", "Käytössäsi on uusin versio.");
     m.insert("update_check_failed", "Päivitysten tarkistus epäonnistui.");
+    m.insert("Additional limit", "Lisäraja");
+    m.insert("Limit locked", "Raja lukittu");
+    m.insert("share_of_weekly", "Enintään {0} % viikkorajasta");
+    m.insert(
+        "api_credits_note",
+        "${0}/kk API-krediittejä, ei Claude Codelle",
+    );
+    m.insert("credits", "krediittiä");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Pilvikrediitti");
+    m.insert("Limit reached", "Raja täynnä");
+    m.insert("estimate_label", "{0} t (arvio)");
+    m.insert(
+        "estimate_note",
+        "{0} % viikosta, budjetti {1} %, ei Anthropicin raja",
+    );
+    m.insert("Estimate window", "Arvion aikaväli");
+    m.insert("Estimate budget", "Arvion budjetti");
+    m.insert(
+        "estimate_hint",
+        "Viikko = 100 %, tasaosuus = 100 % / 168 t x aikaväli",
+    );
+    m.insert("Off", "Off");
     m
 }

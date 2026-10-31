@@ -217,7 +217,7 @@ unsafe extern "system" fn widget_wnd_proc(
             let mut rect = RECT::default();
             let _ = GetClientRect(hwnd, &mut rect);
 
-            // Show 5-hour session utilization (not max across all metrics)
+            // Show the session, or weekly without one (not max across all metrics)
             let (text, bg_color) = if let Some(state) = crate::APP_STATE.as_ref() {
                 let colors = ThemeColors::for_theme(resolve_theme(ThemeMode::from_str(
                     &state.config_mgr.config.theme,
@@ -226,7 +226,7 @@ unsafe extern "system" fn widget_wnd_proc(
                 let five_hour_util = state
                     .usage
                     .as_ref()
-                    .and_then(|u| u.five_hour.as_ref())
+                    .and_then(|u| u.display_metric())
                     .map(|m| m.utilization);
                 match five_hour_util {
                     Some(u) => (format!("{}%", u.round() as u32), colors.progress_color(u)),

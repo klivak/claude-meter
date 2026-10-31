@@ -162,5 +162,28 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("time_ago", "{} ang nakalipas");
     m.insert("latest_version", "Ginagamit mo ang pinakabagong bersyon.");
     m.insert("update_check_failed", "Hindi masuri ang mga update.");
+    m.insert("Additional limit", "Karagdagang limitasyon");
+    m.insert("Limit locked", "Naka-lock ang limitasyon");
+    m.insert("share_of_weekly", "Hanggang {0}% ng lingguhang limitasyon");
+    m.insert(
+        "api_credits_note",
+        "${0}/buwan na API credits, hindi para sa Claude Code",
+    );
+    m.insert("credits", "credits");
+    m.insert("Ultra", "Ultra");
+    m.insert("Cloud credit", "Cloud credit");
+    m.insert("Limit reached", "Naabot ang limitasyon");
+    m.insert("estimate_label", "{0} oras (tantiya)");
+    m.insert(
+        "estimate_note",
+        "{0}% ng linggo, budget {1}%, hindi limitasyon ng Anthropic",
+    );
+    m.insert("Estimate window", "Window ng tantiya");
+    m.insert("Estimate budget", "Budget ng tantiya");
+    m.insert(
+        "estimate_hint",
+        "Linggo = 100%, pantay na hati = 100% / 168 oras x window",
+    );
+    m.insert("Off", "Off");
     m
 }
