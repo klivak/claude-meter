@@ -3,8 +3,27 @@ name: Build
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "site/**"
+      - "docs/**"
+      - "marketing/**"
+      - "screenshots/**"
+      - "**/*.md"
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "site/**"
+      - "docs/**"
+      - "marketing/**"
+      - "screenshots/**"
+      - "**/*.md"
+  workflow_dispatch:
+
+
+# A newer push supersedes an older run of the same branch, so skip the stale one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-windows:
@@ -22,6 +41,7 @@ jobs:
         with:
           name: claudemeter-windows-x64
           path: target/release/claudemeter.exe
+          retention-days: 7
 
   build-macos:
     runs-on: macos-latest
@@ -40,3 +60,4 @@ jobs:
           path: |
             target/aarch64-apple-darwin/release/claudemeter-macos-arm64
             target/aarch64-apple-darwin/release/ClaudeMeter-macos-arm64.app.zip
+          retention-days: 7
