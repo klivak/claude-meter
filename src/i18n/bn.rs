@@ -260,5 +260,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "সপ্তাহ = 100%, সমান ভাগ = 100% / 168 ঘণ্টা x সময়সীমা",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "অগ্রগতি বার অ্যানিমেট করুন");
     m
 }

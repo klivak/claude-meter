@@ -1484,6 +1484,13 @@ unsafe extern "system" fn popup_wnd_proc(
                     trigger_poll_force(state.main_hwnd);
                     let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
                 } else if state.popup_in_settings
+                    && crate::popup::point_in_rect(pt, state.setting_rects[21])
+                {
+                    // Animate progress bars: toggle
+                    state.config_mgr.config.animate_bars = !state.config_mgr.config.animate_bars;
+                    state.config_mgr.save();
+                    let _ = windows::Win32::Graphics::Gdi::InvalidateRect(hwnd, None, true);
+                } else if state.popup_in_settings
                     && crate::popup::point_in_rect(pt, state.setting_rects[18])
                 {
                     if let Some(tray) = &state.tray {
@@ -1863,16 +1870,11 @@ unsafe fn show_popup(_main_hwnd: HWND) {
         }
 
         // Start animation if we have targets (cascading: each metric starts with a delay)
-        if !state.anim_targets.is_empty() {
-            // Stagger: each metric starts at a negative value proportional to index.
-            // The animation loop clamps to 0, so later metrics visually wait before filling.
-            state.anim_current = state
-                .anim_targets
-                .iter()
-                .enumerate()
-                .map(|(i, _)| -(i as f64 * 8.0))
-                .collect();
-            state.anim_active = true;
+        let (current, active) =
+            popup_open_anim_start(&state.anim_targets, state.config_mgr.config.animate_bars);
+        state.anim_current = current;
+        state.anim_active = active;
+        if active {
             windows::Win32::UI::WindowsAndMessaging::SetTimer(
                 state.popup_hwnd,
                 TIMER_ANIM,
@@ -2750,13 +2752,15 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
         // Start progress bar animation
         if let Some(u) = &state.usage {
             let targets: Vec<f64> = u.all_metrics().iter().map(|(_, m)| m.utilization).collect();
-            // Initialize current values at 0 if sizes differ (new data shape)
-            if state.anim_current.len() != targets.len() {
-                state.anim_current = vec![0.0; targets.len()];
-            }
+            let (current, active) = data_update_anim_start(
+                std::mem::take(&mut state.anim_current),
+                &targets,
+                state.config_mgr.config.animate_bars,
+            );
+            state.anim_current = current;
             state.anim_targets = targets;
-            state.anim_active = true;
-            if state.popup_visible {
+            state.anim_active = active;
+            if state.anim_active && state.popup_visible {
                 windows::Win32::UI::WindowsAndMessaging::SetTimer(
                     state.popup_hwnd,
                     TIMER_ANIM,
@@ -3088,5 +3092,75 @@ fn network_change_monitor(hwnd_raw: usize) {
         loop {
             std::thread::sleep(std::time::Duration::from_secs(3600));
         }
+    }
+}
+
+/// Progress-bar start values when the popup opens. With animation on, every
+/// metric starts below zero proportionally to its index (the loop clamps to 0),
+/// giving a cascading fill. With animation off, bars show final values at once.
+fn popup_open_anim_start(targets: &[f64], animate: bool) -> (Vec<f64>, bool) {
+    if !animate || targets.is_empty() {
+        return (targets.to_vec(), false);
+    }
+    let current = (0..targets.len()).map(|i| -(i as f64 * 8.0)).collect();
+    (current, true)
+}
+
+/// Progress-bar start values when fresh data arrives. With animation on, bars
+/// glide from their current values (from 0 if the metric set changed shape).
+fn data_update_anim_start(current: Vec<f64>, targets: &[f64], animate: bool) -> (Vec<f64>, bool) {
+    if !animate {
+        return (targets.to_vec(), false);
+    }
+    if current.len() != targets.len() {
+        return (vec![0.0; targets.len()], true);
+    }
+    (current, true)
+}
+
+#[cfg(test)]
+mod anim_tests {
+    use super::*;
+
+    #[test]
+    fn popup_open_without_animation_shows_final_values() {
+        let (current, active) = popup_open_anim_start(&[42.0, 7.5], false);
+        assert_eq!(current, vec![42.0, 7.5]);
+        assert!(!active);
+    }
+
+    #[test]
+    fn popup_open_with_animation_cascades_from_below_zero() {
+        let (current, active) = popup_open_anim_start(&[42.0, 7.5, 90.0], true);
+        assert_eq!(current, vec![0.0, -8.0, -16.0]);
+        assert!(active);
+    }
+
+    #[test]
+    fn popup_open_with_no_metrics_stays_idle() {
+        let (current, active) = popup_open_anim_start(&[], true);
+        assert!(current.is_empty());
+        assert!(!active);
+    }
+
+    #[test]
+    fn data_update_without_animation_jumps_to_targets() {
+        let (current, active) = data_update_anim_start(vec![10.0], &[30.0, 40.0], false);
+        assert_eq!(current, vec![30.0, 40.0]);
+        assert!(!active);
+    }
+
+    #[test]
+    fn data_update_with_animation_keeps_current_values() {
+        let (current, active) = data_update_anim_start(vec![10.0, 20.0], &[30.0, 40.0], true);
+        assert_eq!(current, vec![10.0, 20.0]);
+        assert!(active);
+    }
+
+    #[test]
+    fn data_update_with_animation_resets_on_shape_change() {
+        let (current, active) = data_update_anim_start(vec![10.0], &[30.0, 40.0], true);
+        assert_eq!(current, vec![0.0, 0.0]);
+        assert!(active);
     }
 }

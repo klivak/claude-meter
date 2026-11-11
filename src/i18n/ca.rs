@@ -163,5 +163,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Setmana = 100%, part igual = 100% / 168 h x finestra",
     );
     strings.insert("Off", "Off");
+    strings.insert("Animate progress bars", "Anima les barres de progrés");
     strings
 }

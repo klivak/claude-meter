@@ -272,5 +272,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "هفته = 100٪، سهم برابر = 100٪ / 168 ساعت x بازه",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "متحرک‌سازی نوارهای پیشرفت");
     m
 }

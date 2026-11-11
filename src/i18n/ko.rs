@@ -224,5 +224,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "주 = 100%, 균등 몫 = 100% / 168시간 x 기간",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "진행 막대 애니메이션");
     m
 }

@@ -197,5 +197,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("Estimate budget", "估算预算");
     m.insert("estimate_hint", "一周 = 100%,均分 = 100% / 168 小时 x 时段");
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "进度条动画");
     m
 }

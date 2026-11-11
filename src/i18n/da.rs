@@ -182,5 +182,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Uge = 100 %, lige andel = 100 % / 168 t x vindue",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "Animér statuslinjer");
     m
 }

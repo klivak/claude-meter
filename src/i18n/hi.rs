@@ -254,5 +254,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "सप्ताह = 100%, बराबर हिस्सा = 100% / 168 घंटे x अवधि",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "प्रगति बार एनिमेट करें");
     m
 }

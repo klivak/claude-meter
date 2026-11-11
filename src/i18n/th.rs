@@ -167,5 +167,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "สัปดาห์ = 100% ส่วนเท่ากัน = 100% / 168 ชม. x ช่วง",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "เคลื่อนไหวแถบความคืบหน้า");
     m
 }

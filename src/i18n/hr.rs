@@ -169,5 +169,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Tjedan = 100 %, jednak udio = 100 % / 168 h x prozor",
     );
     strings.insert("Off", "Off");
+    strings.insert("Animate progress bars", "Animiraj trake napretka");
     strings
 }

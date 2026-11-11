@@ -197,5 +197,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Semana = 100%, parte igual = 100% / 168 h x janela",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "Animar barras de progresso");
     m
 }

@@ -239,5 +239,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "週 = 100%、均等配分 = 100% / 168時間 x 期間",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "プログレスバーをアニメーション");
     m
 }

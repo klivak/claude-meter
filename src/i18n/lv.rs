@@ -166,5 +166,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Nedēļa = 100%, vienāda daļa = 100% / 168 st. x logs",
     );
     strings.insert("Off", "Off");
+    strings.insert("Animate progress bars", "Animēt progresa joslas");
     strings
 }

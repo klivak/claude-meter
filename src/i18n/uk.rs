@@ -175,5 +175,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Тиждень = 100%, рівна частка = 100% / 168 год x вікно",
     );
     m.insert("Off", "Вимк.");
+    m.insert("Animate progress bars", "Анімувати шкали прогресу");
     m
 }

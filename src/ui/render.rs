@@ -38,7 +38,7 @@ pub const POPUP_WIDTH: i32 = 380;
 /// The panel's drawn height and the window height computed in `windows_app`
 /// must agree — when they drifted apart the footer ended up painted on top of
 /// the tray-colour legend, so both sides derive from this one constant.
-pub const SETTINGS_ROW_COUNT: usize = 21;
+pub const SETTINGS_ROW_COUNT: usize = 22;
 /// Row pitch of the settings list, in unscaled pixels.
 pub const SETTINGS_ROW_H: i32 = 34;
 
@@ -3848,6 +3848,11 @@ pub unsafe fn draw_settings_panel(
                 }
             }),
             None,
+        ),
+        (
+            i18n.t("Animate progress bars").to_string(),
+            None,
+            Some(config.animate_bars),
         ),
     ];
 

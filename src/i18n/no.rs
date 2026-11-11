@@ -179,5 +179,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Uke = 100 %, lik andel = 100 % / 168 t x vindu",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "Animer fremdriftslinjer");
     m
 }

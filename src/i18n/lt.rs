@@ -166,5 +166,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Savaitė = 100 %, lygi dalis = 100 % / 168 val. x langas",
     );
     strings.insert("Off", "Off");
+    strings.insert("Animate progress bars", "Animuoti eigos juostas");
     strings
 }

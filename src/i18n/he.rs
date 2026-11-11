@@ -278,5 +278,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "שבוע = 100%, חלק שווה = 100% / 168 שע' x חלון",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "הנפשת פסי התקדמות");
     m
 }

@@ -182,5 +182,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Неделя = 100%, равная доля = 100% / 168 ч x окно",
     );
     m.insert("Off", "Выкл.");
+    m.insert("Animate progress bars", "Анимировать шкалы прогресса");
     m
 }

@@ -245,5 +245,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Недеља = 100%, једнак удео = 100% / 168 с x прозор",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "Анимирај траке напретка");
     m
 }

@@ -185,5 +185,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Linggo = 100%, pantay na hati = 100% / 168 oras x window",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "I-animate ang mga progress bar");
     m
 }

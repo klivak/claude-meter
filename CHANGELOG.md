@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.0] - 2026-11-11
 
+### Added
+- **Animate progress bars setting** — a new Settings toggle (on by default) turns off the fill-up animation, so the dashboard shows final values instantly when opened. Config field: `animate_bars`. On macOS it can be set with `--set animate_bars=false`.
+
+### Security
+- **SQLite updated** — `rusqlite` 0.31 → 0.42 fixes RUSTSEC-2026-0459 (bundled SQLite CVE). Other dependencies refreshed.
 
 ## [6.0.0] - 2026-10-31
 

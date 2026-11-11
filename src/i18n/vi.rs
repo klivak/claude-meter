@@ -230,5 +230,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Tuần = 100%, phần đều = 100% / 168 giờ x khoảng",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "Hiệu ứng thanh tiến trình");
     m
 }

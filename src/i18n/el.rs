@@ -269,5 +269,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Εβδομάδα = 100%, ίσο μερίδιο = 100% / 168 ώρ. x παράθυρο",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "Κίνηση στις γραμμές προόδου");
     m
 }

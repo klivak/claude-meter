@@ -191,5 +191,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Hafta = %100, eşit pay = %100 / 168 sa x aralık",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "İlerleme çubuklarını canlandır");
     m
 }

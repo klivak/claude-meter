@@ -169,5 +169,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Nädal = 100%, võrdne osa = 100% / 168 t x aken",
     );
     strings.insert("Off", "Off");
+    strings.insert("Animate progress bars", "Animeeri edenemisribasid");
     strings
 }

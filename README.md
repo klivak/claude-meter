@@ -370,6 +370,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
   "dashboard_layout": "standard",
   "show_extra_usage": false,
   "show_model_limits": true,
+  "animate_bars": true,
   "collapsed_metrics": [],
   "show_usage_links": true,
   "custom_colors": {},
@@ -401,6 +402,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 | `dashboard_layout` | `"standard"` | minimal/standard/detailed | Dashboard layout mode |
 | `show_extra_usage` | `false` | — | Show extra_usage metric in dashboard |
 | `show_model_limits` | `true` | — | Show per-model weekly quotas (Opus, Sonnet, Fable, …) |
+| `animate_bars` | `true` | — | Animate dashboard progress bars filling up; turn off to show values instantly |
 | `collapsed_metrics` | `[]` | — | Metric keys collapsed to a single row in the dashboard (toggled by clicking a metric's name) |
 | `show_usage_links` | `true` | — | Show usage/status icon buttons in section headers |
 | `custom_colors` | `{}` | hex strings | Override theme colors (e.g. `{"green": "#00ff00"}`) |

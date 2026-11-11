@@ -200,5 +200,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Viikko = 100 %, tasaosuus = 100 % / 168 t x aikaväli",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "Animoi edistymispalkit");
     m
 }

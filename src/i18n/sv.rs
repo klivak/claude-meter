@@ -191,5 +191,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Vecka = 100 %, lika andel = 100 % / 168 h x fönster",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "Animera förloppsstaplar");
     m
 }

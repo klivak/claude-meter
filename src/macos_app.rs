@@ -212,6 +212,7 @@ fn apply_setting(exe_dir: &Path, assignment: &str) {
         "show_chatgpt_section" => mgr.config.show_chatgpt_section = as_bool(),
         "show_model_limits" => mgr.config.show_model_limits = as_bool(),
         "show_extra_usage" => mgr.config.show_extra_usage = as_bool(),
+        "animate_bars" => mgr.config.animate_bars = as_bool(),
         "show_startup_notification" => mgr.config.show_startup_notification = as_bool(),
         "token_expiry_warning" => mgr.config.token_expiry_warning = as_bool(),
         "notifications.enabled" => mgr.config.notifications.enabled = as_bool(),

@@ -116,6 +116,10 @@ pub struct Config {
     /// On by default; turn off to keep only the session and overall weekly bars.
     #[serde(default = "default_true")]
     pub show_model_limits: bool,
+    /// Animate dashboard progress bars filling up when the popup opens or data
+    /// changes. Turn off to show final values instantly.
+    #[serde(default = "default_true")]
+    pub animate_bars: bool,
     /// Metric keys the user collapsed to a single compact row in the dashboard.
     #[serde(default)]
     pub collapsed_metrics: Vec<String>,
@@ -242,6 +246,7 @@ impl Default for Config {
             dashboard_layout: "standard".to_string(),
             show_extra_usage: false,
             show_model_limits: true,
+            animate_bars: true,
             collapsed_metrics: Vec::new(),
             token_expiry_warning: false,
             show_startup_notification: true,
@@ -402,6 +407,27 @@ mod tests {
         assert_eq!(cfg.theme, "auto");
         assert!(!cfg.compact_mode);
         assert!(!cfg.token_expiry_warning);
+        assert!(cfg.animate_bars);
+    }
+
+    #[test]
+    fn test_animate_bars_defaults_on_for_old_configs() {
+        // A config.json written before the option existed has no `animate_bars` key.
+        let mut json = serde_json::to_value(Config::default()).unwrap();
+        json.as_object_mut().unwrap().remove("animate_bars");
+        let cfg: Config = serde_json::from_value(json).unwrap();
+        assert!(cfg.animate_bars);
+    }
+
+    #[test]
+    fn test_animate_bars_roundtrip_off() {
+        let cfg = Config {
+            animate_bars: false,
+            ..Config::default()
+        };
+        let json = serde_json::to_string(&cfg).unwrap();
+        let back: Config = serde_json::from_str(&json).unwrap();
+        assert!(!back.animate_bars);
     }
 
     #[test]

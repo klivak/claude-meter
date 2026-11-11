@@ -227,5 +227,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Hét = 100%, egyenlő rész = 100% / 168 óra x időszak",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "Folyamatjelzők animálása");
     m
 }

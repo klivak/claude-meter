@@ -179,5 +179,6 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Minggu = 100%, bahagian sama = 100% / 168 jam x tetingkap",
     );
     m.insert("Off", "Off");
+    m.insert("Animate progress bars", "Animasikan bar kemajuan");
     m
 }
