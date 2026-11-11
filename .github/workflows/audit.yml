@@ -1,14 +1,7 @@
 name: Security Audit & Analysis
 
+# Heavy checks run weekly, on PRs and on demand — not on every push to main.
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "site/**"
-      - "docs/**"
-      - "marketing/**"
-      - "screenshots/**"
-      - "**/*.md"
   pull_request:
     branches: [main]
     paths-ignore:
@@ -20,7 +13,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 6 * * 1'  # Every Monday at 6:00 UTC
-
 
 # A newer push supersedes an older run of the same branch, so skip the stale one.
 concurrency:

@@ -3,12 +3,17 @@ name: Build
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "site/**"
-      - "docs/**"
-      - "marketing/**"
-      - "screenshots/**"
-      - "**/*.md"
+    # Only build when something that goes into the binaries changed.
+    paths:
+      - "src/**"
+      - "macos/**"
+      - "assets/**"
+      - "build.rs"
+      - "app.manifest"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "scripts/build-macos-app.sh"
+      - ".github/workflows/build.yml"
   pull_request:
     branches: [main]
     paths-ignore:
@@ -18,7 +23,6 @@ on:
       - "screenshots/**"
       - "**/*.md"
   workflow_dispatch:
-
 
 # A newer push supersedes an older run of the same branch, so skip the stale one.
 concurrency:
