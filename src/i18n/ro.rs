@@ -17,7 +17,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "Token expirat");
     m.insert(
         "token_expired_desc",
-        "Tokenul OAuth a expirat. Rulați `claude login` în terminal pentru a-l reînnoi.",
+        "Tokenul OAuth a expirat. Rulați `claude auth status` în terminal pentru a-l reînnoi.",
     );
     m.insert("rate_limited", "Limită de cereri");
     m.insert("server_error", "Eroare de server");

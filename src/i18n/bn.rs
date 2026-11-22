@@ -29,7 +29,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "\u{099f}\u{09cb}\u{0995}\u{09c7}\u{09a8} \u{09ae}\u{09c7}\u{09af}\u{09bc}\u{09be}\u{09a6} \u{0989}\u{09a4}\u{09cd}\u{09a4}\u{09c0}\u{09b0}\u{09cd}\u{09a3}");
     m.insert(
         "token_expired_desc",
-        "\u{0986}\u{09aa}\u{09a8}\u{09be}\u{09b0} OAuth \u{099f}\u{09cb}\u{0995}\u{09c7}\u{09a8} \u{09ae}\u{09c7}\u{09af}\u{09bc}\u{09be}\u{09a6} \u{0989}\u{09a4}\u{09cd}\u{09a4}\u{09c0}\u{09b0}\u{09cd}\u{09a3}\u{0964} \u{099f}\u{09be}\u{09b0}\u{09cd}\u{09ae}\u{09bf}\u{09a8}\u{09be}\u{09b2}\u{09c7} `claude login` \u{099a}\u{09be}\u{09b2}\u{09be}\u{09a8}\u{0964}",
+        "\u{0986}\u{09aa}\u{09a8}\u{09be}\u{09b0} OAuth \u{099f}\u{09cb}\u{0995}\u{09c7}\u{09a8} \u{09ae}\u{09c7}\u{09af}\u{09bc}\u{09be}\u{09a6} \u{0989}\u{09a4}\u{09cd}\u{09a4}\u{09c0}\u{09b0}\u{09cd}\u{09a3}\u{0964} \u{099f}\u{09be}\u{09b0}\u{09cd}\u{09ae}\u{09bf}\u{09a8}\u{09be}\u{09b2}\u{09c7} `claude auth status` \u{099a}\u{09be}\u{09b2}\u{09be}\u{09a8}\u{0964}",
     );
     m.insert(
         "rate_limited",

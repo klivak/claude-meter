@@ -18,7 +18,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
         "Pasenę — prieigos raktas nebegalioja",
     );
     strings.insert("stale_data", "Pasenę — paskutiniai žinomi duomenys");
-    strings.insert("token_expired_desc", "OAuth prieigos raktas nebegalioja. Paleiskite `claude login` terminale, kad jį atnaujintumėte.");
+    strings.insert("token_expired_desc", "OAuth prieigos raktas nebegalioja. Paleiskite `claude auth status` terminale, kad jį atnaujintumėte.");
     strings.insert("rate_limited", "Pasiektas užklausų limitas");
     strings.insert("server_error", "Serverio klaida");
     strings.insert(

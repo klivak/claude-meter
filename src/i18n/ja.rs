@@ -29,7 +29,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "トークン期限切れ");
     m.insert(
         "token_expired_desc",
-        "OAuthトークンが期限切れです。ターミナルで `claude login` を実行して更新してください。",
+        "OAuthトークンが期限切れです。ターミナルで `claude auth status` を実行して更新してください。",
     );
     m.insert("rate_limited", "レート制限");
     m.insert("server_error", "サーバーエラー");

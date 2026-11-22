@@ -29,7 +29,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "टोकन समाप्त");
     m.insert(
         "token_expired_desc",
-        "आपका OAuth टोकन समाप्त हो गया है। इसे नवीनीकृत करने के लिए टर्मिनल में `claude login` चलाएँ।",
+        "आपका OAuth टोकन समाप्त हो गया है। इसे नवीनीकृत करने के लिए टर्मिनल में `claude auth status` चलाएँ।",
     );
     m.insert("rate_limited", "अनुरोध सीमा");
     m.insert("server_error", "सर्वर त्रुटि");

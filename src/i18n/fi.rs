@@ -26,7 +26,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "Token vanhentunut");
     m.insert(
         "token_expired_desc",
-        "OAuth-tokenisi on vanhentunut. Suorita `claude login` terminaalissa uusiaksesi sen.",
+        "OAuth-tokenisi on vanhentunut. Suorita `claude auth status` terminaalissa uusiaksesi sen.",
     );
     m.insert("rate_limited", "Pyyntöraja");
     m.insert("server_error", "Palvelinvirhe");

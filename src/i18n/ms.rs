@@ -17,7 +17,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "Token tamat tempoh");
     m.insert(
         "token_expired_desc",
-        "Token OAuth anda telah tamat tempoh. Jalankan `claude login` di terminal.",
+        "Token OAuth anda telah tamat tempoh. Jalankan `claude auth status` di terminal.",
     );
     m.insert("rate_limited", "Had kadar");
     m.insert("server_error", "Ralat pelayan");

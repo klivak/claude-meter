@@ -40,9 +40,93 @@ impl NotificationTracker {
     }
 }
 
+/// Minutes before expiry at which the "token about to expire" warning may fire.
+pub const TOKEN_EXPIRY_MARKS_MIN: [u64; 4] = [55, 30, 15, 5];
+
+/// Spaces out the token-expiry warning: one balloon per mark in
+/// [`TOKEN_EXPIRY_MARKS_MIN`], never one per poll.
+#[derive(Default)]
+pub struct TokenExpiryTracker {
+    /// Smallest mark already announced for the current token, if any.
+    announced: Option<u64>,
+}
+
+impl TokenExpiryTracker {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Feed the time left on the token (milliseconds). Returns the whole
+    /// minutes to show when a new mark has just been crossed.
+    ///
+    /// Crossing several marks at once (the machine slept, a long poll gap)
+    /// yields a single warning. A token with more than the first mark left was
+    /// refreshed, so the sequence starts over for the next one.
+    pub fn check(&mut self, remaining_ms: u64) -> Option<u64> {
+        let minutes = remaining_ms / 60_000;
+        let first_mark = TOKEN_EXPIRY_MARKS_MIN[0];
+        if remaining_ms == 0 || minutes > first_mark {
+            self.announced = None;
+            return None;
+        }
+        let crossed = TOKEN_EXPIRY_MARKS_MIN
+            .iter()
+            .copied()
+            .filter(|&mark| minutes <= mark)
+            .min()?;
+        if self.announced.is_some_and(|done| crossed >= done) {
+            return None;
+        }
+        self.announced = Some(crossed);
+        Some(minutes)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const MIN: u64 = 60_000;
+
+    #[test]
+    fn token_warning_fires_once_per_mark() {
+        let mut t = TokenExpiryTracker::new();
+        assert_eq!(t.check(54 * MIN), Some(54));
+        // Every minute of polling after that stays quiet until the next mark.
+        for m in (31..54).rev() {
+            assert_eq!(t.check(m * MIN), None, "minute {m}");
+        }
+        assert_eq!(t.check(30 * MIN), Some(30));
+        assert_eq!(t.check(29 * MIN), None);
+        assert_eq!(t.check(15 * MIN), Some(15));
+        assert_eq!(t.check(5 * MIN), Some(5));
+        assert_eq!(t.check(2 * MIN), None);
+    }
+
+    #[test]
+    fn token_warning_collapses_skipped_marks() {
+        let mut t = TokenExpiryTracker::new();
+        // Woke up with 12 minutes left: one warning, not three.
+        assert_eq!(t.check(12 * MIN), Some(12));
+        assert_eq!(t.check(11 * MIN), None);
+    }
+
+    #[test]
+    fn token_warning_restarts_after_refresh() {
+        let mut t = TokenExpiryTracker::new();
+        assert_eq!(t.check(20 * MIN), Some(20));
+        // Refreshed token: 8 hours left.
+        assert_eq!(t.check(480 * MIN), None);
+        assert_eq!(t.check(50 * MIN), Some(50));
+    }
+
+    #[test]
+    fn token_warning_ignores_expired_and_far_tokens() {
+        let mut t = TokenExpiryTracker::new();
+        assert_eq!(t.check(0), None);
+        assert_eq!(t.check(56 * MIN), None);
+        assert_eq!(t.check(90 * MIN), None);
+    }
 
     #[test]
     fn test_notification_dedup() {

@@ -197,7 +197,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 ### 📊 Dashboard
 
 - **Dashboard layouts** — three modes: Minimal (single largest metric), Standard (all bars), Detailed (metrics with inline sparkline charts)
-- **Weekly pace projection** — a line under the weekly bar showing where usage lands at reset at the current rate (✓ within budget, ⚠ at the limit, 🔥 overshooting)
+- **Weekly pace projection** — a line under the weekly bar, and under each per-model weekly bar (Fable, Opus, Sonnet, ...), showing where usage lands at reset at the current rate (✓ within budget, ⚠ at the limit, 🔥 overshooting)
 - **Gradient progress bars** — full-spectrum green→amber→coral gradient with rate-of-change trend arrows (↑↗→↘↓)
 - **Easing animations** — smooth ease-out progress bars with cascading staggered appearance (~60fps)
 - **Fade-in animation** — popup appears with accelerating opacity transition
@@ -216,7 +216,7 @@ OpenAI does not provide a public API for checking Codex subscription usage. Inst
 - **Usage & status icon buttons** — each section header shows compact "open usage" and "service status" icon buttons; toggle them with the "Usage link icons" setting
 - **Notification toggles** — Settings exposes "Show startup notification" (silence the "Running in tray" balloon on launch) and "Show login expiry warning" (silence the `claude login` reminder)
 - **Update notification** — clicking the "Update available" tray balloon opens the release page in your browser (ClaudeMeter does not download or replace its own `.exe` — see [Antivirus false positives](#-antivirus-false-positives--verifying-your-download))
-- **Actionable error recovery** — expired or missing Claude credentials offer a one-click `claude login` copy action, while transient errors can be retried directly from the dashboard
+- **Actionable error recovery** — expired or missing Claude credentials offer a one-click copy action (`claude auth status` to refresh an expired token, `claude login` when not logged in), while transient errors can be retried directly from the dashboard
 
 ### 🎨 Themes
 

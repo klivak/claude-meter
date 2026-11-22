@@ -29,7 +29,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "انتهت صلاحية الرمز");
     m.insert(
         "token_expired_desc",
-        "انتهت صلاحية رمز OAuth الخاص بك. قم بتشغيل `claude login` في الطرفية لتجديده.",
+        "انتهت صلاحية رمز OAuth الخاص بك. قم بتشغيل `claude auth status` في الطرفية لتجديده.",
     );
     m.insert("rate_limited", "تم تجاوز حد الطلبات");
     m.insert("server_error", "خطأ في الخادم");

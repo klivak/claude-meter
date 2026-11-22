@@ -20,7 +20,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "토큰 만료");
     m.insert(
         "token_expired_desc",
-        "OAuth 토큰이 만료되었습니다. 터미널에서 `claude login`을 실행하여 갱신하세요.",
+        "OAuth 토큰이 만료되었습니다. 터미널에서 `claude auth status`을 실행하여 갱신하세요.",
     );
     m.insert("rate_limited", "요청 제한");
     m.insert("server_error", "서버 오류");

@@ -17,7 +17,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     strings.insert("stale_data", "Zastarjelo — zadnji poznati podaci");
     strings.insert(
         "token_expired_desc",
-        "Vaš OAuth token je istekao. Pokrenite `claude login` u terminalu da biste ga obnovili.",
+        "Vaš OAuth token je istekao. Pokrenite `claude auth status` u terminalu da biste ga obnovili.",
     );
     strings.insert("rate_limited", "Dosegnuto ograničenje zahtjeva");
     strings.insert("server_error", "Pogreška poslužitelja");

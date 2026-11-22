@@ -130,8 +130,8 @@ pub(crate) struct AppState {
     d2d: Option<D2DResources>,
     hovered_element: HoveredElement,
     mouse_tracking: bool,
-    // Token expiry warning (avoid repeated notifications)
-    token_expiry_warned: bool,
+    // Token expiry warning (one balloon per mark, see TokenExpiryTracker)
+    token_expiry: crate::notifications::TokenExpiryTracker,
     // Mini-widget window
     widget_hwnd: Option<HWND>,
     // Rate of change per metric (%/hour)
@@ -307,7 +307,7 @@ unsafe fn run_message_loop(exe_dir: std::path::PathBuf, config_mgr: ConfigManage
         d2d,
         hovered_element: HoveredElement::None,
         mouse_tracking: false,
-        token_expiry_warned: false,
+        token_expiry: crate::notifications::TokenExpiryTracker::new(),
         widget_hwnd: None,
         rate_of_change: std::collections::HashMap::new(),
         codex_status: None,
@@ -801,7 +801,6 @@ unsafe extern "system" fn main_wnd_proc(
                     .map_or(true, |t| t.elapsed().as_secs() > 5);
                 if should_poll {
                     state.consecutive_failures = 0;
-                    state.token_expiry_warned = false;
                     trigger_poll(hwnd);
                 }
             }
@@ -1180,6 +1179,8 @@ unsafe extern "system" fn popup_wnd_proc(
                         HoveredElement::BackButton
                     } else if crate::popup::point_in_rect(pt, state.close_rect) {
                         HoveredElement::CloseButton
+                    } else if crate::ui::render::repo_link_at(pt) {
+                        HoveredElement::RepoLink
                     } else {
                         let mut found = HoveredElement::None;
                         for (i, rect) in state.setting_rects.iter().enumerate() {
@@ -1266,6 +1267,8 @@ unsafe extern "system" fn popup_wnd_proc(
             if let Some(state) = APP_STATE.as_mut() {
                 if crate::popup::point_in_rect(pt, state.close_rect) {
                     hide_popup(state);
+                } else if state.popup_in_settings && crate::ui::render::repo_link_at(pt) {
+                    let _ = open::that(crate::ui::render::REPO_URL);
                 } else if state.popup_in_settings
                     && crate::popup::point_in_rect(pt, state.back_rect)
                 {
@@ -1565,6 +1568,9 @@ unsafe extern "system" fn popup_wnd_proc(
                     match crate::errors::action_for(error_kind) {
                         crate::errors::ErrorAction::CopyLoginCommand => {
                             copy_to_clipboard("claude login");
+                        }
+                        crate::errors::ErrorAction::CopyRefreshCommand => {
+                            copy_to_clipboard("claude auth status");
                         }
                         crate::errors::ErrorAction::Retry => {
                             state.last_updated = "...".to_string();
@@ -2450,7 +2456,8 @@ async fn do_poll(web_fallback: Option<(String, String)>) -> PollResult {
         return PollResult {
             usage: None,
             error: Some(
-                "[token_expired] OAuth token has expired. Run `claude login` to refresh.".into(),
+                "[token_expired] OAuth token has expired. Run `claude auth status` to refresh."
+                    .into(),
             ),
             token_expires_in_ms: Some(0),
         };
@@ -2513,29 +2520,22 @@ unsafe fn on_poll_result(hwnd: HWND, result: PollResult) {
             token_expires_in_ms,
         } = result;
 
-        // Token expiry warning: notify once when token expires within 1 hour
+        // Token expiry warning: one balloon per mark (55/30/15/5 min), see TokenExpiryTracker.
+        // The tracker sees every poll so a refreshed token restarts the sequence even
+        // while the warning is switched off or Focus Assist is active.
         if let Some(ms) = token_expires_in_ms {
-            if ms > 0
-                && ms < 3_600_000
-                && !state.token_expiry_warned
-                && !is_focus_assist_active()
-                && state.config_mgr.config.token_expiry_warning
-            {
-                state.token_expiry_warned = true;
-                let minutes = ms / 60_000;
-                if let Some(tray) = &state.tray {
-                    tray.show_balloon(
-                        "ClaudeMeter",
-                        &format!(
-                            "OAuth token expires in ~{} min. Run `claude login` to refresh.",
-                            minutes
-                        ),
-                    );
+            if let Some(minutes) = state.token_expiry.check(ms) {
+                if !is_focus_assist_active() && state.config_mgr.config.token_expiry_warning {
+                    if let Some(tray) = &state.tray {
+                        tray.show_balloon(
+                            "ClaudeMeter",
+                            &format!(
+                                "OAuth token expires in ~{} min. Start Claude Code in a terminal or run `claude auth status` to refresh it.",
+                                minutes
+                            ),
+                        );
+                    }
                 }
-            }
-            // Reset warning flag if token was refreshed (>1h remaining)
-            if ms >= 3_600_000 {
-                state.token_expiry_warned = false;
             }
         }
 

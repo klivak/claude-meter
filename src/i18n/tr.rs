@@ -20,7 +20,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "Token süresi doldu");
     m.insert(
         "token_expired_desc",
-        "OAuth tokeninizin süresi doldu. Yenilemek için terminalinizde `claude login` komutunu çalıştırın.",
+        "OAuth tokeninizin süresi doldu. Yenilemek için terminalinizde `claude auth status` komutunu çalıştırın.",
     );
     m.insert("rate_limited", "İstek sınırı");
     m.insert("server_error", "Sunucu hatası");

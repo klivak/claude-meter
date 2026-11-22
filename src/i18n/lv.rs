@@ -17,7 +17,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     strings.insert("stale_data", "Novecojis — pēdējie zināmie dati");
     strings.insert(
         "token_expired_desc",
-        "OAuth pilnvara ir beigusies. Lai to atjaunotu, terminālī palaidiet `claude login`.",
+        "OAuth pilnvara ir beigusies. Lai to atjaunotu, terminālī palaidiet `claude auth status`.",
     );
     strings.insert("rate_limited", "Sasniegts pieprasījumu ierobežojums");
     strings.insert("server_error", "Servera kļūda");

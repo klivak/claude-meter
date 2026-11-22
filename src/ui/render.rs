@@ -83,6 +83,20 @@ thread_local! {
         const { std::cell::RefCell::new(Vec::new()) };
 }
 
+thread_local! {
+    /// Clickable repository link in the settings footer from the last paint.
+    static REPO_LINK_RECT: std::cell::Cell<RECT> = const { std::cell::Cell::new(RECT { left: 0, top: 0, right: 0, bottom: 0 }) };
+}
+
+/// Repository the footer link opens.
+pub const REPO_URL: &str = "https://github.com/klivak/claudemeter";
+
+/// Whether `pt` (client coordinates) is on the settings footer's repository link.
+pub fn repo_link_at(pt: windows::Win32::Foundation::POINT) -> bool {
+    let rc = REPO_LINK_RECT.with(|r| r.get());
+    pt.x >= rc.left && pt.x < rc.right && pt.y >= rc.top && pt.y < rc.bottom
+}
+
 /// Index of the collapsible row under `pt`, for the hover highlight.
 pub fn metric_toggle_index_at(pt: windows::Win32::Foundation::POINT) -> Option<usize> {
     METRIC_TOGGLE_RECTS.with(|r| {
@@ -177,22 +191,29 @@ pub fn weekly_pace_line_height(usage: &UsageResponse, metric_filter: MetricFilte
         .filter(|(key, metric)| {
             !metric_filter.hides(key)
                 && !is_metric_collapsed(key)
-                && ((key == "seven_day" && metric.resets_at.is_some()) || metric.has_detail())
+                && (has_weekly_pace(key, metric) || metric.has_detail())
         })
         .count() as i32;
     lines * PACE_LABEL_H
 }
 
-/// Text for the weekly burn-rate line, or `None` when this metric is not the
-/// all-models weekly window (the only one worth projecting) or has no reset
-/// time. Shared by the renderer and `calculate_height` so the reserved height
-/// always matches what gets drawn.
+/// Whether a burn-rate projection applies: the all-models weekly window and the
+/// per-model weekly quotas (`seven_day_opus`, `seven_day_fable`, ...) that have
+/// a reset time. Locked or inactive model quotas are not projected.
+pub fn has_weekly_pace(key: &str, metric: &crate::providers::claude::UsageMetric) -> bool {
+    let weekly = key == "seven_day" || key.starts_with("seven_day_");
+    weekly && !metric.inactive && metric.locked_reason.is_none() && metric.resets_at.is_some()
+}
+
+/// Text for the weekly burn-rate line, or `None` when this metric is not a
+/// weekly window or has no reset time. Shared by the renderer and
+/// `calculate_height` so the reserved height always matches what gets drawn.
 pub fn weekly_pace_text(
     key: &str,
     metric: &crate::providers::claude::UsageMetric,
     i18n: &I18n,
 ) -> Option<String> {
-    if key != "seven_day" {
+    if !has_weekly_pace(key, metric) {
         return None;
     }
     let resets_at = metric.resets_at.as_deref()?;
@@ -271,6 +292,7 @@ pub enum HoveredElement {
     SettingRow(usize),
     ChartBar(usize),
     ChartToggle,
+    RepoLink,
 }
 
 /// Draw accessibility overlay pattern on a progress bar fill.
@@ -1265,12 +1287,18 @@ impl PopupRenderer {
         colors: &ThemeColors,
         i18n: &I18n,
     ) -> f32 {
-        let Some(text) = weekly_pace_text(key, metric, i18n).or_else(|| metric.detail_text(i18n))
-        else {
-            return y;
+        // A model quota can carry both a projection and its weekly share: one line.
+        let text = match (
+            weekly_pace_text(key, metric, i18n),
+            metric.detail_text(i18n),
+        ) {
+            (Some(pace), Some(detail)) if key != "seven_day" => format!("{pace} \u{b7} {detail}"),
+            (Some(pace), _) => pace,
+            (None, Some(detail)) => detail,
+            (None, None) => return y,
         };
         // Only the projection carries a verdict; other notes are plain information.
-        let pace = if key == "seven_day" {
+        let pace = if has_weekly_pace(key, metric) {
             crate::pace::weekly_pace(
                 metric.utilization,
                 metric.resets_at.as_deref().unwrap_or_default(),
@@ -2440,6 +2468,7 @@ impl PopupRenderer {
         };
         let btn_label = match error_action {
             crate::errors::ErrorAction::CopyLoginCommand => "claude login",
+            crate::errors::ErrorAction::CopyRefreshCommand => "claude auth status",
             crate::errors::ErrorAction::Retry => i18n.t("Refresh"),
             crate::errors::ErrorAction::InstallClaude => i18n.t("Install Claude Code \u{2192}"),
         };
@@ -3348,7 +3377,7 @@ impl PopupRenderer {
 
         // Honest "stale data" detection. We are showing cached numbers that are
         // NOT confirmed live in two cases the user cares about:
-        //   1. the OAuth token is expired (cannot refresh until `claude login`), or
+        //   1. the OAuth token is expired (refreshes via `claude auth status` or Claude Code), or
         //   2. we never got a live poll this session (last_updated is still "(cached)").
         // Transient errors right after a successful refresh are NOT flagged — the
         // displayed data is only seconds old and still trustworthy.
@@ -4102,6 +4131,17 @@ pub unsafe fn draw_settings_panel(
     );
 
     let footer_text2 = wide("github.com/klivak/claudemeter");
+    // Width is estimated (about 5.8 px per character at 10pt) so only the link
+    // text, not the whole row, reacts to the mouse.
+    let link_right = (pad + (footer_text2.len() - 1) as f32 * 5.8).min(w - pad);
+    REPO_LINK_RECT.with(|r| {
+        r.set(RECT {
+            left: pad as i32,
+            top: (fy + 16.0) as i32,
+            right: link_right as i32,
+            bottom: (fy + 32.0) as i32,
+        })
+    });
     let footer_link_brush = rt
         .CreateSolidColorBrush(&colorref_to_d2d(colors.accent) as *const _, None)
         .unwrap();
@@ -4118,6 +4158,21 @@ pub unsafe fn draw_settings_panel(
         D2D1_DRAW_TEXT_OPTIONS_NONE,
         DWRITE_MEASURING_MODE_NATURAL,
     );
+    if matches!(hovered, HoveredElement::RepoLink) {
+        rt.DrawLine(
+            D2D_POINT_2F {
+                x: pad,
+                y: fy + 29.0,
+            },
+            D2D_POINT_2F {
+                x: link_right,
+                y: fy + 29.0,
+            },
+            &footer_link_brush,
+            1.0,
+            None,
+        );
+    }
 
     // 1px border
     let border_brush = rt
@@ -4404,5 +4459,43 @@ mod tests {
             weekly_pace_line_height(&usage, MetricFilter::default()),
             2 * PACE_LABEL_H
         );
+    }
+
+    #[test]
+    fn model_weekly_quota_gets_pace_line() {
+        let future = (chrono::Utc::now() + chrono::Duration::days(3)).to_rfc3339();
+        let usage: UsageResponse = crate::providers::claude::test_usage(serde_json::json!({
+            "seven_day": {"utilization": 30.0, "resets_at": future},
+            "seven_day_fable": {"utilization": 30.0, "resets_at": future},
+            "tangelo": {"utilization": 1.0, "resets_at": future}
+        }));
+        let fable = &usage.extra["seven_day_fable"];
+        assert!(has_weekly_pace("seven_day_fable", fable));
+        assert!(!has_weekly_pace("tangelo", &usage.extra["tangelo"]));
+        let i18n = I18n::new(crate::i18n::Locale::En);
+        let text = weekly_pace_text("seven_day_fable", fable, &i18n).unwrap();
+        assert!(text.contains('%'), "{text}");
+        assert!(weekly_pace_text("tangelo", &usage.extra["tangelo"], &i18n).is_none());
+        // seven_day lives in its own field; Fable adds a second note line.
+        assert_eq!(
+            weekly_pace_line_height(&usage, MetricFilter::default()),
+            2 * PACE_LABEL_H
+        );
+    }
+
+    #[test]
+    fn inactive_model_quota_has_no_pace() {
+        let mut usage: UsageResponse = crate::providers::claude::test_usage(serde_json::json!({
+            "seven_day_fable": {"utilization": 0.0, "resets_at": "2099-01-01T00:00:00+00:00"}
+        }));
+        assert!(has_weekly_pace(
+            "seven_day_fable",
+            &usage.extra["seven_day_fable"]
+        ));
+        usage.extra.get_mut("seven_day_fable").unwrap().inactive = true;
+        assert!(!has_weekly_pace(
+            "seven_day_fable",
+            &usage.extra["seven_day_fable"]
+        ));
     }
 }

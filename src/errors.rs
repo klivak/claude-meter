@@ -13,6 +13,8 @@ pub enum ErrorKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorAction {
     CopyLoginCommand,
+    /// Expired access token: `claude auth status` refreshes it without a browser login.
+    CopyRefreshCommand,
     Retry,
     InstallClaude,
 }
@@ -55,7 +57,8 @@ pub fn retry_after_seconds(message: &str) -> Option<u64> {
 
 pub fn action_for(kind: ErrorKind) -> ErrorAction {
     match kind {
-        ErrorKind::CredentialsMissing | ErrorKind::TokenExpired => ErrorAction::CopyLoginCommand,
+        ErrorKind::CredentialsMissing => ErrorAction::CopyLoginCommand,
+        ErrorKind::TokenExpired => ErrorAction::CopyRefreshCommand,
         ErrorKind::RateLimited
         | ErrorKind::Network
         | ErrorKind::Server
@@ -112,7 +115,7 @@ mod tests {
     fn chooses_action_for_each_error_class() {
         assert_eq!(
             action_for(ErrorKind::TokenExpired),
-            ErrorAction::CopyLoginCommand
+            ErrorAction::CopyRefreshCommand
         );
         assert_eq!(
             action_for(ErrorKind::CredentialsMissing),

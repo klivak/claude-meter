@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+## [6.2.0] - 2026-11-22
+
+### Added
+- **Release preparation** - version bumped to 6.2.0.
+
+### Added
+- **Pace projection for model quotas** — the per-model weekly bars (Fable, Opus, Sonnet, ...) now show the same "lands at X% at reset" line as the all-models weekly bar, joined with the weekly share when the API reports one (#4).
+
+### Changed
+- **Expired-token hint** — the tooltip, dashboard text, balloon and copy button now point to `claude auth status` (or simply starting Claude Code), which refreshes the token without the browser login that `claude login` needs. "Not logged in" still suggests `claude login` (#6).
+
+### Fixed
+- **Token-expiry warning no longer repeats** — it fires once per mark (55, 30, 15 and 5 minutes before expiry) instead of again after every credential-file change, and starts over only after the token is refreshed (#5).
+- **Repository link in Settings is clickable** — it opens the GitHub page, with a hand cursor and underline on hover (#3).
+
 ## [6.1.0] - 2026-11-11
 
 ### Added

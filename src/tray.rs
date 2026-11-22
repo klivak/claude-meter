@@ -978,7 +978,7 @@ fn error_tooltip_label(err: &str) -> &'static str {
 /// Whether the displayed numbers are cached rather than confirmed live.
 ///
 /// Mirrors the popup footer logic: the data is stale when the OAuth token is
-/// expired (no refresh possible until `claude login`), or when no successful
+/// expired (refresh with `claude auth status` or by starting Claude Code), or when no successful
 /// poll has happened this session. A transient error right after a successful
 /// refresh is not stale — those numbers are seconds old.
 pub fn is_stale(last_error: &Option<String>, last_updated: &str) -> bool {
@@ -994,7 +994,7 @@ fn stale_tooltip_label(last_error: &Option<String>) -> &'static str {
         crate::errors::classify(error) == crate::errors::ErrorKind::TokenExpired
     });
     if token_expired {
-        "\u{26a0} Cached \u{2014} token expired, run: claude login"
+        "\u{26a0} Cached \u{2014} token expired, run: claude auth status"
     } else {
         "\u{26a0} Cached \u{2014} last known values"
     }

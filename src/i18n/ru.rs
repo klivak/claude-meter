@@ -17,7 +17,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "Токен истёк");
     m.insert(
         "token_expired_desc",
-        "Ваш OAuth токен истёк. Выполните `claude login` в терминале, чтобы обновить его.",
+        "Ваш OAuth токен истёк. Выполните `claude auth status` в терминале, чтобы обновить его.",
     );
     m.insert("rate_limited", "Лимит запросов");
     m.insert("server_error", "Ошибка сервера");

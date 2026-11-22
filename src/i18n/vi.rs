@@ -23,7 +23,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "Token hết hạn");
     m.insert(
         "token_expired_desc",
-        "Token OAuth của bạn đã hết hạn. Chạy `claude login` trong terminal để làm mới.",
+        "Token OAuth của bạn đã hết hạn. Chạy `claude auth status` trong terminal để làm mới.",
     );
     m.insert("rate_limited", "Giới hạn yêu cầu");
     m.insert("server_error", "Lỗi máy chủ");

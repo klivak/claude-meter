@@ -38,7 +38,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("stale_data", "Stale \u{2014} last known");
     m.insert(
         "token_expired_desc",
-        "Your OAuth token has expired. Run `claude login` in your terminal to refresh it.",
+        "Your OAuth token has expired. Run `claude auth status` in your terminal to refresh it.",
     );
     m.insert("rate_limited", "Rate limited");
     m.insert("server_error", "Server error");

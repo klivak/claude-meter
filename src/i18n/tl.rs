@@ -17,7 +17,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "Nag-expire na ang token");
     m.insert(
         "token_expired_desc",
-        "Nag-expire na ang iyong OAuth token. Patakbuhin ang `claude login` sa terminal.",
+        "Nag-expire na ang iyong OAuth token. Patakbuhin ang `claude auth status` sa terminal.",
     );
     m.insert("rate_limited", "Na-rate limit");
     m.insert("server_error", "Error sa server");

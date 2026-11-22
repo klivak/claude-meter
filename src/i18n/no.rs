@@ -17,7 +17,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "Token utl\u{00f8}pt");
     m.insert(
         "token_expired_desc",
-        "OAuth-tokenet ditt har utl\u{00f8}pt. Kj\u{00f8}r `claude login` i terminalen.",
+        "OAuth-tokenet ditt har utl\u{00f8}pt. Kj\u{00f8}r `claude auth status` i terminalen.",
     );
     m.insert("rate_limited", "Hastighetsbegrenset");
     m.insert("server_error", "Serverfeil");

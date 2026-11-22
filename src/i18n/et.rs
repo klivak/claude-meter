@@ -17,7 +17,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     strings.insert("stale_data", "Aegunud — viimased teadaolevad andmed");
     strings.insert(
         "token_expired_desc",
-        "OAuthi luba on aegunud. Selle uuendamiseks käivita terminalis `claude login`.",
+        "OAuthi luba on aegunud. Selle uuendamiseks käivita terminalis `claude auth status`.",
     );
     strings.insert("rate_limited", "Päringulimiit ületatud");
     strings.insert("server_error", "Serveri viga");

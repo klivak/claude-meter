@@ -23,7 +23,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "Token vypr\u{0161}al");
     m.insert(
         "token_expired_desc",
-        "V\u{00e1}\u{0161} OAuth token vypr\u{0161}al. Spustite `claude login` v termin\u{00e1}li.",
+        "V\u{00e1}\u{0161} OAuth token vypr\u{0161}al. Spustite `claude auth status` v termin\u{00e1}li.",
     );
     m.insert("rate_limited", "Obmedzen\u{00e1} frekvencia");
     m.insert("server_error", "Chyba servera");

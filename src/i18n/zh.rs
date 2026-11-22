@@ -23,7 +23,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "令牌已过期");
     m.insert(
         "token_expired_desc",
-        "您的OAuth令牌已过期。请在终端中运行 `claude login` 以刷新它。",
+        "您的OAuth令牌已过期。请在终端中运行 `claude auth status` 以刷新它。",
     );
     m.insert("rate_limited", "请求受限");
     m.insert("server_error", "服务器错误");

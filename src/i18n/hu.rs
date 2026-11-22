@@ -23,7 +23,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "Token lejárt");
     m.insert(
         "token_expired_desc",
-        "Az OAuth tokenje lejárt. Futtassa a `claude login` parancsot a terminálban a megújításhoz.",
+        "Az OAuth tokenje lejárt. Futtassa a `claude auth status` parancsot a terminálban a megújításhoz.",
     );
     m.insert("rate_limited", "Kéréskorlát");
     m.insert("server_error", "Szerverhiba");

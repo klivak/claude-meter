@@ -23,7 +23,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     );
     m.insert(
         "token_expired_desc",
-        "\u{03a4}\u{03bf} OAuth token \u{03ad}\u{03bb}\u{03b7}\u{03be}\u{03b5}. \u{0395}\u{03ba}\u{03c4}\u{03b5}\u{03bb}\u{03ad}\u{03c3}\u{03c4}\u{03b5} `claude login` \u{03c3}\u{03c4}\u{03bf} \u{03c4}\u{03b5}\u{03c1}\u{03bc}\u{03b1}\u{03c4}\u{03b9}\u{03ba}\u{03cc}.",
+        "\u{03a4}\u{03bf} OAuth token \u{03ad}\u{03bb}\u{03b7}\u{03be}\u{03b5}. \u{0395}\u{03ba}\u{03c4}\u{03b5}\u{03bb}\u{03ad}\u{03c3}\u{03c4}\u{03b5} `claude auth status` \u{03c3}\u{03c4}\u{03bf} \u{03c4}\u{03b5}\u{03c1}\u{03bc}\u{03b1}\u{03c4}\u{03b9}\u{03ba}\u{03cc}.",
     );
     m.insert("rate_limited", "\u{03a0}\u{03b5}\u{03c1}\u{03b9}\u{03bf}\u{03c1}\u{03b9}\u{03c3}\u{03bc}\u{03cc}\u{03c2} \u{03c1}\u{03c5}\u{03b8}\u{03bc}\u{03bf}\u{03cd}");
     m.insert("server_error", "\u{03a3}\u{03c6}\u{03ac}\u{03bb}\u{03bc}\u{03b1} \u{03b4}\u{03b9}\u{03b1}\u{03ba}\u{03bf}\u{03bc}\u{03b9}\u{03c3}\u{03c4}\u{03ae}");

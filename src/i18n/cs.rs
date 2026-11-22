@@ -17,7 +17,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "Token vypršel");
     m.insert(
         "token_expired_desc",
-        "Váš OAuth token vypršel. Spusťte `claude login` v terminálu pro jeho obnovení.",
+        "Váš OAuth token vypršel. Spusťte `claude auth status` v terminálu pro jeho obnovení.",
     );
     m.insert("rate_limited", "Limit požadavků");
     m.insert("server_error", "Chyba serveru");

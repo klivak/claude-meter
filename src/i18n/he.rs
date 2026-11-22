@@ -38,7 +38,7 @@ pub fn strings() -> HashMap<&'static str, &'static str> {
     m.insert("token_expired", "\u{05d4}\u{05d8}\u{05d5}\u{05e7}\u{05df} \u{05e4}\u{05d2} \u{05ea}\u{05d5}\u{05e7}\u{05e3}");
     m.insert(
         "token_expired_desc",
-        "\u{05d4}\u{05d8}\u{05d5}\u{05e7}\u{05df} \u{05e4}\u{05d2} \u{05ea}\u{05d5}\u{05e7}\u{05e3}. \u{05d4}\u{05e8}\u{05d9}\u{05e6}\u{05d5} `claude login` \u{05d1}\u{05d8}\u{05e8}\u{05de}\u{05d9}\u{05e0}\u{05dc}.",
+        "\u{05d4}\u{05d8}\u{05d5}\u{05e7}\u{05df} \u{05e4}\u{05d2} \u{05ea}\u{05d5}\u{05e7}\u{05e3}. \u{05d4}\u{05e8}\u{05d9}\u{05e6}\u{05d5} `claude auth status` \u{05d1}\u{05d8}\u{05e8}\u{05de}\u{05d9}\u{05e0}\u{05dc}.",
     );
     m.insert(
         "rate_limited",
